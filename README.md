@@ -1,6 +1,8 @@
 # FluentLocalizer
 
 [![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer)
+[![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.Store.Json.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer.Store.Json)
+[![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.Extensions.DependencyInjection.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer.Extensions.DependencyInjection)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 **FluentLocalizer** is a lightweight, high-performance .NET library designed for resolving culture-aware translation templates using **ICU / MessageFormat** syntax with clean **Fluent APIs**.
