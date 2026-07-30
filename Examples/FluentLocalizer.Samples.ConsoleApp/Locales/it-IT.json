@@ -1,0 +1,8 @@
+{
+  "Welcome": "{gender, select, male {Benvenuto} female {Benvenuta} other {Benvenuto/a}} {name}!",
+  "Notifications": {
+    "MessageCount": "{gender, select, male {Il signor} female {La signora} other {L'utente}} {name} ha {quantity, plural, =0 {zero messaggi} one {# solo messaggio} other {# messaggi non letti}}.",
+    "DiskSpaceWarning": "spazio su disco quasi esaurito"
+  },
+  "BrokenTemplate": "{name"
+}

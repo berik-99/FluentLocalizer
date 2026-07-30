@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<PackageId>FluentLocalizer.Store.Json</PackageId>
+		<Product>FluentLocalizer.Store.Json</Product>
+		<Version>0.0.1</Version>
+		<Description>
+			JSON-backed translation store for FluentLocalizer with culture-aware loading from files or embedded resources.
+		</Description>
+		<PackageTags>json;localization;translation;store;messageformat;dotnet</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="PolySharp" Version="1.16.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.Collections.Immutable" Version="10.*" />
+		<PackageReference Include="System.Text.Json" Version="10.*" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Assets\readme.txt" Pack="true" PackagePath="readme.txt" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="FluentLocalizer" Version="0.0.1" />
+	</ItemGroup>
+
+</Project>

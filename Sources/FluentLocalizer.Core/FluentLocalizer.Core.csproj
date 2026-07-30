@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<PackageId>FluentLocalizer</PackageId>
+		<Product>FluentLocalizer</Product>
+		<Version>0.0.1</Version>
+		<Description>
+			Core library for building culture-aware translation pipelines in .NET with fluent APIs, MessageFormat-style interpolation, and configurable fallback and error handling.
+		</Description>
+		<PackageTags>localization;translation;messageformat;culture;fluent;dotnet</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MessageFormat" Version="8.0.0" />
+		<PackageReference Include="PolySharp" Version="1.16.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+</Project>

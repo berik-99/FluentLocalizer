@@ -1,0 +1,3 @@
+﻿{
+    "Welcome": "{select, gender, male {Benvenuto} female {Benvenuta} other {Benvenuto/a}} {name}! Hai {quantity, plural, 0= {nessun messaggio non letto} one {solo un nuovo messaggio} other {# nuovi messaggi}}."
+}

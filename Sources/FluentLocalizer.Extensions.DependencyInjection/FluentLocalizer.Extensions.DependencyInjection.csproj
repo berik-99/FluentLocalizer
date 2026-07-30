@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<PackageId>FluentLocalizer.Extensions.DependencyInjection</PackageId>
+		<Product>FluentLocalizer.Extensions.DependencyInjection</Product>
+		<RootNamespace>FluentLocalizer.Core</RootNamespace>
+		<Version>0.0.1</Version>
+		<Description>
+			Dependency injection extensions for registering FluentLocalizer translators, stores, and logging services in .NET applications.
+		</Description>
+		<PackageTags>dependencyinjection;di;localization;translation;dotnet;services</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.*" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="FluentLocalizer" Version="0.0.1" />
+	</ItemGroup>
+
+</Project>

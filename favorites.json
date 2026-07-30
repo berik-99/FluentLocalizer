@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "items": [
+    {
+      "name": ".gitignore",
+      "path": ".gitignore"
+    },
+    {
+      "name": "Directory.Build.props",
+      "path": "Sources\\Directory.Build.props"
+    },
+    {
+      "name": "README.md",
+      "path": "README.md"
+    }
+  ]
+}

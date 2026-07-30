@@ -1,0 +1,8 @@
+{
+  "Welcome": "Welcome {name}!",
+  "Notifications": {
+    "MessageCount": "{gender, select, male {Mr.} female {Ms.} other {User}} {name} has {quantity, plural, =0 {no messages} one {only one unread message} other {# unread messages}}.",
+    "DiskSpaceWarning": "Disk space is almost full"
+  },
+  "BrokenTemplate": "{name"
+}

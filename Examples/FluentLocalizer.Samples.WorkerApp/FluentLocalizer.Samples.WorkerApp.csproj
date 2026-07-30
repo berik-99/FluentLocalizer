@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>dotnet-FluentLocalizer.Samples.WorkerApp-c9a4165b-083b-403b-b394-25af674df1aa</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentLocalizer.Extensions.DependencyInjection" Version="0.0.1" />
+		<PackageReference Include="FluentLocalizer.Store.Json" Version="0.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+	</ItemGroup>
+
+</Project>

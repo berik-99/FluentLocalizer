@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Examples/">
+    <Project Path="Examples/FluentLocalizer.Samples.ConsoleApp/FluentLocalizer.Samples.ConsoleApp.csproj" />
+    <Project Path="Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.Samples.WorkerApp.csproj" />
+  </Folder>
+  <Folder Name="/Sources/">
+    <Project Path="Sources/FluentLocalizer.Core/FluentLocalizer.Core.csproj" />
+    <Project Path="Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizer.Extensions.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Sources/Stores/">
+    <Project Path="Sources/FluentLocalizer.Store.Json/FluentLocalizer.Store.Json.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/FluentLocalizer.Test/FluentLocalizer.Test.csproj" />
+  </Folder>
+</Solution>
