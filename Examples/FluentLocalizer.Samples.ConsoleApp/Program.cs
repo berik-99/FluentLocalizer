@@ -1,5 +1,5 @@
 using FluentLocalizer.Core;
-using FluentLocalizer.Store.Json;
+using FluentLocalizer.Samples.ConsoleApp;
 using System.Globalization;
 
 CultureInfo culture = new("it-IT");
@@ -18,18 +18,7 @@ TranslationOptions options = new()
     DefaultArguments = new Dictionary<string, object?> { ["name"] = "Guest" }
 };
 
-JsonStoreOptions storeOptions = new()
-{
-    ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.FileSystem,
-    ReloadOnChange = false,
-    FallbackCulture = "en-US",
-    ThrowOnError = true,
-};
-
-storeOptions.FileMappings.Add("en-US", "english.json");
-
-Translator translator = new(new JsonStore(storeOptions), options);
+Translator translator = new(new MemoryStore(), options);
 
 await ShowScenarioAsync("1. Italian greeting", async () =>
     await translator.Get("Welcome")
