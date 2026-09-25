@@ -8,7 +8,7 @@ namespace FluentLocalizer.Store.Json;
 public sealed class JsonStore : ITranslationStore, IDisposable
 {
     private readonly ITranslationStore _store;
-    private readonly IDisposable? _disposable;
+    private readonly JsonFileStore? _jfs;
 
     /// <summary>Creates a compatibility store that forwards to the selected dedicated JSON store.</summary>
     public JsonStore(JsonStoreOptions? options = null)
@@ -29,7 +29,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
                 CopyMappings(options, fileOptions);
                 var fileStore = new JsonFileStore(fileOptions);
                 _store = fileStore;
-                _disposable = fileStore;
+                _jfs = fileStore;
                 break;
             case JsonStoreLocation.EmbeddedResources:
                 var embeddedOptions = new EmbeddedJsonStoreOptions
@@ -55,7 +55,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
         _store.GetTemplateAsync(key, culture, cancellationToken);
 
     /// <inheritdoc />
-    public void Dispose() => _disposable?.Dispose();
+    public void Dispose() => _jfs?.Dispose();
 
     private static void CopyMappings(JsonStoreSettings source, JsonStoreSettings destination)
     {
