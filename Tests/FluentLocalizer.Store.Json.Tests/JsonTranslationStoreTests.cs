@@ -3,6 +3,7 @@ using FluentLocalizer.Store.Json;
 
 namespace FluentLocalizer.Test;
 
+#pragma warning disable CS0618 // The compatibility API is retained as part of the package surface.
 public class JsonTranslationStoreTests
 {
     [Fact]
@@ -282,3 +283,4 @@ public class JsonTranslationStoreTests
         }
     }
 }
+#pragma warning restore CS0618

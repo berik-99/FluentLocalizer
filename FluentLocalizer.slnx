@@ -15,6 +15,8 @@
     <Project Path="Sources/FluentLocalizer.Store.Json/FluentLocalizer.Store.Json.csproj" />
   </Folder>
   <Folder Name="/Tests/">
-    <Project Path="Tests/FluentLocalizer.Test/FluentLocalizer.Test.csproj" />
+    <Project Path="Tests/FluentLocalizer.Core.Tests/FluentLocalizer.Core.Tests.csproj" />
+    <Project Path="Tests/FluentLocalizer.DependencyInjection.Tests/FluentLocalizer.DependencyInjection.Tests.csproj" />
+    <Project Path="Tests/FluentLocalizer.Store.Json.Tests/FluentLocalizer.Store.Json.Tests.csproj" />
   </Folder>
 </Solution>

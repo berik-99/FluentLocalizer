@@ -1,9 +1,13 @@
-using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text.Json;
 
 namespace FluentLocalizer.Store.Json;
 
 /// <summary>Loads and caches culture JSON files from the local filesystem.</summary>
+#if NET8_0_OR_GREATER
+[UnsupportedOSPlatform("browser")]
+#endif
 public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
 {
     private readonly JsonFileStoreOptions _options;
@@ -13,6 +17,9 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     /// <summary>Creates a filesystem-backed JSON translation store.</summary>
     public JsonFileStore(JsonFileStoreOptions? options = null) : base(options ?? new JsonFileStoreOptions())
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+            throw new PlatformNotSupportedException("JsonFileStore is not supported in browser applications. Use EmbeddedJsonStore or HttpJsonStore instead.");
+
         _options = (JsonFileStoreOptions)Options;
         _path = Path.IsPathRooted(_options.ResourcesPath)
             ? _options.ResourcesPath
@@ -37,7 +44,18 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
 
     private void LoadFile(string path)
     {
-        try { SetDocument(Path.GetFileName(path), File.ReadAllText(path)); }
+        try
+        {
+            string json;
+            try { json = File.ReadAllText(path); }
+            catch (IOException) when (!Options.ThrowOnMissingStore && File.Exists(path))
+            {
+                Thread.Sleep(50);
+                json = File.ReadAllText(path);
+            }
+
+            SetDocument(Path.GetFileName(path), json);
+        }
         catch (Exception ex) when (!Options.ThrowOnMissingStore && (ex is IOException or JsonException or UnauthorizedAccessException))
         { }
     }

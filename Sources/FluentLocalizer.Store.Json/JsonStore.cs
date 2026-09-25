@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace FluentLocalizer.Store.Json;
 
@@ -16,6 +17,8 @@ public sealed class JsonStore : ITranslationStore, IDisposable
         switch (options.SearchMode)
         {
             case JsonStoreLocation.FileSystem:
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+                    throw new PlatformNotSupportedException("JsonStore with FileSystem location is not supported in browser applications. Use EmbeddedJsonStore or HttpJsonStore instead.");
                 var fileOptions = new JsonFileStoreOptions
                 {
                     ResourcesPath = options.ResourcesPath,

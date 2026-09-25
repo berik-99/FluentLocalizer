@@ -29,7 +29,17 @@ By default, each store tries the requested culture file, its two-letter neutral 
 
 ## Local files
 
-The package's MSBuild targets copy JSON files under the application's `Locales` folder to the build output. Relative `ResourcesPath` values use the application base directory.
+Configure the consuming application to copy its JSON files to the output and publish directories. The package does not add build rules to the application project:
+
+```xml
+<ItemGroup>
+  <Content Include="Locales\**\*.json"
+           CopyToOutputDirectory="PreserveNewest"
+           CopyToPublishDirectory="PreserveNewest" />
+</ItemGroup>
+```
+
+Relative `ResourcesPath` values use the application base directory. The store scans that directory for top-level `*.json` files. `JsonFileStore` requires filesystem access and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` in the browser.
 
 ```text
 Locales/
@@ -65,6 +75,8 @@ Embed the locale files in the application assembly. The default resource folder 
 </ItemGroup>
 ```
 
+The store selects manifest resource names containing the `ResourcesPath` folder (default `Locales`) and recognizes culture files by their final filename, such as `en-US.json`.
+
 ```csharp
 using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
@@ -78,7 +90,7 @@ Embedded resources work in browser applications because they are read from the a
 
 ## HTTP
 
-`HttpJsonStore` downloads locale files below `HttpClient.BaseAddress` and keeps parsed documents in memory. It does not own the supplied `HttpClient`.
+Publish the locale files as static assets on the server, such as under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app. `HttpJsonStore` requests `{ResourcesPath}/{culture}.json` below `HttpClient.BaseAddress` and keeps parsed documents in memory. It does not own the supplied `HttpClient`.
 
 ```csharp
 using FluentLocalizer;

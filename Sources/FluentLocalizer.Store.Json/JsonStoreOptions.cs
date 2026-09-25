@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace FluentLocalizer.Store.Json;
 
@@ -23,6 +24,9 @@ public sealed class JsonStoreOptions : JsonStoreSettings
 public enum JsonStoreLocation
 {
     /// <summary>Local filesystem.</summary>
+#if NET8_0_OR_GREATER
+    [UnsupportedOSPlatform("browser")]
+#endif
     FileSystem,
     /// <summary>Embedded assembly resources.</summary>
     EmbeddedResources

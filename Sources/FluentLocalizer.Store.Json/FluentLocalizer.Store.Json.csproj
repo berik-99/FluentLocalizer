@@ -18,7 +18,6 @@
 
 	<ItemGroup>
 		<Content Include="Assets\readme.txt" Pack="true" PackagePath="readme.txt" />
-		<None Include="FluentLocalizer.Store.Json.targets" Pack="true" PackagePath="build\FluentLocalizer.Store.Json.targets" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -131,6 +131,18 @@ Locales/
   it-IT.json
 ```
 
+`JsonFileStore` reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
+
+```xml
+<ItemGroup>
+  <Content Include="Locales\**\*.json"
+           CopyToOutputDirectory="PreserveNewest"
+           CopyToPublishDirectory="PreserveNewest" />
+</ItemGroup>
+```
+
+The store scans `ResourcesPath` (default `Locales`) for top-level `*.json` files. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
+
 ```csharp
 using FluentLocalizer;
 using FluentLocalizer.Store.Json;
@@ -153,6 +165,8 @@ For embedded resources, include the locale files as `EmbeddedResource` and creat
 </ItemGroup>
 ```
 
+The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and converts the final resource name to the culture filename. Set `ResourceAssembly` if the files are embedded in a different assembly.
+
 ```csharp
 using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
@@ -161,7 +175,7 @@ using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 });
 ```
 
-For HTTP, configure an `HttpClient` with the application's base address, then create an `HttpJsonStore`. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. `RefreshStoreAsync()` reloads cultures already loaded by that store.
+For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` is the URL path below that base address, and the store requests `{ResourcesPath}/{culture}.json`. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. `RefreshStoreAsync()` reloads cultures already loaded by that store.
 
 ```csharp
 using FluentLocalizer.Store.Json;

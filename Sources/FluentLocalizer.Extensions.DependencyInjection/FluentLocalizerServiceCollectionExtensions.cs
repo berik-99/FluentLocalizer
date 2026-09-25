@@ -20,6 +20,7 @@ public static class FluentLocalizerServiceCollectionExtensions
     /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     public static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)
     {
+        services.AddOptions();
         if (configure != null)
             services.Configure(configure);
         services.AddSingleton<ITranslator>(sp =>

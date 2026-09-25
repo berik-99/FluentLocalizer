@@ -38,8 +38,13 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
     /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
     /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
-    public Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
-        => culture is null ? throw new ArgumentNullException(nameof(culture)) : LoadCultureAsync(culture, cancellationToken);
+    public async Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
+    {
+        if (culture is null) throw new ArgumentNullException(nameof(culture));
+        await LoadCultureAsync(culture, cancellationToken).ConfigureAwait(false);
+        if (!culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
+            await LoadCultureAsync(CultureInfo.GetCultureInfo(_options.FallbackCulture), cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Loads candidate JSON files for each culture into memory.
