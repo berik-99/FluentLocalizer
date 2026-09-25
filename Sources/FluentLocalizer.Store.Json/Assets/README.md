@@ -1,8 +1,6 @@
-# FluentLocalizer.Store.Json
+# FluentLocalizer JSON stores
 
-FluentLocalizer.Store.Json is a JSON-backed implementation of `ITranslationStore` for FluentLocalizer. It loads translation templates from `.json` files, resolves them by culture, and can fall back to a default culture when a specific translation is missing.
-
-The message templates used by FluentLocalizer are based on ICU / MessageFormat concepts. ICU is the Unicode standard that defines how messages are formatted across languages, including plural rules, gender selection, and locale-aware numbers and dates. For the official reference, see https://unicode-org.github.io/icu/. For example, the same template can render `1 item` in English and `1 elemento` in Italian when the plural rules are applied according to the active culture.
+`FluentLocalizer.Store.Json` contains three `ITranslationStore` implementations for JSON translation files: `JsonFileStore`, `EmbeddedJsonStore`, and `HttpJsonStore`. They share culture fallback, custom file mappings, nested-key lookup, and JSON parsing behavior.
 
 ## Install
 
@@ -10,24 +8,28 @@ The message templates used by FluentLocalizer are based on ICU / MessageFormat c
 dotnet add package FluentLocalizer.Store.Json
 ```
 
-## How it works
+Install `FluentLocalizer.Extensions.DependencyInjection` separately when you want `IServiceCollection` integration.
 
-`JsonStore` reads one or more JSON files and exposes them to FluentLocalizer through the `ITranslationStore` contract. A key is resolved by splitting it on `:` and walking the JSON object hierarchy, so a structure like this:
+## JSON format and keys
+
+Use one JSON file per culture. Nested object properties are addressed with colon-separated keys.
 
 ```json
 {
   "Welcome": "Hello {name}!",
   "Notifications": {
-	"MessageCount": "You have {quantity} unread messages."
+    "MessageCount": "You have {quantity} unread messages."
   }
 }
 ```
 
-can be resolved with keys such as `Welcome` or `Notifications:MessageCount`.
+The `Notifications:MessageCount` key resolves to the nested value. FluentLocalizer then formats the returned template using the requested culture.
 
-## Example file layout
+By default, each store tries the requested culture file, its two-letter neutral culture file, then the configured fallback culture and its neutral file. `FileMappings` lets a culture use a custom file name. For example, map `it-IT` to `italiano.json`.
 
-A typical layout for filesystem-based translations looks like this:
+## Local files
+
+The package's MSBuild targets copy JSON files under the application's `Locales` folder to the build output. Relative `ResourcesPath` values use the application base directory.
 
 ```text
 Locales/
@@ -35,22 +37,27 @@ Locales/
   it-IT.json
 ```
 
-Example `it-IT.json`:
+```csharp
+using FluentLocalizer;
+using FluentLocalizer.Store.Json;
 
-```json
+using var store = new JsonFileStore(new JsonFileStoreOptions
 {
-  "Welcome": "Ciao {name}!",
-  "Notifications": {
-	"MessageCount": "Hai {quantity} messaggi non letti."
-  }
-}
+    ResourcesPath = "Locales",
+    FallbackCulture = "en-US",
+    ReloadOnChange = true,
+    ThrowOnMissingStore = true
+});
+
+var translator = new Translator(store);
+var greeting = translator.Get("Welcome").WithCulture("it-IT").WithArg("name", "Ada").Resolve();
 ```
 
-## Locales folder structure and build output
+`ReloadOnChange` watches filesystem files and is disabled by default. Dispose the store when finished to release the watcher.
 
-When you use `FluentLocalizer.Store.Json`, place your translation files in a `Locales` folder at the root of your project. The package's MSBuild targets include every `.json` file under that folder in the build output, so the files are copied to the application output folder by default. This makes `JsonStoreLocation.FileSystem` the easiest option for most apps.
+## Embedded resources
 
-If you want the translations to be shipped as embedded resources instead, change your project file to embed them and point the store to the embedded-resource mode:
+Embed the locale files in the application assembly. The default resource folder filter is `Locales`; set `ResourceAssembly` when the files are in another assembly.
 
 ```xml
 <ItemGroup>
@@ -59,139 +66,52 @@ If you want the translations to be shipped as embedded resources instead, change
 ```
 
 ```csharp
-var options = new JsonStoreOptions
+using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
-	ResourcesPath = "Locales",
-	SearchMode = JsonStoreLocation.EmbeddedResources,
-	ResourceAssembly = typeof(MyApp.Program).Assembly,
-	ThrowOnMissingStore = true
-};
+    ResourceAssembly = typeof(Program).Assembly,
+    ResourcesPath = "Locales",
+    FallbackCulture = "en-US"
+});
 ```
 
-Use `FileSystem` when you want the files to remain on disk and `EmbeddedResources` when you want the translations to be baked into the assembly.
+Embedded resources work in browser applications because they are read from the assembly rather than the filesystem.
 
-## Example 1: standalone usage in Program.cs
+## HTTP
 
-This is the simplest approach when you want to create the store directly in an application entry point.
+`HttpJsonStore` downloads locale files below `HttpClient.BaseAddress` and keeps parsed documents in memory. It does not own the supplied `HttpClient`.
 
 ```csharp
 using FluentLocalizer;
 using FluentLocalizer.Store.Json;
 
-var options = new JsonStoreOptions
+var httpClient = new HttpClient { BaseAddress = new Uri("https://example.com/") };
+using var store = new HttpJsonStore(httpClient, new HttpJsonStoreOptions
 {
-	ResourcesPath = "Locales",
-	SearchMode = JsonStoreLocation.FileSystem,
-	FallbackCulture = "en-US",
-	ThrowOnMissingStore = true
-};
+    ResourcesPath = "locales",
+    FallbackCulture = "en-US",
+    ThrowOnMissingStore = true
+});
 
-using var store = new JsonStore(options);
+await store.LoadAsync(["it-IT", "en-US"]); // preload for synchronous Resolve()
 var translator = new Translator(store);
-
-var message = translator
-	.Get("Welcome")
-	.WithArg("name", "Ada")
-	.Resolve();
-
-Console.WriteLine(message);
+var message = await translator.Get("Welcome").WithCulture("it-IT").ResolveAsync();
+await store.RefreshStoreAsync();
 ```
 
-In this example:
-- `ResourcesPath` points to the folder that contains your JSON files.
-- `SearchMode = FileSystem` tells the store to read files from disk.
-- `FallbackCulture` ensures that a fallback language is used when the requested culture is missing.
-- `ThrowOnMissingStore = true` makes missing files or invalid JSON fail fast.
+`ResolveAsync()` can also load a culture lazily. Synchronous `Resolve()` requires the requested culture to have been preloaded with `LoadAsync`. Call `RefreshStoreAsync()` to re-download the cultures already loaded by the current store.
 
-## Culture resolution
+The repository's Blazor WebAssembly sample preloads English and Italian at startup. Its `+` and `−` buttons update the plural count in component state, so the localized message changes on each click; the language selector changes the rendered locale.
 
-The store automatically tries to resolve translations in this order:
+## Shared settings
 
-1. the requested culture, for example `it-IT`
-2. the neutral culture, for example `it`
-3. the configured fallback culture, for example `en-US`
+All three store options inherit `JsonStoreSettings`:
 
-If you provide a custom mapping, it is used before the default file naming convention.
+- `FallbackCulture` selects the fallback culture; defaults to `en-US`.
+- `FileMappings` maps culture names to custom JSON file names.
+- `ThrowOnMissingStore` makes missing translation files throw. When disabled, file and embedded-resource stores skip individual read or parse errors. The HTTP store always throws for failed requests and invalid JSON; when missing files are allowed, lookups with no value return `null`.
 
-```csharp
-var options = new JsonStoreOptions
-{
-	ResourcesPath = "Locales",
-	FallbackCulture = "en-US"
-};
+The stores are separate classes so filesystem watching, assembly resource selection, and asynchronous HTTP loading remain explicit. They share the same fallback and JSON key resolution.
 
-options.FileMappings["it-IT"] = "italian.json";
-```
+## Migration from the separate HTTP package
 
-### Configuration options explained
-
-- `ResourcesPath`: the folder used to locate translation files. It can be relative or absolute.
-- `SearchMode`: selects whether files are loaded from the local filesystem (`FileSystem`) or from embedded resources (`EmbeddedResources`).
-- `FallbackCulture`: the culture used when a requested culture or its neutral variant cannot be resolved.
-- `ReloadOnChange`: when `true`, the store watches the translation folder and reloads files automatically.
-- `ThrowOnMissingStore`: when `true`, missing files or invalid JSON cause exceptions; when `false`, the store simply returns `null` for missing values.
-- `FileMappings`: lets you override the default file naming convention for a specific culture.
-- `ResourceAssembly`: used only with `EmbeddedResources` to identify which assembly should be inspected.
-
-## Nested JSON keys
-
-Because the store walks the JSON object hierarchy, you can structure translations in nested objects and access them with colon-separated keys.
-
-```json
-{
-  "Dashboard": {
-	"Title": "Welcome back",
-	"Cards": {
-	  "Pending": "You have {count} pending tasks"
-	}
-  }
-}
-```
-
-You can resolve them as:
-
-```csharp
-var title = translator.Get("Dashboard:Title").Resolve();
-var pending = translator.Get("Dashboard:Cards:Pending").WithArg("count", 2).Resolve();
-```
-
-## Embedded resources
-
-You can also load translations from embedded resources instead of the filesystem:
-
-```csharp
-var options = new JsonStoreOptions
-{
-	SearchMode = JsonStoreLocation.EmbeddedResources,
-	ResourceAssembly = typeof(MyApp.Program).Assembly,
-	ThrowOnMissingStore = true
-};
-```
-
-## Reload on change
-
-If you want the store to refresh translations when files change on disk, enable reload mode:
-
-```csharp
-var options = new JsonStoreOptions
-{
-	ResourcesPath = "Locales",
-	ReloadOnChange = true
-};
-```
-
-## Error handling
-
-`ThrowOnMissingStore` controls whether missing files or invalid JSON should raise exceptions or simply return `null`.
-
-```csharp
-var options = new JsonStoreOptions
-{
-	ResourcesPath = "Locales",
-	ThrowOnMissingStore = false
-};
-```
-
-## Notes
-
-FluentLocalizer.Store.Json is designed to be simple and integration-friendly. It focuses on file discovery, culture fallback, and JSON traversal, while formatting and translation are handled by the FluentLocalizer core package.
+Replace the `FluentLocalizer.Store.Http` package reference with `FluentLocalizer.Store.Json`, and change `using FluentLocalizer.Store.Http;` to `using FluentLocalizer.Store.Json;`. The `HttpJsonStore` and `HttpJsonStoreOptions` types keep their names. `JsonStore` and `JsonStoreOptions` are deprecated; migrate to `JsonFileStore` or `EmbeddedJsonStore` and their corresponding options types.

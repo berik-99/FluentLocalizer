@@ -1,5 +1,5 @@
 using FluentLocalizer;
-using FluentLocalizer.Store.Http;
+using FluentLocalizer.Store.Json;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

@@ -1,12 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<PackageId>FluentLocalizer.Store.Json</PackageId>
 		<Product>FluentLocalizer.Store.Json</Product>
 		<Version>0.0.1</Version>
-		<Description>
-			JSON-backed translation store for FluentLocalizer with culture-aware loading from files or embedded resources.
-		</Description>
-		<PackageTags>json;localization;translation;store;messageformat;dotnet</PackageTags>
+		<Description>JSON translation stores for FluentLocalizer with culture-aware loading from files, embedded resources, or HTTP.</Description>
+		<PackageTags>json;http;localization;translation;store;messageformat;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 

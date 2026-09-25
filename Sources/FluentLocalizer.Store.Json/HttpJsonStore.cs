@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace FluentLocalizer.Store.Http;
+namespace FluentLocalizer.Store.Json;
 
 /// <summary>
 /// Loads culture JSON files over HTTP and caches them for subsequent translation lookups.
@@ -37,7 +37,7 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
     /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
     /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
     public Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
         => culture is null ? throw new ArgumentNullException(nameof(culture)) : LoadCultureAsync(culture, cancellationToken);
 
@@ -52,7 +52,7 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
     /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
     /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists for a loaded culture.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists for a loaded culture.</exception>
     public async Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)
     {
         if (cultures is null) throw new ArgumentNullException(nameof(cultures));
@@ -74,7 +74,7 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
     /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
     /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file is available during the refresh.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file is available during the refresh.</exception>
     public async Task RefreshStoreAsync(CancellationToken cancellationToken = default)
     {
         var cultures = _loadedCultures.Keys.ToArray();
@@ -90,7 +90,7 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// <exception cref="OperationCanceledException">The operation was canceled while loading a culture file.</exception>
     /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
     /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
     public async Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)
     {
         await LoadCultureAsync(culture, cancellationToken).ConfigureAwait(false);
@@ -212,69 +212,21 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     {
         foreach (var fileName in ResolveCandidates(culture))
         {
-            if (_cache.TryGetValue(fileName, out var document) && TryGetValue(document.RootElement, key, out var value))
+            if (_cache.TryGetValue(fileName, out var document) && JsonStoreCore.TryGetValue(document.RootElement, key, out var value))
                 return value;
         }
 
         return null;
     }
 
-    private List<string> ResolveCandidates(CultureInfo culture)
-    {
-        var candidates = new List<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        void Add(string fileName)
-        {
-            if (!string.IsNullOrWhiteSpace(fileName) && seen.Add(fileName))
-                candidates.Add(fileName);
-        }
-
-        if (_options.FileMappings.TryGetValue(culture.Name, out var mapped))
-            Add(mapped);
-
-        Add($"{culture.Name}.json");
-        if (!string.IsNullOrWhiteSpace(culture.TwoLetterISOLanguageName))
-            Add($"{culture.TwoLetterISOLanguageName}.json");
-
-        if (!culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
-        {
-            if (_options.FileMappings.TryGetValue(_options.FallbackCulture, out var fallbackMapped))
-                Add(fallbackMapped);
-
-            var fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
-            Add($"{fallback.Name}.json");
-            Add($"{fallback.TwoLetterISOLanguageName}.json");
-        }
-
-        return candidates;
-    }
+    private List<string> ResolveCandidates(CultureInfo culture) =>
+        JsonStoreCore.ResolveCandidates(culture, _options.FallbackCulture, _options.FileMappings);
 
     private string GetRequestUri(string fileName)
     {
         var path = _options.ResourcesPath.Trim('/');
         var relativePath = string.IsNullOrEmpty(path) ? fileName : $"{path}/{fileName}";
         return string.Join("/", relativePath.Split('/').Select(Uri.EscapeDataString));
-    }
-
-    private static bool TryGetValue(JsonElement root, string key, out string value)
-    {
-        value = string.Empty;
-        if (string.IsNullOrWhiteSpace(key))
-            return false;
-
-        var current = root;
-        foreach (var segment in key.Split([':'], StringSplitOptions.RemoveEmptyEntries).Select(static item => item.Trim()))
-        {
-            if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(segment, out current))
-                return false;
-        }
-
-        if (current.ValueKind != JsonValueKind.String)
-            return false;
-
-        value = current.GetString() ?? string.Empty;
-        return true;
     }
 
     /// <summary>

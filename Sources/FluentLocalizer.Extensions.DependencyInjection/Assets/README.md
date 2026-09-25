@@ -8,6 +8,12 @@ FluentLocalizer.Extensions.DependencyInjection provides ASP.NET Core and generic
 dotnet add package FluentLocalizer.Extensions.DependencyInjection
 ```
 
+The JSON store examples also require `FluentLocalizer.Store.Json`:
+
+```bash
+dotnet add package FluentLocalizer.Store.Json
+```
+
 ## Basic registration
 
 ```csharp
@@ -23,7 +29,7 @@ services.AddFluentLocalizer(options =>
     options.MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue;
     options.MissingKeyFallbackValue = "[{key}]";
 })
-    .WithStore(new JsonStore(new JsonStoreOptions
+    .WithStore(new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
         FallbackCulture = "en-US"
@@ -53,10 +59,9 @@ using Microsoft.Extensions.Hosting;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddFluentLocalizer()
-    .WithStore(new JsonStore(new JsonStoreOptions
+    .WithStore(new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
-        SearchMode = JsonStoreLocation.FileSystem,
         FallbackCulture = "en-US",
         ThrowOnMissingStore = true
     }));
@@ -99,7 +104,7 @@ If you prefer to resolve the store from the service provider, you can register i
 
 ```csharp
 services.AddFluentLocalizer()
-    .WithStore(sp => new JsonStore(new JsonStoreOptions
+    .WithStore(sp => new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
         FallbackCulture = "en-US"

@@ -1,264 +1,62 @@
-using System.Collections.Concurrent;
 using System.Globalization;
-using System.Reflection;
-using System.Text.Json;
 
 namespace FluentLocalizer.Store.Json;
 
-/// <summary>
-/// Provides translation templates stored in JSON files or assembly resources.
-/// </summary>
-/// <remarks>
-/// The store loads candidate files when constructed and caches their JSON documents. Keys use colon-separated
-/// segments to access nested JSON objects. Culture-specific files are considered before neutral and fallback-culture files.
-/// Dispose the store when finished, especially when file watching is enabled.
-/// </remarks>
+/// <summary>Compatibility wrapper for applications using the original mode-based JSON store API.</summary>
+[Obsolete("JsonStore is deprecated. Use JsonFileStore or EmbeddedJsonStore with their specific options.")]
 public sealed class JsonStore : ITranslationStore, IDisposable
 {
-    private readonly JsonStoreOptions _options;
-    private readonly Assembly _resourceAssembly;
+    private readonly ITranslationStore _store;
+    private readonly IDisposable? _disposable;
 
-    private readonly ConcurrentDictionary<string, JsonElement> _cache = new(StringComparer.OrdinalIgnoreCase);
-
-    private FileSystemWatcher? _watcher;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JsonStore"/> class.
-    /// </summary>
-    /// <param name="options">The configuration options used to discover and load translation files.</param>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and no translation files can be found.</exception>
-    /// <exception cref="IOException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a filesystem operation fails.</exception>
-    /// <exception cref="JsonException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a translation file contains invalid JSON.</exception>
-    /// <exception cref="UnauthorizedAccessException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a translation file cannot be accessed.</exception>
-    /// <exception cref="InvalidOperationException">The configured <see cref="JsonStoreOptions.SearchMode"/> is not supported.</exception>
+    /// <summary>Creates a compatibility store that forwards to the selected dedicated JSON store.</summary>
     public JsonStore(JsonStoreOptions? options = null)
     {
-        _options = options ?? new JsonStoreOptions();
-        _resourceAssembly = _options.ResourceAssembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-
-        LoadAllFiles();
-
-        if (_options.ReloadOnChange && _options.SearchMode == JsonStoreLocation.FileSystem)
+        options ??= new JsonStoreOptions();
+        switch (options.SearchMode)
         {
-            StartWatcher();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves a translation template for the specified key and culture.
-    /// </summary>
-    /// <param name="key">The translation key to resolve.</param>
-    /// <param name="culture">The culture used to select the translation template.</param>
-    /// <returns>The matching template, or <c>null</c> when no template exists.</returns>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and none of the candidate files was loaded.</exception>
-    public string? GetTemplate(string key, CultureInfo culture)
-    {
-        bool foundCandidate = false;
-
-        foreach (var file in ResolveCandidates(culture))
-        {
-            if (_cache.TryGetValue(file, out var document))
-            {
-                foundCandidate = true;
-
-                if (TryGetValue(document, key, out var value))
+            case JsonStoreLocation.FileSystem:
+                var fileOptions = new JsonFileStoreOptions
                 {
-                    return value;
-                }
-            }
+                    ResourcesPath = options.ResourcesPath,
+                    FallbackCulture = options.FallbackCulture,
+                    ThrowOnMissingStore = options.ThrowOnMissingStore,
+                    ReloadOnChange = options.ReloadOnChange
+                };
+                CopyMappings(options, fileOptions);
+                var fileStore = new JsonFileStore(fileOptions);
+                _store = fileStore;
+                _disposable = fileStore;
+                break;
+            case JsonStoreLocation.EmbeddedResources:
+                var embeddedOptions = new EmbeddedJsonStoreOptions
+                {
+                    ResourcesPath = options.ResourcesPath,
+                    ResourceAssembly = options.ResourceAssembly,
+                    FallbackCulture = options.FallbackCulture,
+                    ThrowOnMissingStore = options.ThrowOnMissingStore
+                };
+                CopyMappings(options, embeddedOptions);
+                _store = new EmbeddedJsonStore(embeddedOptions);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported search mode '{options.SearchMode}'.");
         }
-
-        if (_options.ThrowOnMissingStore && !foundCandidate)
-        {
-            throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{_options.FallbackCulture}'.");
-        }
-
-        return null;
     }
 
     /// <inheritdoc />
-    /// <remarks>This JSON-backed store performs no asynchronous I/O. The cancellation token is not observed.</remarks>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and none of the candidate files was loaded.</exception>
-    public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) => Task.FromResult(GetTemplate(key, culture));
+    public string? GetTemplate(string key, CultureInfo culture) => _store.GetTemplate(key, culture);
 
-    private HashSet<string> ResolveCandidates(CultureInfo culture)
+    /// <inheritdoc />
+    public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
+        _store.GetTemplateAsync(key, culture, cancellationToken);
+
+    /// <inheritdoc />
+    public void Dispose() => _disposable?.Dispose();
+
+    private static void CopyMappings(JsonStoreSettings source, JsonStoreSettings destination)
     {
-        HashSet<string> added = new(StringComparer.OrdinalIgnoreCase);
-
-        void Add(string file)
-        {
-            if (!string.IsNullOrWhiteSpace(file))
-                added.Add(file);
-        }
-
-        if (_options.FileMappings.TryGetValue(culture.Name, out var mapped))
-            Add(mapped);
-
-        Add($"{culture.Name}.json");
-
-        if (!string.IsNullOrWhiteSpace(culture.TwoLetterISOLanguageName))
-            Add($"{culture.TwoLetterISOLanguageName}.json");
-
-        if (!culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
-        {
-            if (_options.FileMappings.TryGetValue(_options.FallbackCulture, out var fallbackMapped))
-                Add(fallbackMapped);
-
-            CultureInfo fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
-
-            Add($"{fallback.Name}.json");
-            Add($"{fallback.TwoLetterISOLanguageName}.json");
-        }
-
-        return added;
+        foreach (var mapping in source.FileMappings)
+            destination.FileMappings[mapping.Key] = mapping.Value;
     }
-
-    private void LoadAllFiles()
-    {
-        var files = EnumerateFiles();
-
-        if (files.Length == 0 && _options.ThrowOnMissingStore)
-        {
-            throw new FileNotFoundException("No translation files were found.");
-        }
-
-        foreach (var file in files)
-            LoadFile(file);
-    }
-
-    private string[] EnumerateFiles()
-    {
-        if (_options.SearchMode == JsonStoreLocation.FileSystem)
-        {
-            var path = GetFullResourcesPath();
-            if (!Directory.Exists(path))
-                return [];
-            return Directory.GetFiles(path, "*.json");
-        }
-
-        if (_options.SearchMode == JsonStoreLocation.EmbeddedResources)
-            return [.. _resourceAssembly.GetManifestResourceNames().Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))];
-
-        throw new InvalidOperationException($"Unsupported search mode '{_options.SearchMode}'.");
-    }
-
-    private void LoadFile(string filePath)
-    {
-        try
-        {
-            string json;
-
-            if (_options.SearchMode == JsonStoreLocation.FileSystem)
-            {
-                json = File.ReadAllText(filePath);
-            }
-            else
-            {
-                using var stream = _resourceAssembly.GetManifestResourceStream(filePath)
-                    ?? throw new InvalidOperationException($"Embedded resource '{filePath}' was not found.");
-                using var reader = new StreamReader(stream);
-                json = reader.ReadToEnd();
-            }
-
-            using var document = JsonDocument.Parse(json);
-            var root = document.RootElement.Clone();
-
-            var fileName = GetCacheKey(filePath);
-
-            _cache.AddOrUpdate(fileName, root, (_, _) => root);
-        }
-        catch (Exception ex) when (ex is IOException || ex is JsonException || ex is UnauthorizedAccessException || ex is InvalidOperationException)
-        {
-            if (_options.ThrowOnMissingStore)
-            {
-                throw;
-            }
-        }
-    }
-
-    private static string GetCacheKey(string filePath)
-    {
-        if (Path.IsPathRooted(filePath) || filePath.Contains(Path.DirectorySeparatorChar) || filePath.Contains(Path.AltDirectorySeparatorChar))
-            return Path.GetFileName(filePath);
-        var parts = filePath.Split('.');
-        return parts.Length >= 2 ? $"{parts[^2]}.json" : filePath;
-    }
-
-    private static bool TryGetValue(JsonElement root, string key, out string value)
-    {
-        value = string.Empty;
-        if (string.IsNullOrWhiteSpace(key))
-            return false;
-
-        JsonElement current = root;
-        var segments = key.Split([':'], StringSplitOptions.RemoveEmptyEntries)
-                          .Select(static s => s.Trim())
-                          .Where(static s => s.Length > 0)
-                          .ToArray();
-
-        foreach (var segment in segments)
-        {
-            if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(segment, out current))
-            {
-                return false;
-            }
-        }
-
-        if (current.ValueKind == JsonValueKind.String)
-        {
-            value = current.GetString() ?? string.Empty;
-            return true;
-        }
-
-        return false;
-    }
-
-    private void RemoveFile(string filePath)
-    {
-        var fileName = Path.GetFileName(filePath);
-        _cache.TryRemove(fileName, out _);
-    }
-
-    private void StartWatcher()
-    {
-        var path = GetFullResourcesPath();
-
-        Directory.CreateDirectory(path);
-
-        _watcher = new FileSystemWatcher(path, "*.json")
-        {
-            NotifyFilter =
-                NotifyFilters.FileName |
-                NotifyFilters.LastWrite |
-                NotifyFilters.CreationTime
-        };
-
-        _watcher.Changed += (_, e) => LoadFile(e.FullPath);
-        _watcher.Created += (_, e) => LoadFile(e.FullPath);
-        _watcher.Renamed += (_, e) =>
-        {
-            RemoveFile(e.OldFullPath);
-            LoadFile(e.FullPath);
-        };
-        _watcher.Deleted += (_, e) => RemoveFile(e.FullPath);
-
-        _watcher.EnableRaisingEvents = true;
-    }
-
-    private string GetFullResourcesPath()
-    {
-        if (Path.IsPathRooted(_options.ResourcesPath))
-        {
-            return _options.ResourcesPath;
-        }
-
-        return Path.Combine(
-            AppContext.BaseDirectory,
-            _options.ResourcesPath);
-    }
-
-    /// <summary>
-    /// Releases resources used by the store and its file watcher.
-    /// </summary>
-    public void Dispose() => _watcher?.Dispose();
 }

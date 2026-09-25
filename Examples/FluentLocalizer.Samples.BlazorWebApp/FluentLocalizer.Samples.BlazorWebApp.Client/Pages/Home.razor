@@ -1,4 +1,5 @@
 @page "/"
+@using System.Globalization
 @inject ITranslator Translator
 @inject HttpJsonStore TranslationStore
 
@@ -7,7 +8,13 @@
 <h1>@Text("Home:Title")</h1>
 
 <p>@Text("Home:Welcome", "name", "Ada")</p>
-<p>@Text("Home:Unread", quantity: 3)</p>
+<p aria-live="polite">@Text("Home:Unread", quantity: _quantity)</p>
+
+<p>Unread message count: @_quantity</p>
+<p>
+    <button type="button" aria-label="Decrease unread message count" @onclick="DecreaseCount" disabled="@(_quantity == 0)">−</button>
+    <button type="button" aria-label="Increase unread message count" @onclick="IncreaseCount">+</button>
+</p>
 
 <label for="culture">Language</label>
 <select id="culture" @bind="_culture">
@@ -25,8 +32,9 @@
 }
 
 @code {
-    private string _culture = "en-US";
+    private string _culture = GetInitialCulture();
     private string _refreshStatus = string.Empty;
+    private int _quantity = 1;
 
     private string Text(string key, string? argumentName = null, object? argumentValue = null, int? quantity = null)
     {
@@ -46,4 +54,13 @@
         await TranslationStore.RefreshStoreAsync();
         _refreshStatus = "Translations refreshed from the server.";
     }
+
+    private void DecreaseCount() => _quantity = Math.Max(0, _quantity - 1);
+
+    private void IncreaseCount() => _quantity++;
+
+    private static string GetInitialCulture() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("it", StringComparison.OrdinalIgnoreCase)
+            ? "it-IT"
+            : "en-US";
 }

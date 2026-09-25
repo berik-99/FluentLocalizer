@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Sources\FluentLocalizer.Extensions.DependencyInjection\FluentLocalizer.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\..\Sources\FluentLocalizer.Store.Http\FluentLocalizer.Store.Http.csproj" />
+    <ProjectReference Include="..\..\..\Sources\FluentLocalizer.Store.Json\FluentLocalizer.Store.Json.csproj" />
   </ItemGroup>
 
 </Project>

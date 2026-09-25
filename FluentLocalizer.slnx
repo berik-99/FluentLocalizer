@@ -13,7 +13,6 @@
   </Folder>
   <Folder Name="/Sources/Stores/">
     <Project Path="Sources/FluentLocalizer.Store.Json/FluentLocalizer.Store.Json.csproj" />
-    <Project Path="Sources/FluentLocalizer.Store.Http/FluentLocalizer.Store.Http.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/FluentLocalizer.Test/FluentLocalizer.Test.csproj" />

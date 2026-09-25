@@ -14,10 +14,9 @@ TranslationOptions translationOptions = new()
     DefaultArguments = new Dictionary<string, object?> { ["name"] = "Guest" }
 };
 
-JsonStoreOptions storeOptions = new()
+JsonFileStoreOptions storeOptions = new()
 {
     ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.FileSystem,
     ReloadOnChange = true,
     FallbackCulture = "en-US",
     ThrowOnMissingStore = true,
@@ -26,7 +25,7 @@ JsonStoreOptions storeOptions = new()
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddFluentLocalizer(translationOptions)
-    .WithStore(new JsonStore(storeOptions));
+    .WithStore(new JsonFileStore(storeOptions));
 
 builder.Services.AddHostedService<Worker>();
 
