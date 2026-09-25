@@ -64,7 +64,7 @@ var options = new JsonStoreOptions
 	ResourcesPath = "Locales",
 	SearchMode = JsonStoreLocation.EmbeddedResources,
 	ResourceAssembly = typeof(MyApp.Program).Assembly,
-	ThrowOnError = true
+	ThrowOnMissingStore = true
 };
 ```
 
@@ -83,7 +83,7 @@ var options = new JsonStoreOptions
 	ResourcesPath = "Locales",
 	SearchMode = JsonStoreLocation.FileSystem,
 	FallbackCulture = "en-US",
-	ThrowOnError = true
+	ThrowOnMissingStore = true
 };
 
 using var store = new JsonStore(options);
@@ -101,7 +101,7 @@ In this example:
 - `ResourcesPath` points to the folder that contains your JSON files.
 - `SearchMode = FileSystem` tells the store to read files from disk.
 - `FallbackCulture` ensures that a fallback language is used when the requested culture is missing.
-- `ThrowOnError = true` makes missing files or invalid JSON fail fast.
+- `ThrowOnMissingStore = true` makes missing files or invalid JSON fail fast.
 
 ## Culture resolution
 
@@ -129,7 +129,7 @@ options.FileMappings["it-IT"] = "italian.json";
 - `SearchMode`: selects whether files are loaded from the local filesystem (`FileSystem`) or from embedded resources (`EmbeddedResources`).
 - `FallbackCulture`: the culture used when a requested culture or its neutral variant cannot be resolved.
 - `ReloadOnChange`: when `true`, the store watches the translation folder and reloads files automatically.
-- `ThrowOnError`: when `true`, missing files or invalid JSON cause exceptions; when `false`, the store simply returns `null` for missing values.
+- `ThrowOnMissingStore`: when `true`, missing files or invalid JSON cause exceptions; when `false`, the store simply returns `null` for missing values.
 - `FileMappings`: lets you override the default file naming convention for a specific culture.
 - `ResourceAssembly`: used only with `EmbeddedResources` to identify which assembly should be inspected.
 
@@ -164,7 +164,7 @@ var options = new JsonStoreOptions
 {
 	SearchMode = JsonStoreLocation.EmbeddedResources,
 	ResourceAssembly = typeof(MyApp.Program).Assembly,
-	ThrowOnError = true
+	ThrowOnMissingStore = true
 };
 ```
 
@@ -182,13 +182,13 @@ var options = new JsonStoreOptions
 
 ## Error handling
 
-`ThrowOnError` controls whether missing files or invalid JSON should raise exceptions or simply return `null`.
+`ThrowOnMissingStore` controls whether missing files or invalid JSON should raise exceptions or simply return `null`.
 
 ```csharp
 var options = new JsonStoreOptions
 {
 	ResourcesPath = "Locales",
-	ThrowOnError = false
+	ThrowOnMissingStore = false
 };
 ```
 

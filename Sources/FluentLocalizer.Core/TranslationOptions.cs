@@ -16,11 +16,13 @@ public sealed class TranslationOptions
     /// <summary>
     /// Gets or sets the fallback text returned when missing-key resolution is configured to use a value.
     /// </summary>
+    /// <remarks>The <c>{key}</c> and <c>{0}</c> tokens are replaced with the key; <c>{culture}</c> and <c>{1}</c> are replaced with the culture name.</remarks>
     public string MissingKeyFallbackValue { get; set; } = "[{key}]";
 
     /// <summary>
     /// Gets or sets a callback used to create a custom exception for missing translations.
     /// </summary>
+    /// <remarks>The callback receives the missing key and requested culture. Its returned exception is thrown by resolution when <see cref="MissingKeyBehavior"/> is <see cref="MissingTranslationBehavior.ThrowException"/>.</remarks>
     public Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }
 
     /// <summary>
@@ -31,11 +33,13 @@ public sealed class TranslationOptions
     /// <summary>
     /// Gets or sets the fallback text returned when formatting errors are configured to use a value.
     /// </summary>
+    /// <remarks>The <c>{key}</c> and <c>{0}</c> tokens are replaced with the key; <c>{culture}</c> and <c>{1}</c> are replaced with the culture name.</remarks>
     public string FormattingErrorFallbackValue { get; set; } = "[Format Error]";
 
     /// <summary>
     /// Gets or sets a callback used to create a custom exception for formatting failures.
     /// </summary>
+    /// <remarks>The callback receives the key and culture. Its returned exception is thrown by resolution when formatting behavior is <see cref="FormattingErrorBehavior.ThrowException"/>.</remarks>
     public Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }
 
     /// <summary>
@@ -47,7 +51,8 @@ public sealed class TranslationOptions
     /// Merges default arguments and runtime arguments into a single argument set.
     /// </summary>
     /// <param name="runtimeArguments">The arguments supplied by the current builder invocation.</param>
-    /// <returns>A dictionary containing the merged argument values.</returns>
+    /// <returns>A case-insensitive dictionary containing the default arguments overridden by any runtime arguments with matching names.</returns>
+    /// <remarks>When both inputs contain the same name, the runtime value takes precedence. The input dictionaries are not modified.</remarks>
     public IReadOnlyDictionary<string, object?> CreateArgumentSet(IReadOnlyDictionary<string, object?>? runtimeArguments)
     {
         Dictionary<string, object?> mergedArguments = new(StringComparer.OrdinalIgnoreCase);
@@ -78,6 +83,8 @@ public sealed class TranslationOptions
     /// <param name="culture">The culture associated with the missing translation.</param>
     /// <returns>An exception describing the missing translation.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="key"/> is <see langword="null"/> on target frameworks that distinguish null arguments.</exception>
+    /// <remarks>If configured, <see cref="MissingKeyExceptionFactory"/> supplies the returned exception. Exceptions thrown by that callback are propagated.</remarks>
     public Exception CreateMissingKeyException(string key, CultureInfo? culture)
     {
         Throw.IfNullOrWhiteSpace(key);
@@ -102,6 +109,8 @@ public sealed class TranslationOptions
     /// <param name="innerException">The original formatting exception, if any.</param>
     /// <returns>An exception describing the formatting failure.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="key"/> is <see langword="null"/> on target frameworks that distinguish null arguments.</exception>
+    /// <remarks>If configured, <see cref="FormattingErrorExceptionFactory"/> supplies the returned exception. Exceptions thrown by that callback are propagated.</remarks>
     public Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)
     {
         Throw.IfNullOrWhiteSpace(key);

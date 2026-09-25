@@ -110,6 +110,8 @@ var message = translator
     .Resolve();
 ```
 
+WithArg and WithArgs use case-insensitive argument names; runtime values override configured default arguments with the same name. Resolve() and ResolveAsync() return the formatted message. Their result depends on the configured missing-key and formatting-error policies, which can return placeholders, configured fallback strings, or throw exceptions.
+
 ### Available fluent methods
 
 - `WithCulture(...)` selects the culture for the current request when you want to override `CurrentUICulture`

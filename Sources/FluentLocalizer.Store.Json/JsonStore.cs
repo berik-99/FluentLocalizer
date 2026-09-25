@@ -6,8 +6,13 @@ using System.Text.Json;
 namespace FluentLocalizer.Store.Json;
 
 /// <summary>
-/// Provides translations stored in JSON files.
+/// Provides translation templates stored in JSON files or assembly resources.
 /// </summary>
+/// <remarks>
+/// The store loads candidate files when constructed and caches their JSON documents. Keys use colon-separated
+/// segments to access nested JSON objects. Culture-specific files are considered before neutral and fallback-culture files.
+/// Dispose the store when finished, especially when file watching is enabled.
+/// </remarks>
 public sealed class JsonStore : ITranslationStore, IDisposable
 {
     private readonly JsonStoreOptions _options;
@@ -21,6 +26,11 @@ public sealed class JsonStore : ITranslationStore, IDisposable
     /// Initializes a new instance of the <see cref="JsonStore"/> class.
     /// </summary>
     /// <param name="options">The configuration options used to discover and load translation files.</param>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and no translation files can be found.</exception>
+    /// <exception cref="IOException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a filesystem operation fails.</exception>
+    /// <exception cref="JsonException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a translation file contains invalid JSON.</exception>
+    /// <exception cref="UnauthorizedAccessException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and a translation file cannot be accessed.</exception>
+    /// <exception cref="InvalidOperationException">The configured <see cref="JsonStoreOptions.SearchMode"/> is not supported.</exception>
     public JsonStore(JsonStoreOptions? options = null)
     {
         _options = options ?? new JsonStoreOptions();
@@ -40,6 +50,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
     /// <param name="key">The translation key to resolve.</param>
     /// <param name="culture">The culture used to select the translation template.</param>
     /// <returns>The matching template, or <c>null</c> when no template exists.</returns>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and none of the candidate files was loaded.</exception>
     public string? GetTemplate(string key, CultureInfo culture)
     {
         bool foundCandidate = false;
@@ -66,6 +77,8 @@ public sealed class JsonStore : ITranslationStore, IDisposable
     }
 
     /// <inheritdoc />
+    /// <remarks>This JSON-backed store performs no asynchronous I/O. The cancellation token is not observed.</remarks>
+    /// <exception cref="FileNotFoundException"><see cref="JsonStoreOptions.ThrowOnMissingStore"/> is enabled and none of the candidate files was loaded.</exception>
     public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) => Task.FromResult(GetTemplate(key, culture));
 
     private HashSet<string> ResolveCandidates(CultureInfo culture)

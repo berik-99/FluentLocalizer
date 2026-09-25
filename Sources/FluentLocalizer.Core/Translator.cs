@@ -19,6 +19,7 @@ public class Translator(ITranslationStore store, TranslationOptions? options = n
     /// </summary>
     /// <param name="key">The translation key to resolve.</param>
     /// <returns>A builder that can be configured with culture, arguments, and formatting options.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key"/> is <see langword="null"/>.</exception>
+    /// <remarks>Empty or whitespace-only keys are passed to the store unchanged.</remarks>
     public TranslationBuilder Get(string key) => new(_store, key, _options, null, _logger);
 }

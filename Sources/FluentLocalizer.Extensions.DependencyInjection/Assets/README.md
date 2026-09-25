@@ -58,7 +58,7 @@ builder.Services.AddFluentLocalizer()
         ResourcesPath = "Locales",
         SearchMode = JsonStoreLocation.FileSystem,
         FallbackCulture = "en-US",
-        ThrowOnError = true
+        ThrowOnMissingStore = true
     }));
 
 builder.Services.AddHostedService<NotificationWorker>();

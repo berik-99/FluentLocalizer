@@ -8,6 +8,12 @@ namespace FluentLocalizer;
 /// <summary>
 /// Builds and resolves a translation request by combining store access, culture, arguments, and formatting options.
 /// </summary>
+/// <param name="store">The store used to retrieve the template. Cannot be <see langword="null"/>.</param>
+/// <param name="key">The key to resolve. Cannot be <see langword="null"/>.</param>
+/// <param name="options">The missing-key and formatting policies to use; defaults to a new <see cref="TranslationOptions"/>.</param>
+/// <param name="culture">The culture used for lookup and formatting; defaults to <see cref="CultureInfo.CurrentUICulture"/>.</param>
+/// <param name="logger">An optional logger for resolution events.</param>
+/// <exception cref="ArgumentNullException">The <paramref name="store"/> or <paramref name="key"/> is <see langword="null"/>.</exception>
 public class TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)
 {
     private const string genderDefaultKey = "gender";
@@ -26,8 +32,9 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// <summary>
     /// Sets the culture used to resolve the translation template.
     /// </summary>
-    /// <param name="culture">The culture to use. This argument cannot be null.</param>
+    /// <param name="culture">The culture to use.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
+    /// <remarks>Passing <see langword="null"/> resets the culture to <see cref="CultureInfo.CurrentCulture"/>.</remarks>
     public TranslationBuilder WithCulture(CultureInfo culture)
     {
         _culture = culture ?? CultureInfo.CurrentCulture;
@@ -39,7 +46,8 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// </summary>
     /// <param name="cultureName">The culture name to resolve, such as <c>en-US</c>.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
-    /// <exception cref="CultureNotFoundException">Thrown when the supplied culture name is not recognized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="cultureName"/> is <see langword="null"/>.</exception>
+    /// <exception cref="CultureNotFoundException">The supplied culture name is not recognized.</exception>
     public TranslationBuilder WithCulture(string cultureName)
     {
         _culture = CultureInfo.GetCultureInfo(cultureName);
@@ -51,6 +59,7 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// </summary>
     /// <param name="options">The configuration used for missing key and formatting behaviors.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
+    /// <remarks>Passing <see langword="null"/> resets the options to a new <see cref="TranslationOptions"/> instance.</remarks>
     public TranslationBuilder WithOptions(TranslationOptions options)
     {
         _options = options ?? new TranslationOptions();
@@ -77,6 +86,7 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// <param name="name">The argument name.</param>
     /// <param name="value">The argument value to pass to the formatter.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
+    /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
     public TranslationBuilder WithArg(string name, object? value)
     {
         _arguments[name] = value;
@@ -88,6 +98,7 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// </summary>
     /// <param name="args">A dictionary of argument names and values to merge into the current request.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
+    /// <remarks>Arguments are matched without regard to case. A runtime argument replaces a value with the same name.</remarks>
     public TranslationBuilder WithArgs(Dictionary<string, object?> args)
     {
         if (args != null)
@@ -119,6 +130,8 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// <exception cref="TranslationException">
     /// Thrown when the configured behavior is to throw for missing keys or formatting errors.
     /// </exception>
+    /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> was canceled while the store was loading a template.</exception>
+    /// <remarks>Exceptions raised by the store or by a configured exception factory are propagated.</remarks>
     public async Task<string> ResolveAsync(CancellationToken cancellationToken = default)
     {
         var culture = _culture ?? CultureInfo.CurrentUICulture;
@@ -148,6 +161,8 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// <exception cref="TranslationException">
     /// Thrown when the configured behavior is to throw for missing keys or formatting errors.
     /// </exception>
+    /// <exception cref="InvalidOperationException">The store cannot perform a synchronous lookup in its current state.</exception>
+    /// <remarks>Exceptions raised by the store or by a configured exception factory are propagated.</remarks>
     public string Resolve()
     {
         var culture = _culture ?? CultureInfo.CurrentUICulture;

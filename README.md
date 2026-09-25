@@ -159,7 +159,7 @@ var options = new JsonStoreOptions
     ResourcesPath = "Locales",
     SearchMode = JsonStoreLocation.EmbeddedResources,
     ResourceAssembly = typeof(Program).Assembly,
-    ThrowOnError = true
+    ThrowOnMissingStore = true
 };
 ```
 
@@ -216,7 +216,7 @@ var options = new JsonStoreOptions
     ResourcesPath = "Locales",
     SearchMode = JsonStoreLocation.FileSystem,
     FallbackCulture = "en-US",
-    ThrowOnError = true
+    ThrowOnMissingStore = true
 };
 
 using var store = new JsonStore(options);
@@ -263,7 +263,7 @@ builder.Services.AddFluentLocalizer(options =>
     ResourcesPath = "Locales",
     SearchMode = JsonStoreLocation.FileSystem,
     FallbackCulture = "en-US",
-    ThrowOnError = true
+    ThrowOnMissingStore = true
 }))
 .WithLogger();
 

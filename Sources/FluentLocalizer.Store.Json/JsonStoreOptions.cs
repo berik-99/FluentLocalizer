@@ -54,12 +54,14 @@ public class JsonStoreOptions
     /// Enables automatic reload when translation files change.
     /// Default value: <c>false</c>.
     /// </summary>
+    /// <remarks>This option applies only to <see cref="JsonStoreLocation.FileSystem"/>. Changes to embedded resources cannot be watched.</remarks>
     public bool ReloadOnChange { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether load errors or missing translation files should throw exceptions.
     /// Default value: <c>false</c>.
     /// </summary>
+    /// <remarks>When <see langword="false"/>, files that cannot be loaded are skipped and missing lookups return <see langword="null"/>. When <see langword="true"/>, file discovery or parsing errors are surfaced, and a lookup throws <see cref="FileNotFoundException"/> if no candidate file exists.</remarks>
     public bool ThrowOnMissingStore { get; set; }
 
     /// <summary>
@@ -68,6 +70,8 @@ public class JsonStoreOptions
     /// <code>
     /// options.FileMappings["it-IT"] = "Italiano.json";
     /// </code>
+    /// Mapped names are considered before the conventional culture and neutral-culture filenames.
     /// </summary>
+    /// <remarks>For example, map <c>it-IT</c> to <c>Italiano.json</c> when the file does not use the default culture name.</remarks>
     public IDictionary<string, string> FileMappings { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

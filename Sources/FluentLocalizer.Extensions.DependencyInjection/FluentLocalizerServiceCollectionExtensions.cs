@@ -17,6 +17,7 @@ public static class FluentLocalizerServiceCollectionExtensions
     /// <param name="services">The service collection to populate.</param>
     /// <param name="configure">An optional callback used to configure translation behavior.</param>
     /// <returns>A builder that can register additional FluentLocalizer services.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     public static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)
     {
         if (configure != null)
@@ -37,6 +38,7 @@ public static class FluentLocalizerServiceCollectionExtensions
     /// <param name="services">The service collection to populate.</param>
     /// <param name="translationOptions">The translation options to use.</param>
     /// <returns>A builder that can register additional FluentLocalizer services.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="translationOptions"/> is <see langword="null"/>.</exception>
     public static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)
     {
         if (services is null)

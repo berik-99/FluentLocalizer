@@ -10,10 +10,13 @@ namespace FluentLocalizer.Store.Http;
 /// Loads culture JSON files over HTTP and caches them for subsequent translation lookups.
 /// </summary>
 /// <remarks>
-/// Initializes a new instance of the <see cref="HttpJsonStore"/> class.
+/// The supplied <see cref="HttpClient"/> remains owned by the caller. Culture files are cached in memory and nested
+/// object keys are addressed with colon-separated segments. Synchronous lookups require the requested culture to have
+/// been loaded first; asynchronous lookups load it on demand.
 /// </remarks>
 /// <param name="httpClient">The client used to request translation files.</param>
 /// <param name="options">Options for file paths and culture fallback.</param>
+/// <exception cref="ArgumentNullException"><paramref name="httpClient"/> is <see langword="null"/>.</exception>
 public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null) : ITranslationStore, IDisposable
 {
     private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
@@ -27,12 +30,29 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// Loads the candidate JSON files for a culture into memory. Call this during application startup when synchronous
     /// <see cref="ITranslationStore.GetTemplate"/> lookups are needed.
     /// </summary>
+    /// <param name="culture">The culture whose specific, neutral, and fallback files should be loaded.</param>
+    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
+    /// <returns>A task that completes when candidate files have been loaded.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
+    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
+    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
     public Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
         => culture is null ? throw new ArgumentNullException(nameof(culture)) : LoadCultureAsync(culture, cancellationToken);
 
     /// <summary>
     /// Loads candidate JSON files for each culture into memory.
     /// </summary>
+    /// <param name="cultures">Culture names to preload. The configured fallback culture is loaded as well.</param>
+    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
+    /// <returns>A task that completes when the requested and fallback cultures have been loaded.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="cultures"/> is <see langword="null"/>.</exception>
+    /// <exception cref="CultureNotFoundException">A supplied culture name or the configured fallback culture is invalid.</exception>
+    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
+    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists for a loaded culture.</exception>
     public async Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)
     {
         if (cultures is null) throw new ArgumentNullException(nameof(cultures));
@@ -49,6 +69,12 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     /// Call this after translation files change on the server. A newly created store starts empty;
     /// call <see cref="LoadAsync(IEnumerable{string}, CancellationToken)"/> during app startup to load its cultures.
     /// </summary>
+    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
+    /// <returns>A task that completes when previously loaded cultures have been refreshed.</returns>
+    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
+    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file is available during the refresh.</exception>
     public async Task RefreshStoreAsync(CancellationToken cancellationToken = default)
     {
         var cultures = _loadedCultures.Keys.ToArray();
@@ -60,6 +86,11 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     }
 
     /// <inheritdoc />
+    /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
+    /// <exception cref="OperationCanceledException">The operation was canceled while loading a culture file.</exception>
+    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
+    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
+    /// <exception cref="FileNotFoundException"><see cref="HttpJsonStoreOptions.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
     public async Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)
     {
         await LoadCultureAsync(culture, cancellationToken).ConfigureAwait(false);
@@ -74,6 +105,7 @@ public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? o
     }
 
     /// <inheritdoc />
+    /// <exception cref="InvalidOperationException">The requested culture or required fallback culture has not been loaded.</exception>
     public string? GetTemplate(string key, CultureInfo culture)
     {
         EnsureLoaded(culture);
