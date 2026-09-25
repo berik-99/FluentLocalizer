@@ -8,9 +8,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FluentLocalizer.Extensions.DependencyInjection" Version="0.0.1" />
-		<PackageReference Include="FluentLocalizer.Store.Json" Version="0.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Sources\FluentLocalizer.Extensions.DependencyInjection\FluentLocalizer.Extensions.DependencyInjection.csproj" />
+		<ProjectReference Include="..\..\Sources\FluentLocalizer.Store.Json\FluentLocalizer.Store.Json.csproj" />
 	</ItemGroup>
 
 </Project>

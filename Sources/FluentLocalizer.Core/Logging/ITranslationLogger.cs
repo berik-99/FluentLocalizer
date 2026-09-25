@@ -1,4 +1,4 @@
-﻿namespace FluentLocalizer.Core.Logging;
+﻿namespace FluentLocalizer.Logging;
 
 /// <summary>
 /// Defines the contract for logging translation resolution events.

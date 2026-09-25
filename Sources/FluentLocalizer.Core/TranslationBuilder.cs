@@ -1,9 +1,9 @@
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer.Logging;
 using Jeffijoe.MessageFormat;
 using System.Globalization;
 using System.Text;
 
-namespace FluentLocalizer.Core;
+namespace FluentLocalizer;
 
 /// <summary>
 /// Builds and resolves a translation request by combining store access, culture, arguments, and formatting options.
@@ -26,7 +26,7 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// <summary>
     /// Sets the culture used to resolve the translation template.
     /// </summary>
-    /// <param name="culture">The culture to use. When null, the current UI culture is applied.</param>
+    /// <param name="culture">The culture to use. This argument cannot be null.</param>
     /// <returns>The current builder instance to allow fluent composition.</returns>
     public TranslationBuilder WithCulture(CultureInfo culture)
     {
@@ -116,7 +116,9 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// </summary>
     /// <param name="cancellationToken">A token that can cancel the asynchronous store operation.</param>
     /// <returns>The resolved message or a fallback value based on the configured behavior.</returns>
-    /// <exception cref="TranslationException">Thrown when the configured behavior is to throw for missing keys or formatting errors.</exception>
+    /// <exception cref="TranslationException">
+    /// Thrown when the configured behavior is to throw for missing keys or formatting errors.
+    /// </exception>
     public async Task<string> ResolveAsync(CancellationToken cancellationToken = default)
     {
         var culture = _culture ?? CultureInfo.CurrentUICulture;
@@ -143,7 +145,9 @@ public class TranslationBuilder(ITranslationStore store, string key, Translation
     /// Resolves the translation template synchronously.
     /// </summary>
     /// <returns>The resolved message or a fallback value based on the configured behavior.</returns>
-    /// <exception cref="TranslationException">Thrown when the configured behavior is to throw for missing keys or formatting errors.</exception>
+    /// <exception cref="TranslationException">
+    /// Thrown when the configured behavior is to throw for missing keys or formatting errors.
+    /// </exception>
     public string Resolve()
     {
         var culture = _culture ?? CultureInfo.CurrentUICulture;

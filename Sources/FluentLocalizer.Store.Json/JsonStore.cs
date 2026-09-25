@@ -1,6 +1,4 @@
-using FluentLocalizer.Core;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
@@ -59,7 +57,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
             }
         }
 
-        if (_options.ThrowOnError && !foundCandidate)
+        if (_options.ThrowOnMissingStore && !foundCandidate)
         {
             throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{_options.FallbackCulture}'.");
         }
@@ -106,7 +104,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
     {
         var files = EnumerateFiles();
 
-        if (files.Length == 0 && _options.ThrowOnError)
+        if (files.Length == 0 && _options.ThrowOnMissingStore)
         {
             throw new FileNotFoundException("No translation files were found.");
         }
@@ -158,7 +156,7 @@ public sealed class JsonStore : ITranslationStore, IDisposable
         }
         catch (Exception ex) when (ex is IOException || ex is JsonException || ex is UnauthorizedAccessException || ex is InvalidOperationException)
         {
-            if (_options.ThrowOnError)
+            if (_options.ThrowOnMissingStore)
             {
                 throw;
             }

@@ -1,8 +1,7 @@
-#pragma warning disable RCS1194 // Implement exception constructors
 using System.Globalization;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
-namespace FluentLocalizer.Core;
+namespace FluentLocalizer;
 #pragma warning restore IDE0130 // Namespace does not match folder structure
 
 /// <summary>
@@ -20,5 +19,3 @@ public class TranslationException(string key, CultureInfo? culture, string messa
     /// </summary>
     public CultureInfo? Culture { get; } = culture;
 }
-
-#pragma warning restore RCS1194 // Implement exception constructors

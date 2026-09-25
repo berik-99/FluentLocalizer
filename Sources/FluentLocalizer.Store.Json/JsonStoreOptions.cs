@@ -60,7 +60,7 @@ public class JsonStoreOptions
     /// Gets or sets a value indicating whether load errors or missing translation files should throw exceptions.
     /// Default value: <c>false</c>.
     /// </summary>
-    public bool ThrowOnError { get; set; }
+    public bool ThrowOnMissingStore { get; set; }
 
     /// <summary>
     /// Gets custom mappings between culture names and file names.

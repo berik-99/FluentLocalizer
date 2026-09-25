@@ -231,7 +231,7 @@ public class JsonTranslationStoreTests
             {
                 ResourcesPath = temporaryDirectory,
                 SearchMode = JsonStoreLocation.FileSystem,
-                ThrowOnError = true
+                ThrowOnMissingStore = true
             };
 
             Assert.Throws<FileNotFoundException>(() => new JsonStore(options));
@@ -256,7 +256,7 @@ public class JsonTranslationStoreTests
             {
                 ResourcesPath = temporaryDirectory,
                 SearchMode = JsonStoreLocation.FileSystem,
-                ThrowOnError = true
+                ThrowOnMissingStore = true
             };
 
             Assert.ThrowsAny<Exception>(() => new JsonStore(options));

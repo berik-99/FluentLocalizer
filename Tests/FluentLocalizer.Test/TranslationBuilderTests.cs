@@ -1,4 +1,3 @@
-using FluentLocalizer.Core;
 using System.Globalization;
 using System.Reflection;
 
@@ -207,6 +206,24 @@ public class TranslationBuilderTests
             .Resolve();
 
         Assert.Equal("Count:3; Gender:female", result);
+    }
+
+    [Theory]
+    [InlineData(0, "You have no unread messages.")]
+    [InlineData(1, "You have only one new message.")]
+    [InlineData(3, "You have 3 new messages.")]
+    public void Resolve_uses_exact_zero_plural_selector(int quantity, string expected)
+    {
+        InMemoryTranslationStore store = new();
+        store.AddTemplate("message", "You have {quantity, plural, =0 {no unread messages} one {only one new message} other {# new messages}}.");
+        Translator translator = new(store);
+
+        var result = translator.Get("message")
+            .WithCulture("en-US")
+            .Pluralize(quantity)
+            .Resolve();
+
+        Assert.Equal(expected, result);
     }
 
     [Fact]

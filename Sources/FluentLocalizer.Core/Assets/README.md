@@ -1,13 +1,13 @@
-# FluentLocalizer.Core
+# FluentLocalizer
 
-FluentLocalizer.Core is the core package for building culture-aware translation pipelines in .NET applications. It provides a fluent API around an `ITranslationStore`, with MessageFormat-style interpolation, runtime arguments, and configurable fallback behavior. Under the hood, it uses the MessageFormat engine to support ICU-inspired message formatting patterns.
+FluentLocalizer is the core package for building culture-aware translation pipelines in .NET applications. It provides a fluent API around an `ITranslationStore`, with MessageFormat-style interpolation, runtime arguments, and configurable fallback behavior. Under the hood, it uses the MessageFormat engine to support ICU-inspired message formatting patterns.
 
 ICU (International Components for Unicode) is the Unicode standard for culture-aware formatting. It defines how languages handle plurals, numbers, dates, and message selection rules, so the same template can adapt to different locales without custom code. The official reference is https://unicode-org.github.io/icu/. A simple example is a plural rule such as `one{# item}` vs `other{# items}`, which is selected automatically for the current culture.
 
 ## Install
 
 ```bash
-dotnet add package FluentLocalizer.Core
+dotnet add package FluentLocalizer
 ```
 
 ## Why use it?
@@ -23,7 +23,7 @@ dotnet add package FluentLocalizer.Core
 The core package defines the translation engine and contracts. You provide a store implementation (for example the official `FluentLocalizer.Store.Json` package or your own custom `ITranslationStore`) and then resolve translations through a fluent builder.
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -54,14 +54,14 @@ Console.WriteLine(message); // Hello Ada!
 
 ## ICU-style message formatting
 
-FluentLocalizer.Core is built on top of MessageFormat, so templates can use ICU-inspired message formatting patterns such as named arguments and message-format constructs. The fluent API makes it easy to supply these values at runtime.
+FluentLocalizer is built on top of MessageFormat, so templates can use ICU-inspired message formatting patterns such as named arguments and message-format constructs. The fluent API makes it easy to supply these values at runtime.
 
 ```csharp
 public sealed class InMemoryStore : ITranslationStore
 {
     private readonly Dictionary<string, string> _templates = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["items"] = "You have {count, plural, one{# item} other{# items}}.",
+        ["items"] = "You have {quantity, plural, one{# item} other{# items}}.",
         ["profile"] = "{gender, select, female{She} male{He} other{They}} liked {name}.",
         ["welcome"] = "Hello {name}!"
     };
@@ -79,7 +79,7 @@ var translator = new Translator(store);
 var itemSummary = translator
     .Get("items")
     .WithCulture("en-US")
-    .WithArg("count", 2)
+    .Pluralize(2)
     .Resolve();
 
 var profileMessage = translator
@@ -101,8 +101,8 @@ var message = translator
     .WithArg("name", "Ada")
     .WithArgs(new Dictionary<string, object?>
     {
-        ["city"] = "Rome",
-        ["count"] = 3
+        ["city"] = "Torino",
+        ["address"] = "Via Montebello 20"
     })
     .Pluralize(3)
     .Genderize(Gender.Female)
@@ -114,8 +114,8 @@ var message = translator
 
 - `WithCulture(...)` selects the culture for the current request when you want to override `CurrentUICulture`
 - `WithArg(...)` and `WithArgs(...)` add runtime arguments
-- `Pluralize(...)` exposes the `quantity` argument used by plural formatting
-- `Genderize(...)` exposes the `gender` argument used by gender-aware formatting
+- `Pluralize(...)` sets the `quantity` argument used by plural formatting; it is equivalent to `WithArg("quantity", ...)`.
+- `Genderize(...)` sets the `gender` argument used by gender-aware formatting; it is equivalent to `WithArg("gender", ...)`.
 - `WithCase(...)` applies casing transforms such as upper, lower, camelCase, PascalCase, snake_case, or kebab-case
 - `WithOptions(...)` overrides the current `TranslationOptions` for a single request
 - `Resolve()` resolves synchronously
@@ -123,11 +123,11 @@ var message = translator
 
 ## Logging with ITranslationLogger
 
-FluentLocalizer.Core also supports an optional `ITranslationLogger` contract. This is useful when you want to observe missing keys, formatting errors, or other translation events while keeping the logging behavior fully under your control.
+FluentLocalizer also supports an optional `ITranslationLogger` contract. This is useful when you want to observe missing keys, formatting errors, or other translation events while keeping the logging behavior fully under your control.
 
 ```csharp
-using FluentLocalizer.Core;
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer;
+using FluentLocalizer.Logging;
 
 public sealed class ConsoleTranslationLogger : ITranslationLogger
 {
@@ -155,8 +155,8 @@ var translator = new Translator(store, options, logger);
 The following example shows a full setup with a custom store, explicit options, and a logger. It is useful when you want to configure FluentLocalizer once and reuse the translator throughout the application.
 
 ```csharp
-using FluentLocalizer.Core;
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer;
+using FluentLocalizer.Logging;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -165,7 +165,7 @@ public sealed class DemoStore : ITranslationStore
     private readonly Dictionary<string, string> _templates = new(StringComparer.OrdinalIgnoreCase)
     {
         ["welcome"] = "Hello {name}!",
-        ["items"] = "You have {count, plural, one{# item} other{# items}}.",
+        ["items"] = "You have {quantity, plural, one{# item} other{# items}}.",
         ["profile"] = "{gender, select, female{She} male{He} other{They}} liked {name}."
     };
 
@@ -205,7 +205,7 @@ var welcome = translator
 
 var summary = translator
     .Get("items")
-    .WithArg("count", 2)
+    .Pluralize(2)
     .Resolve();
 
 var profile = translator
@@ -227,4 +227,4 @@ var message = await translator
 
 ## Notes
 
-FluentLocalizer.Core is intentionally small and extensible. It focuses on the translation engine and leaves storage concerns to implementations such as `FluentLocalizer.Store.Json` or your own custom `ITranslationStore`.
+FluentLocalizer is intentionally small and extensible. It focuses on the translation engine and leaves storage concerns to implementations such as `FluentLocalizer.Store.Json` or your own custom `ITranslationStore`.

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace FluentLocalizer.Core.Polyfill;
+namespace FluentLocalizer.Polyfill;
 
 internal static class Throw
 {

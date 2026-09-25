@@ -1,5 +1,3 @@
-using FluentLocalizer.Core;
-
 namespace FluentLocalizer.Samples.WorkerApp;
 
 public class Worker(ILogger<Worker> logger, ITranslator translator) : BackgroundService
@@ -11,9 +9,10 @@ public class Worker(ILogger<Worker> logger, ITranslator translator) : Background
             if (logger.IsEnabled(LogLevel.Information))
             {
                 var message = await translator.Get("Welcome")
-                    .WithArg("name", "Anna")
-                    .Genderize(Gender.Female)
-                    .Pluralize(5)
+                    .WithArg("name", "Anita")
+                    .Genderize(Gender.Male)
+                    .Pluralize(0)
+                    .WithCulture("it-IT")
                     .ResolveAsync(stoppingToken);
                 Console.WriteLine(message);
             }

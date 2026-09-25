@@ -1,4 +1,4 @@
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Samples.WorkerApp;
 using FluentLocalizer.Store.Json;
 
@@ -20,7 +20,7 @@ JsonStoreOptions storeOptions = new()
     SearchMode = JsonStoreLocation.FileSystem,
     ReloadOnChange = true,
     FallbackCulture = "en-US",
-    ThrowOnError = true,
+    ThrowOnMissingStore = true,
 };
 
 var builder = Host.CreateApplicationBuilder(args);

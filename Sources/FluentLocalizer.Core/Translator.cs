@@ -1,6 +1,6 @@
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer.Logging;
 
-namespace FluentLocalizer.Core;
+namespace FluentLocalizer;
 
 /// <summary>
 /// Resolves translation templates by creating a fluent builder for a specific key.

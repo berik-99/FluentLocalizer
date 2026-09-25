@@ -3,11 +3,13 @@
 	<PropertyGroup>
 		<PackageId>FluentLocalizer</PackageId>
 		<Product>FluentLocalizer</Product>
+		<RootNamespace>FluentLocalizer</RootNamespace>
 		<Version>0.0.1</Version>
 		<Description>
 			Core library for building culture-aware translation pipelines in .NET with fluent APIs, MessageFormat-style interpolation, and configurable fallback and error handling.
 		</Description>
 		<PackageTags>localization;translation;messageformat;culture;fluent;dotnet</PackageTags>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -16,6 +18,10 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Enums\" FolderSameAsRootNamespace="false" />
 	</ItemGroup>
 
 </Project>

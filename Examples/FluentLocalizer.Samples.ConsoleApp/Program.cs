@@ -1,4 +1,4 @@
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Samples.ConsoleApp;
 using System.Globalization;
 

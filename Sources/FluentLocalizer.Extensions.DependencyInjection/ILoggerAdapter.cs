@@ -1,5 +1,5 @@
 ﻿#pragma warning disable CA2254 // Template should be a static expression
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace FluentLocalizer.Core;

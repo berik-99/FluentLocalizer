@@ -1,4 +1,4 @@
-﻿namespace FluentLocalizer.Core.Logging;
+﻿namespace FluentLocalizer.Logging;
 
 /// <summary>
 /// Represents the supported severity levels for translation logging.

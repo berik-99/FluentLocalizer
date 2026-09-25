@@ -1,7 +1,7 @@
-using FluentLocalizer.Core.Polyfill;
+using FluentLocalizer.Polyfill;
 using System.Globalization;
 
-namespace FluentLocalizer.Core;
+namespace FluentLocalizer;
 
 /// <summary>
 /// Configures how FluentLocalizer handles missing keys, formatting errors, and default arguments.
@@ -11,37 +11,37 @@ public sealed class TranslationOptions
     /// <summary>
     /// Gets or sets the behavior used when a translation key is missing in the store.
     /// </summary>
-    public MissingTranslationBehavior MissingKeyBehavior { get; init; } = MissingTranslationBehavior.ReturnPlaceholder;
+    public MissingTranslationBehavior MissingKeyBehavior { get; set; } = MissingTranslationBehavior.ReturnPlaceholder;
 
     /// <summary>
     /// Gets or sets the fallback text returned when missing-key resolution is configured to use a value.
     /// </summary>
-    public string MissingKeyFallbackValue { get; init; } = "[{key}]";
+    public string MissingKeyFallbackValue { get; set; } = "[{key}]";
 
     /// <summary>
     /// Gets or sets a callback used to create a custom exception for missing translations.
     /// </summary>
-    public Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; init; }
+    public Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }
 
     /// <summary>
     /// Gets or sets the behavior used when a translation template cannot be formatted successfully.
     /// </summary>
-    public FormattingErrorBehavior FormattingErrorBehavior { get; init; } = FormattingErrorBehavior.ReturnPlaceholder;
+    public FormattingErrorBehavior FormattingErrorBehavior { get; set; } = FormattingErrorBehavior.ReturnPlaceholder;
 
     /// <summary>
     /// Gets or sets the fallback text returned when formatting errors are configured to use a value.
     /// </summary>
-    public string FormattingErrorFallbackValue { get; init; } = "[Format Error]";
+    public string FormattingErrorFallbackValue { get; set; } = "[Format Error]";
 
     /// <summary>
     /// Gets or sets a callback used to create a custom exception for formatting failures.
     /// </summary>
-    public Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; init; }
+    public Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }
 
     /// <summary>
     /// Gets or sets the default arguments applied to every translation request unless overridden at runtime.
     /// </summary>
-    public IReadOnlyDictionary<string, object?>? DefaultArguments { get; init; }
+    public IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }
 
     /// <summary>
     /// Merges default arguments and runtime arguments into a single argument set.

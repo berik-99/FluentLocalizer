@@ -13,7 +13,7 @@ Example en-US.json:
 {
   "Welcome": "Hello {name}!",
   "Notifications": {
-    "MessageCount": "You have {count, plural, =0 {no messages} one {# message} other {# messages}}."
+    "MessageCount": "You have {quantity, plural, =0 {no messages} one {# message} other {# messages}}."
   }
 }
 

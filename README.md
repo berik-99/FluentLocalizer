@@ -39,14 +39,14 @@ Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string
 Install the core package:
 
 ```bash
-dotnet add package FluentLocalizer.Core
+dotnet add package FluentLocalizer
 
 ```
 
 Create a quick in-memory store and resolve your first message:
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using System.Globalization;
 
 public sealed class InMemoryStore : ITranslationStore
@@ -135,7 +135,7 @@ Place one JSON file per culture in the `Locales` folder. A simple example is sho
 {
   "Welcome": "Hello {name}!",
   "Notifications": {
-    "MessageCount": "You have {count, plural, =0 {no messages} one {# message} other {# messages}}."
+    "MessageCount": "You have {quantity, plural, =0 {no messages} one {# message} other {# messages}}."
   }
 }
 ```
@@ -167,7 +167,7 @@ Use `FileSystem` when you want files on disk, and `EmbeddedResources` when you w
 ### Usage
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Store.Json;
 
 var options = new JsonStoreOptions
@@ -183,10 +183,11 @@ var translator = new Translator(store);
 
 var message = translator
     .Get("Welcome")
+    .WithCulture("en-US")
     .WithArg("name", "Ada")
     .Resolve();
 
-Console.WriteLine(message); // Output: Ciao Ada!
+Console.WriteLine(message); // Output: Hello Ada!
 
 ```
 
@@ -204,7 +205,7 @@ dotnet add package FluentLocalizer.Extensions.DependencyInjection
 ### Registration & Worker Example
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -229,17 +230,17 @@ builder.Services.AddHostedService<NotificationWorker>();
 
 await builder.Build().RunAsync();
 
-public sealed class NotificationWorker(ITranslationService translator) : BackgroundService
+public sealed class NotificationWorker(ITranslator translator) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var message = translator
             .Get("Notifications:MessageCount")
-            .WithCulture("it-IT")
-            .WithArg("quantity", 3)
+            .WithCulture("en-US")
+            .Pluralize(3)
             .Resolve();
 
-        Console.WriteLine(message); // Output: Hai 3 messaggi non letti.
+        Console.WriteLine(message); // Output: You have 3 messages.
         return Task.CompletedTask;
     }
 }
@@ -290,8 +291,8 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 
-- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/your-username/FluentLocalizer/issues).
-- 🐛 **Found a bug?** Submit an [Issue](https://github.com/your-username/FluentLocalizer/issues) with steps to reproduce it.
+- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/berik-99/FluentLocalizer/issues).
+- 🐛 **Found a bug?** Submit an [Issue](https://github.com/berik-99/FluentLocalizer/issues) with steps to reproduce it.
 - 🔧 **Want to contribute code?** Fork the repo and submit a **Pull Request**. New storage backends (e.g., Redis, Database, YAML) or engine improvements are warmly welcome!
 
 > [!NOTE]

@@ -12,7 +12,7 @@ dotnet add package FluentLocalizer.Store.Json
 
 ## How it works
 
-`JsonStore` reads one or more JSON files and exposes them to `FluentLocalizer.Core` through the `ITranslationStore` contract. A key is resolved by splitting it on `:` and walking the JSON object hierarchy, so a structure like this:
+`JsonStore` reads one or more JSON files and exposes them to FluentLocalizer through the `ITranslationStore` contract. A key is resolved by splitting it on `:` and walking the JSON object hierarchy, so a structure like this:
 
 ```json
 {
@@ -75,7 +75,7 @@ Use `FileSystem` when you want the files to remain on disk and `EmbeddedResource
 This is the simplest approach when you want to create the store directly in an application entry point.
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Store.Json;
 
 var options = new JsonStoreOptions
@@ -135,7 +135,7 @@ options.FileMappings["it-IT"] = "italian.json";
 
 ## Nested JSON keys
 
-Because the store walks the JSON object hierarchy, you can structure translations in nested objects and access them with dotted-style keys separated by `:`.
+Because the store walks the JSON object hierarchy, you can structure translations in nested objects and access them with colon-separated keys.
 
 ```json
 {
@@ -194,4 +194,4 @@ var options = new JsonStoreOptions
 
 ## Notes
 
-FluentLocalizer.Store.Json is designed to be simple and integration-friendly. It focuses on file discovery, culture fallback, and JSON traversal, while the actual formatting and translation pipeline stays in `FluentLocalizer.Core`.
+FluentLocalizer.Store.Json is designed to be simple and integration-friendly. It focuses on file discovery, culture fallback, and JSON traversal, while formatting and translation are handled by the FluentLocalizer core package.

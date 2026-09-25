@@ -11,6 +11,7 @@ dotnet add package FluentLocalizer.Extensions.DependencyInjection
 ## Basic registration
 
 ```csharp
+using FluentLocalizer;
 using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +44,7 @@ var message = translator.Get("Welcome")
 If you are building a hosted service, worker, or background processor, you can register the translator once and inject it into your service class.
 
 ```csharp
+using FluentLocalizer;
 using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -130,4 +132,4 @@ In practice, this means you can keep using your existing logging pipeline and be
 
 ## Notes
 
-This package is intentionally lightweight. It focuses on wiring FluentLocalizer into dependency injection containers so the rest of the translation pipeline remains in `FluentLocalizer.Core` and your chosen store implementation.
+This package is intentionally lightweight. It wires FluentLocalizer and your chosen store implementation into dependency injection containers.
