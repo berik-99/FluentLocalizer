@@ -1,5 +1,4 @@
-﻿#pragma warning disable CA2254 // Template should be a static expression
-using FluentLocalizer.Logging;
+﻿using FluentLocalizer.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace FluentLocalizer.Core;
@@ -24,4 +23,3 @@ internal sealed class ILoggerAdapter(ILogger<Translator> logger) : ITranslationL
         _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
     };
 }
-#pragma warning restore CA2254 // Template should be a static expression

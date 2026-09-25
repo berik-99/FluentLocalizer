@@ -92,6 +92,7 @@ This pattern is useful when the translator is reused across several services and
 
 This makes the translator available throughout your app via dependency injection.
 
+
 ## Using a custom store factory
 
 If you prefer to resolve the store from the service provider, you can register it lazily:

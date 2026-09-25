@@ -1,0 +1,49 @@
+@page "/"
+@inject ITranslator Translator
+@inject HttpJsonStore TranslationStore
+
+<PageTitle>FluentLocalizer Blazor WebAssembly sample</PageTitle>
+
+<h1>@Text("Home:Title")</h1>
+
+<p>@Text("Home:Welcome", "name", "Ada")</p>
+<p>@Text("Home:Unread", quantity: 3)</p>
+
+<label for="culture">Language</label>
+<select id="culture" @bind="_culture">
+    <option value="en-US">English</option>
+    <option value="it-IT">Italiano</option>
+</select>
+
+<p>
+    <button @onclick="RefreshTranslationsAsync">Refresh translations</button>
+</p>
+
+@if (!string.IsNullOrEmpty(_refreshStatus))
+{
+    <p role="status">@_refreshStatus</p>
+}
+
+@code {
+    private string _culture = "en-US";
+    private string _refreshStatus = string.Empty;
+
+    private string Text(string key, string? argumentName = null, object? argumentValue = null, int? quantity = null)
+    {
+        var translation = Translator.Get(key).WithCulture(_culture);
+
+        if (argumentName is not null)
+            translation.WithArg(argumentName, argumentValue);
+
+        if (quantity is not null)
+            translation.Pluralize(quantity.Value);
+
+        return translation.Resolve();
+    }
+
+    private async Task RefreshTranslationsAsync()
+    {
+        await TranslationStore.RefreshStoreAsync();
+        _refreshStatus = "Translations refreshed from the server.";
+    }
+}

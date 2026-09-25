@@ -20,7 +20,7 @@ public sealed class FluentLocalizerBuilder(IServiceCollection services)
     /// <returns>The current builder instance.</returns>
     public FluentLocalizerBuilder WithStore(ITranslationStore store)
     {
-        Services.AddSingleton<ITranslationStore>(store);
+        Services.AddSingleton(store);
         return this;
     }
 
@@ -31,7 +31,7 @@ public sealed class FluentLocalizerBuilder(IServiceCollection services)
     /// <returns>The current builder instance.</returns>
     public FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)
     {
-        Services.AddSingleton<ITranslationStore>(factory);
+        Services.AddSingleton(factory);
         return this;
     }
 

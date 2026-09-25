@@ -1,0 +1,7 @@
+{
+  "Home": {
+    "Title": "FluentLocalizer in Blazor WebAssembly",
+    "Welcome": "Ciao {name}! Questi messaggi sono stati scaricati dal server.",
+    "Unread": "{quantity, plural, =0 {Non hai messaggi da leggere} one {Hai un messaggio da leggere} other {Hai # messaggi da leggere}}"
+  }
+}

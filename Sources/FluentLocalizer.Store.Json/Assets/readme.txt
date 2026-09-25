@@ -19,6 +19,8 @@ Example en-US.json:
 
 By default, the package targets include every .json file inside Locales in the build output. If you prefer to ship them as embedded resources instead, change your project file to use EmbeddedResource for the JSON files and set 'JsonStoreOptions.SearchMode' to 'JsonStoreLocation.EmbeddedResources'.
 
+JsonStoreLocation.FileSystem requires filesystem access and is not supported in browser applications. In a browser, use JsonStoreLocation.EmbeddedResources with this store, or use FluentLocalizer.Store.Http to fetch JSON files from a server at runtime.
+
 Example for embedded resources:
 
 <ItemGroup>

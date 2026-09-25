@@ -30,6 +30,7 @@ Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string
 | :--- | :--- | :--- |
 | **`FluentLocalizer`** | Core engine, `Translator`, and `ITranslationStore` abstractions. | [![NuGet](https://img.shields.io/nuget/v/FluentLocalizer.svg?style=flat-square)](https://www.nuget.org/packages/FluentLocalizer) |
 | **`FluentLocalizer.Store.Json`** | Official JSON-backed translation store implementation. | [![NuGet](https://img.shields.io/nuget/v/FluentLocalizer.Store.Json.svg?style=flat-square)](https://www.nuget.org/packages/FluentLocalizer.Store.Json) |
+| **`FluentLocalizer.Store.Http`** | HTTP-backed JSON store for remote culture files, with in-memory caching. | [![NuGet](https://img.shields.io/nuget/v/FluentLocalizer.Store.Http.svg?style=flat-square)](https://www.nuget.org/packages/FluentLocalizer.Store.Http) |
 | **`FluentLocalizer.Extensions.DependencyInjection`** | Dependency Injection extensions for `IServiceCollection`. | [![NuGet](https://img.shields.io/nuget/v/FluentLocalizer.Extensions.DependencyInjection.svg?style=flat-square)](https://www.nuget.org/packages/FluentLocalizer.Extensions.DependencyInjection) |
 
 ---
@@ -164,6 +165,46 @@ var options = new JsonStoreOptions
 
 Use `FileSystem` when you want files on disk, and `EmbeddedResources` when you want translations baked into the assembly.
 
+### Using `JsonStore` in browser applications
+
+`JsonStoreLocation.FileSystem` requires filesystem access and is not supported when running in a browser. In a browser, the existing `JsonStore` can only be used with `JsonStoreLocation.EmbeddedResources`. To keep JSON files on the server and download them at runtime, use the HTTP store below.
+
+## 🌐 HTTP JSON Store
+
+`FluentLocalizer.Store.Http` loads locale JSON files from a relative HTTP path and caches each loaded file in memory. It works with Blazor WebAssembly and other clients, as well as server-side .NET applications. The store package has no dependency on the DI integration package; register an instance through the existing `WithStore(...)` method.
+
+```bash
+dotnet add package FluentLocalizer.Store.Http
+dotnet add package FluentLocalizer.Extensions.DependencyInjection
+```
+
+For example, a Blazor host can serve `wwwroot/locales/it-IT.json` and `wwwroot/locales/en-US.json` as static files. On the client:
+
+```csharp
+var httpClient = new HttpClient
+{
+    BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+};
+
+var store = new FluentLocalizer.Store.Http.HttpJsonStore(httpClient, new()
+{
+    ResourcesPath = "/locales",
+    FallbackCulture = "en-US"
+});
+
+builder.Services.AddFluentLocalizer()
+    .WithStore(store);
+
+var app = builder.Build();
+
+// Runs at each client startup, including after a full page reload.
+await store.LoadAsync(["it-IT", "en-US"]);
+
+await app.RunAsync();
+```
+
+The store also loads files lazily when used through `ResolveAsync()`. Call `RefreshStoreAsync()` to re-download the cultures already loaded by that store instance. Each fetch asks the HTTP server to revalidate its cached response, so changes are picked up on startup and explicit refresh. The HTTP client base address should point at the app's base URI; `ResourcesPath` is relative to that base address. JSON files can use the same nested structure as `JsonStore`, with nested keys addressed using `:` (for example, `Menu:Save`).
+
 ### Usage
 
 ```csharp
@@ -279,6 +320,7 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 ├── Sources/
 │   ├── FluentLocalizer.Core/                         # Engine and core abstractions
 │   ├── FluentLocalizer.Store.Json/                   # JSON storage provider
+│   ├── FluentLocalizer.Store.Http/                   # HTTP JSON storage provider
 │   └── FluentLocalizer.Extensions.DependencyInjection/ # Microsoft DI integrations
 ├── Examples/                                         # Runnable sample applications
 └── Tests/                                            # Unit & Integration tests

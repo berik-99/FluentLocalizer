@@ -3,12 +3,17 @@
     <Project Path="Examples/FluentLocalizer.Samples.ConsoleApp/FluentLocalizer.Samples.ConsoleApp.csproj" />
     <Project Path="Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.Samples.WorkerApp.csproj" />
   </Folder>
+  <Folder Name="/Examples/Blazor/">
+    <Project Path="Examples/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp.Client/FluentLocalizer.Samples.BlazorWebApp.Client.csproj" Id="c8aac5d2-597c-42c5-9e64-77eea9144da7" />
+    <Project Path="Examples/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp.csproj" Id="7defc69b-56b2-49f8-ae37-5775e22321b9" />
+  </Folder>
   <Folder Name="/Sources/">
     <Project Path="Sources/FluentLocalizer.Core/FluentLocalizer.Core.csproj" />
     <Project Path="Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizer.Extensions.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Sources/Stores/">
     <Project Path="Sources/FluentLocalizer.Store.Json/FluentLocalizer.Store.Json.csproj" />
+    <Project Path="Sources/FluentLocalizer.Store.Http/FluentLocalizer.Store.Http.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/FluentLocalizer.Test/FluentLocalizer.Test.csproj" />
