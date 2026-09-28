@@ -1,3 +1,7 @@
 {
-	"Welcome": "Welcome {name}! You have {quantity, plural, =0 {no unread messages} one {only one new message} other {# new messages}}."
+	"Welcome": "Welcome {name}! You have {quantity, plural, =0 {no unread messages} one {only one new message} other {# new messages}}.",
+	"Service": {
+		"Ready": "Worker ready: translations from JSON files.",
+		"FallbackOnly": "This message comes from the English fallback file."
+	}
 }

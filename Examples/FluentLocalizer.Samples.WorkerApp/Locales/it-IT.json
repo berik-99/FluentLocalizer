@@ -1,3 +1,6 @@
 ﻿{
-    "Welcome": "{gender, select, male {Benvenuto} female {Benvenuta} other {Benvenuto/a}} {name}! Hai {quantity, plural, =0 {zero messaggi non letti} one {solo un nuovo messaggio} other {# nuovi messaggi}}."
+    "Welcome": "{gender, select, male {Benvenuto} female {Benvenuta} other {Benvenuto/a}} {name}! Hai {quantity, plural, =0 {zero messaggi non letti} one {solo un nuovo messaggio} other {# nuovi messaggi}}.",
+    "Service": {
+        "Ready": "Worker pronto: traduzioni da file JSON."
+    }
 }

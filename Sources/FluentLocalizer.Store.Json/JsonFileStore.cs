@@ -14,6 +14,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     private readonly JsonFileStoreOptions _options;
     private readonly string _path;
     private readonly ConcurrentDictionary<string, byte> _files = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, JsonElement> _documentCache = new(StringComparer.OrdinalIgnoreCase);
     private FileSystemWatcher? _watcher;
 
     /// <summary>Creates a filesystem-backed JSON translation store.</summary>
@@ -23,9 +24,11 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
             throw new PlatformNotSupportedException("JsonFileStore is not supported in browser applications. Use EmbeddedJsonStore or HttpJsonStore instead.");
 
         _options = (JsonFileStoreOptions)Options;
-        _path = Path.IsPathRooted(_options.ResourcesPath)
+        _path = Path.GetFullPath(Path.IsPathRooted(_options.ResourcesPath)
             ? _options.ResourcesPath
-            : Path.Combine(AppContext.BaseDirectory, _options.ResourcesPath);
+            : Path.Combine(AppContext.BaseDirectory, _options.ResourcesPath));
+        foreach (var mapping in Options.FileMappings.Values)
+            JsonStoreCore.ValidateRelativeJsonPath(mapping);
         LoadFiles();
         if (_options.ReloadOnChange) StartWatcher();
     }
@@ -95,17 +98,23 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     /// <inheritdoc />
     protected override string? FindTemplate(string key, System.Globalization.CultureInfo culture)
     {
+        var cache = Volatile.Read(ref _documentCache);
         foreach (var candidate in JsonStoreCore.ResolveFileCandidates(culture, Options.FallbackCulture, Options.FileMappings, key))
         {
-            var path = Path.Combine(_path, candidate.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(path)) continue;
-
+            var path = Path.GetFullPath(Path.Combine(_path, JsonStoreCore.ValidateRelativeJsonPath(candidate).Replace('/', Path.DirectorySeparatorChar)));
+            if (!path.StartsWith(_path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Translation path escapes ResourcesPath.", nameof(candidate));
             try
             {
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
-                if (JsonStoreCore.TryGetValue(document.RootElement, key, out var value) ||
+                if (!cache.TryGetValue(candidate, out var root))
+                {
+                    if (!File.Exists(path)) continue;
+                    using var document = JsonDocument.Parse(File.ReadAllText(path));
+                    root = cache.GetOrAdd(candidate, document.RootElement.Clone());
+                }
+                if (JsonStoreCore.TryGetValue(root, key, out var value) ||
                     (JsonStoreCore.IsNamespaceFile(candidate, key) &&
-                     JsonStoreCore.TryGetValue(document.RootElement, JsonStoreCore.GetLookupKey(key), out value)))
+                     JsonStoreCore.TryGetValue(root, JsonStoreCore.GetLookupKey(key), out value)))
                     return value;
             }
             catch (Exception ex) when (!Options.ThrowOnMissingStore && ex is IOException or JsonException or UnauthorizedAccessException)
@@ -115,6 +124,18 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         return null;
     }
 
+    /// <inheritdoc />
+    public override string? GetTemplate(string key, System.Globalization.CultureInfo culture)
+    {
+        var result = FindTemplate(key, culture);
+        if (result is null && Options.ThrowOnMissingStore && !HasCandidate(culture))
+            throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{Options.FallbackCulture}'.");
+        return result;
+    }
+
+    private void InvalidateCache() =>
+        Interlocked.Exchange(ref _documentCache, new ConcurrentDictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase));
+
     private void StartWatcher()
     {
         Directory.CreateDirectory(_path);
@@ -123,10 +144,10 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
             IncludeSubdirectories = true
         };
-        _watcher.Changed += (_, e) => { LoadFile(e.FullPath); ClearTemplateCache(); };
-        _watcher.Created += (_, e) => { LoadFile(e.FullPath); ClearTemplateCache(); };
-        _watcher.Renamed += (sender, e) => { _files.TryRemove(GetRelativePath(e.OldFullPath), out var ignored); LoadFile(e.FullPath); ClearTemplateCache(); };
-        _watcher.Deleted += (sender, e) => { _files.TryRemove(GetRelativePath(e.FullPath), out var ignored); ClearTemplateCache(); };
+        _watcher.Changed += (_, e) => { LoadFile(e.FullPath); InvalidateCache(); };
+        _watcher.Created += (_, e) => { LoadFile(e.FullPath); InvalidateCache(); };
+        _watcher.Renamed += (sender, e) => { _files.TryRemove(GetRelativePath(e.OldFullPath), out var ignored); LoadFile(e.FullPath); InvalidateCache(); };
+        _watcher.Deleted += (sender, e) => { _files.TryRemove(GetRelativePath(e.FullPath), out var ignored); InvalidateCache(); };
         _watcher.EnableRaisingEvents = true;
     }
 

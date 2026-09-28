@@ -11,7 +11,7 @@ var httpClient = new HttpClient
 
 var store = new HttpJsonStore(httpClient, new HttpJsonStoreOptions
 {
-    ResourcesPath = "/locales",
+    ResourcesPath = "locales",
     FallbackCulture = "en-US",
     ThrowOnMissingStore = true
 });

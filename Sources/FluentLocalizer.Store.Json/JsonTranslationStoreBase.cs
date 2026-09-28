@@ -120,6 +120,20 @@ public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITra
 
 internal static class JsonStoreCore
 {
+    internal static string ValidateRelativeJsonPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.IndexOfAny(['?', '#', '\0']) >= 0)
+            throw new ArgumentException("Translation paths must be relative JSON paths.", nameof(path));
+
+        var normalized = path.Replace('\\', '/');
+        if (normalized.StartsWith("/", StringComparison.Ordinal) ||
+            normalized.Split('/').Any(static segment => segment is "" or "." or ".." || segment.IndexOf(':') >= 0) ||
+            !normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Translation paths must stay inside the configured resource path and end in .json.", nameof(path));
+
+        return normalized;
+    }
+
     internal static List<string> ResolveCandidates(CultureInfo culture, string fallbackCulture, IDictionary<string, string> mappings)
     {
         var candidates = new List<string>();
@@ -150,8 +164,7 @@ internal static class JsonStoreCore
     internal static List<string> ResolveFileCandidates(CultureInfo culture, string fallbackCulture, IDictionary<string, string> mappings, string key)
     {
         var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
-        var namespaced = segments.Length > 1 && segments[0].Length > 0 &&
-            segments[0].IndexOf('/') < 0 && segments[0].IndexOf('\\') < 0 && segments[0] is not "." and not "..";
+        var namespaced = HasNamespace(segments);
         var candidates = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -190,8 +203,7 @@ internal static class JsonStoreCore
     internal static string GetLookupKey(string key)
     {
         var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
-        return segments.Length > 1 && segments[0].Length > 0 &&
-            segments[0].IndexOf('/') < 0 && segments[0].IndexOf('\\') < 0 && segments[0] is not "." and not ".."
+        return HasNamespace(segments)
             ? string.Join(":", segments.Skip(1))
             : key;
     }
@@ -199,13 +211,17 @@ internal static class JsonStoreCore
     internal static bool IsNamespaceFile(string candidate, string key)
     {
         var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
-        if (segments.Length < 2 || segments[0].IndexOf('/') >= 0 || segments[0].IndexOf('\\') >= 0 || segments[0] is "." or "..")
+        if (!HasNamespace(segments))
             return false;
 
         var normalized = candidate.Replace('\\', '/');
         return normalized.EndsWith("." + segments[0] + ".json", StringComparison.OrdinalIgnoreCase) ||
                normalized.EndsWith("/" + segments[0] + ".json", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static bool HasNamespace(string[] segments) =>
+        segments.Length > 1 && segments[0].Length > 0 && segments[0] is not "." and not ".." &&
+        segments[0].IndexOfAny(['/', '\\', '?', '#', '\0', '*', '"', '<', '>', '|']) < 0;
 
     internal static string GetCacheKey(string resourceName)
     {

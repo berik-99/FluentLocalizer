@@ -1,0 +1,5 @@
+{
+  "Notifications": {
+    "MessageCount": "{gender, select, female {Ciao} male {Ciao} other {Salve}} {name}, {quantity, plural, =0 {nessun messaggio} one {un messaggio} other {# messaggi}}."
+  }
+}

@@ -264,6 +264,8 @@ dotnet test FluentLocalizer.slnx --configuration Release
 
 **Run Sample Projects:**
 
+See [the examples guide](Examples/README.md) for basic and advanced scenarios in the console, worker, and Blazor apps.
+
 ```bash
 # Console Sample
 dotnet run --project Examples/FluentLocalizer.Samples.ConsoleApp/FluentLocalizer.Samples.ConsoleApp.csproj

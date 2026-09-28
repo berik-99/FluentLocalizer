@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -74,6 +75,19 @@ public sealed class HttpJsonStoreTests
     }
 
     [Fact]
+    public async Task Strict_mode_accepts_a_fallback_file_when_requested_culture_is_missing()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath.EndsWith("/en-US.json", StringComparison.Ordinal)
+            ? "{\"Hello\":\"Fallback\"}" : null));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client, new HttpJsonStoreOptions { ThrowOnMissingStore = true });
+
+        Assert.Equal("Fallback", await store.GetTemplateAsync("Hello", new CultureInfo("it-IT"), TestContext.Current.CancellationToken));
+        await store.LoadAsync(new CultureInfo("it-IT"), TestContext.Current.CancellationToken);
+        Assert.Equal("Fallback", store.GetTemplate("Hello", new CultureInfo("it-IT")));
+    }
+
+    [Fact]
     public async Task Non_success_responses_invalid_json_and_cancellation_propagate()
     {
         using var errorClient = new HttpClient(new StubHttpHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError))))
@@ -117,13 +131,101 @@ public sealed class HttpJsonStoreTests
         Assert.Null(store.GetTemplate("Value", culture));
     }
 
+    [Fact]
+    public async Task Invalid_refresh_preserves_the_loaded_snapshot()
+    {
+        var content = "{\"Value\":\"before\"}";
+        using var client = new HttpClient(new StubHttpHandler((_, _) => JsonResponse(content)))
+        { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        var culture = new CultureInfo("it-IT");
+        await store.LoadAsync(culture, TestContext.Current.CancellationToken);
+
+        content = "{invalid";
+        await Assert.ThrowsAnyAsync<System.Text.Json.JsonException>(() => store.RefreshStoreAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("before", store.GetTemplate("Value", culture));
+    }
+
+    [Fact]
+    public async Task Namespaced_lazy_lookup_loads_only_the_matching_bundle()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath switch
+        {
+            "/locales/it-IT.common.json" => "{\"Title\":\"Titolo\"}",
+            _ => null
+        }));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        var culture = new CultureInfo("it-IT");
+
+        Assert.Equal("Titolo", await store.GetTemplateAsync("common:Title", culture, TestContext.Current.CancellationToken));
+        var firstRequestCount = handler.Requests.Count;
+        Assert.Equal("Titolo", await store.GetTemplateAsync("common:Title", culture, TestContext.Current.CancellationToken));
+        Assert.Equal(firstRequestCount, handler.Requests.Count);
+        Assert.Equal("Titolo", store.GetTemplate("common:Title", culture));
+        Assert.DoesNotContain(handler.Requests, path => path.EndsWith("/it-IT.json", StringComparison.Ordinal));
+    }
+
+    #if NET8_0_OR_GREATER
+    [Fact]
+    public async Task Independent_cultures_can_load_while_another_request_is_pending()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new StubHttpHandler(async (request, token) =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/fr-FR.json", StringComparison.Ordinal))
+            {
+                started.SetResult();
+                await release.Task.WaitAsync(token);
+            }
+            return CreateJsonResponse("{\"Value\":\"ok\"}");
+        });
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        var pending = store.GetTemplateAsync("Value", new CultureInfo("fr-FR"), TestContext.Current.CancellationToken);
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            Assert.Equal("ok", await store.GetTemplateAsync("Value", new CultureInfo("it-IT"), TestContext.Current.CancellationToken)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        }
+        finally { release.SetResult(); }
+        Assert.Equal("ok", await pending);
+    }
+    #endif
+
+    [Theory]
+    [InlineData("../secret.json")]
+    [InlineData("/secret.json")]
+    [InlineData("https://elsewhere.test/file.json")]
+    [InlineData("folder/../secret.json")]
+    [InlineData("%2e%2e/secret.json")]
+    public void Rejects_file_mappings_outside_resources_path(string mapping)
+    {
+        using var client = new HttpClient { BaseAddress = new Uri("https://example.test/") };
+        var options = new HttpJsonStoreOptions();
+        options.FileMappings["it-IT"] = mapping;
+        Assert.Throws<ArgumentException>(() => new HttpJsonStore(client, options));
+    }
+
+    [Theory]
+    [InlineData("../locales")]
+    [InlineData("/locales")]
+    [InlineData("%2e%2e/locales")]
+    public void Rejects_resources_paths_that_can_escape_the_base_address(string path)
+    {
+        using var client = new HttpClient { BaseAddress = new Uri("https://example.test/") };
+        Assert.Throws<ArgumentException>(() => new HttpJsonStore(client, new HttpJsonStoreOptions { ResourcesPath = path }));
+    }
+
     private static HttpResponseMessage CreateJsonResponse(string? json) => json is null
         ? new HttpResponseMessage(HttpStatusCode.NotFound)
         : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
     private sealed class StubHttpHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler
     {
-        public List<string> Requests { get; } = [];
+        public ConcurrentBag<string> Requests { get; } = [];
         public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> Respond { get; set; } = respond;
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

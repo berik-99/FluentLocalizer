@@ -20,19 +20,24 @@ TranslationOptions options = new()
 
 Translator translator = new(new MemoryStore(), options);
 
-await ShowScenarioAsync("1. Italian greeting", async () =>
+Console.WriteLine("=== Base: custom ITranslationStore and synchronous lookup ===");
+Console.WriteLine(translator.Get("Hello").Resolve()); // CurrentUICulture is it-IT.
+Console.WriteLine(translator.Get("Hello").WithCulture("de-DE").Resolve()); // MemoryStore falls back to English.
+
+Console.WriteLine("\n=== Advanced: arguments, plural, fallback, and error policy ===");
+await ShowScenarioAsync("Italian greeting with a runtime argument", async () =>
     await translator.Get("Welcome")
         .WithArg("name", "Elena")
         .WithCulture("it-IT")
         .ResolveAsync());
 
-await ShowScenarioAsync("2. Requesting German, Fallback to English", async () =>
+await ShowScenarioAsync("German request falls back to English", async () =>
     await translator.Get("Welcome")
         .WithArg("name", "Sofia")
         .WithCulture("de-DE")
         .ResolveAsync());
 
-await ShowScenarioAsync("3. Nested notification with pluralization", async () =>
+await ShowScenarioAsync("Nested key, gender and plural", async () =>
     await translator.Get("Notifications:MessageCount")
         .WithArg("name", "Elena")
         .Genderize(Gender.Female)
@@ -40,17 +45,20 @@ await ShowScenarioAsync("3. Nested notification with pluralization", async () =>
         .WithCulture("it-IT")
         .ResolveAsync());
 
-await ShowScenarioAsync("4. Default argument when runtime arg is missing", async () =>
+await ShowScenarioAsync("Default argument when runtime arg is missing", async () =>
     await translator.Get("Welcome")
         .WithCulture("en-US")
         .ResolveAsync());
 
-await ShowScenarioAsync("5. Missing key fallback", async () =>
+await ShowScenarioAsync("Missing key fallback", async () =>
     await translator.Get("MissingGreeting")
         .WithCulture("it-IT")
         .ResolveAsync());
 
-await ShowScenarioAsync("6. Formatting exception", async () =>
+await ShowScenarioAsync("Case transformation", () =>
+    Task.FromResult(translator.Get("Hello").WithCulture("en-US").WithCase(LetterCase.Upper).Resolve()));
+
+await ShowScenarioAsync("Custom formatting exception", async () =>
     await translator.Get("BrokenTemplate")
         .WithCulture("it-IT")
         .ResolveAsync());

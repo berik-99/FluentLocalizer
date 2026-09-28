@@ -7,6 +7,7 @@
 
 <h1>@Text("Home:Title")</h1>
 
+<h2>Basic: preloaded HTTP translations</h2>
 <p>@Text("Home:Welcome", "name", "Ada")</p>
 <p aria-live="polite">@Text("Home:Unread", quantity: _quantity)</p>
 
@@ -17,13 +18,23 @@
 </p>
 
 <label for="culture">Language</label>
-<select id="culture" @bind="_culture">
+<select id="culture" @bind="_culture" @bind:after="ClearLazyResult">
     <option value="en-US">English</option>
     <option value="it-IT">Italiano</option>
 </select>
 
+<h2>Advanced: fallback, lazy bundle, and refresh</h2>
+<p>@Text("Home:FallbackOnly")</p>
 <p>
-    <button @onclick="RefreshTranslationsAsync">Refresh translations</button>
+    <button type="button" @onclick="LoadNamespaceAsync">Load namespace asynchronously</button>
+</p>
+@if (!string.IsNullOrEmpty(_lazyResult))
+{
+    <p role="status">@_lazyResult</p>
+}
+
+<p>
+    <button type="button" @onclick="RefreshTranslationsAsync">Refresh translations</button>
 </p>
 
 @if (!string.IsNullOrEmpty(_refreshStatus))
@@ -34,6 +45,7 @@
 @code {
     private string _culture = GetInitialCulture();
     private string _refreshStatus = string.Empty;
+    private string _lazyResult = string.Empty;
     private int _quantity = 1;
 
     private string Text(string key, string? argumentName = null, object? argumentValue = null, int? quantity = null)
@@ -51,9 +63,34 @@
 
     private async Task RefreshTranslationsAsync()
     {
-        await TranslationStore.RefreshStoreAsync();
-        _refreshStatus = "Translations refreshed from the server.";
+        try
+        {
+            await TranslationStore.RefreshStoreAsync();
+            _refreshStatus = "Translations refreshed from the server.";
+            _lazyResult = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _refreshStatus = $"Refresh failed: {ex.Message}";
+        }
     }
+
+    private async Task LoadNamespaceAsync()
+    {
+        try
+        {
+            _lazyResult = await Translator.Get("common:Status")
+                .WithArg("name", "Ada")
+                .WithCulture(_culture)
+                .ResolveAsync();
+        }
+        catch (Exception ex)
+        {
+            _lazyResult = $"Loading failed: {ex.Message}";
+        }
+    }
+
+    private void ClearLazyResult() => _lazyResult = string.Empty;
 
     private void DecreaseCount() => _quantity = Math.Max(0, _quantity - 1);
 

@@ -1,250 +1,215 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace FluentLocalizer.Store.Json;
 
-/// <summary>
-/// Loads culture JSON files over HTTP and caches them for subsequent translation lookups.
-/// </summary>
-/// <remarks>
-/// The supplied <see cref="HttpClient"/> remains owned by the caller. Culture files are cached in memory and nested
-/// object keys are addressed with colon-separated segments. Synchronous lookups require the requested culture to have
-/// been loaded first; asynchronous lookups load it on demand.
-/// </remarks>
-/// <param name="httpClient">The client used to request translation files.</param>
-/// <param name="options">Options for file paths and culture fallback.</param>
-/// <exception cref="ArgumentNullException"><paramref name="httpClient"/> is <see langword="null"/>.</exception>
-public sealed class HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null) : ITranslationStore, IDisposable
+/// <summary>Loads culture JSON files over HTTP and caches them for synchronous lookups after loading.</summary>
+/// <remarks>The supplied <see cref="HttpClient"/> remains owned by the caller.</remarks>
+public sealed class HttpJsonStore : ITranslationStore, IDisposable
 {
-    private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-    private readonly HttpJsonStoreOptions _options = options ?? new HttpJsonStoreOptions();
-    private readonly ConcurrentDictionary<string, JsonDocument> _cache = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentBag<JsonDocument> _retiredDocuments = [];
-    private readonly ConcurrentDictionary<string, byte> _loadedCultures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly SemaphoreSlim _loadLock = new(1, 1);
+    private readonly HttpClient _httpClient;
+    private readonly HttpJsonStoreOptions _options;
+    private readonly ConcurrentDictionary<string, CultureCache> _cultures = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Loads the candidate JSON files for a culture into memory. Call this during application startup when synchronous
-    /// <see cref="ITranslationStore.GetTemplate"/> lookups are needed.
-    /// </summary>
-    /// <param name="culture">The culture whose specific, neutral, and fallback files should be loaded.</param>
-    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
-    /// <returns>A task that completes when candidate files have been loaded.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
-    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
-    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
+    private sealed class CultureCache
+    {
+        internal readonly SemaphoreSlim Gate = new(1, 1);
+        internal Dictionary<string, JsonElement>? Documents;
+        internal HashSet<string> Attempted = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Creates an HTTP JSON store. The client remains owned by the caller.</summary>
+    public HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null)
+    {
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _options = options ?? new HttpJsonStoreOptions();
+        ValidateResourcePath(_options.ResourcesPath);
+        foreach (var mapping in _options.FileMappings.Values)
+            ValidateHttpFileName(mapping);
+    }
+
+    /// <summary>Preloads the combined JSON files for a culture and its fallback.</summary>
     public async Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
     {
         if (culture is null) throw new ArgumentNullException(nameof(culture));
-        await LoadCultureAsync(culture, cancellationToken).ConfigureAwait(false);
+        await LoadCultureAsync(culture, null, cancellationToken).ConfigureAwait(false);
         if (!culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
-            await LoadCultureAsync(CultureInfo.GetCultureInfo(_options.FallbackCulture), cancellationToken).ConfigureAwait(false);
+            await LoadCultureAsync(CultureInfo.GetCultureInfo(_options.FallbackCulture), null, cancellationToken).ConfigureAwait(false);
+        EnsureAvailable(culture);
     }
 
-    /// <summary>
-    /// Loads candidate JSON files for each culture into memory.
-    /// </summary>
-    /// <param name="cultures">Culture names to preload. The configured fallback culture is loaded as well.</param>
-    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
-    /// <returns>A task that completes when the requested and fallback cultures have been loaded.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="cultures"/> is <see langword="null"/>.</exception>
-    /// <exception cref="CultureNotFoundException">A supplied culture name or the configured fallback culture is invalid.</exception>
-    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
-    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists for a loaded culture.</exception>
+    /// <summary>Preloads combined JSON files for the requested cultures and the fallback culture.</summary>
     public async Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)
     {
         if (cultures is null) throw new ArgumentNullException(nameof(cultures));
-        foreach (var cultureName in cultures.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            await LoadCultureAsync(CultureInfo.GetCultureInfo(cultureName), cancellationToken).ConfigureAwait(false);
-        }
-
-        await LoadCultureAsync(CultureInfo.GetCultureInfo(_options.FallbackCulture), cancellationToken).ConfigureAwait(false);
+        var requested = cultures.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        foreach (var name in requested)
+            await LoadCultureAsync(CultureInfo.GetCultureInfo(name), null, cancellationToken).ConfigureAwait(false);
+        await LoadCultureAsync(CultureInfo.GetCultureInfo(_options.FallbackCulture), null, cancellationToken).ConfigureAwait(false);
+        EnsureAvailable(CultureInfo.GetCultureInfo(_options.FallbackCulture));
+        foreach (var name in requested)
+            EnsureAvailable(CultureInfo.GetCultureInfo(name));
     }
 
-    /// <summary>
-    /// Re-downloads the files for cultures previously loaded by this store.
-    /// Call this after translation files change on the server. A newly created store starts empty;
-    /// call <see cref="LoadAsync(IEnumerable{string}, CancellationToken)"/> during app startup to load its cultures.
-    /// </summary>
-    /// <param name="cancellationToken">A token that can cancel the HTTP requests.</param>
-    /// <returns>A task that completes when previously loaded cultures have been refreshed.</returns>
-    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
-    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file is available during the refresh.</exception>
+    /// <summary>Refreshes loaded cultures atomically. An invalid response leaves the previous culture snapshot available.</summary>
     public async Task RefreshStoreAsync(CancellationToken cancellationToken = default)
     {
-        var cultures = _loadedCultures.Keys.ToArray();
-        foreach (var cultureName in cultures)
-        {
-            await LoadCultureAsync(CultureInfo.GetCultureInfo(cultureName), cancellationToken, forceRefresh: true)
-                .ConfigureAwait(false);
-        }
+        foreach (var name in _cultures.Keys.ToArray())
+            await LoadCultureAsync(CultureInfo.GetCultureInfo(name), null, cancellationToken, forceRefresh: true).ConfigureAwait(false);
+        foreach (var name in _cultures.Keys)
+            EnsureAvailable(CultureInfo.GetCultureInfo(name));
     }
 
     /// <inheritdoc />
-    /// <exception cref="ArgumentNullException"><paramref name="culture"/> is <see langword="null"/>.</exception>
-    /// <exception cref="OperationCanceledException">The operation was canceled while loading a culture file.</exception>
-    /// <exception cref="HttpRequestException">A request failed or the server returned an unsuccessful status code other than not found.</exception>
-    /// <exception cref="JsonException">A retrieved file does not contain valid JSON.</exception>
-    /// <exception cref="FileNotFoundException"><see cref="JsonStoreSettings.ThrowOnMissingStore"/> is enabled and no candidate file exists.</exception>
     public async Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)
     {
-        await LoadCultureAsync(culture, cancellationToken).ConfigureAwait(false);
-
-        var template = FindTemplate(key, culture);
-        if (template is not null || culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
-            return template;
-
-        var fallbackCulture = CultureInfo.GetCultureInfo(_options.FallbackCulture);
-        await LoadCultureAsync(fallbackCulture, cancellationToken).ConfigureAwait(false);
-        return FindTemplate(key, fallbackCulture);
+        if (culture is null) throw new ArgumentNullException(nameof(culture));
+        await LoadCultureAsync(culture, key, cancellationToken).ConfigureAwait(false);
+        var value = FindTemplate(key, culture);
+        if (value is not null || culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
+        {
+            EnsureAvailable(culture);
+            return value;
+        }
+        var fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
+        await LoadCultureAsync(fallback, key, cancellationToken).ConfigureAwait(false);
+        EnsureAvailable(culture);
+        return FindTemplate(key, fallback);
     }
 
     /// <inheritdoc />
-    /// <exception cref="InvalidOperationException">The requested culture or required fallback culture has not been loaded.</exception>
     public string? GetTemplate(string key, CultureInfo culture)
     {
         EnsureLoaded(culture);
-
-        var template = FindTemplate(key, culture);
-        if (template is not null || culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
-            return template;
-
-        var fallbackCulture = CultureInfo.GetCultureInfo(_options.FallbackCulture);
-        EnsureLoaded(fallbackCulture);
-        return FindTemplate(key, fallbackCulture);
+        var value = FindTemplate(key, culture);
+        if (value is not null || culture.Name.Equals(_options.FallbackCulture, StringComparison.OrdinalIgnoreCase))
+            return value;
+        var fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
+        EnsureLoaded(fallback);
+        return FindTemplate(key, fallback);
     }
 
-    private async Task LoadCultureAsync(
-        CultureInfo culture,
-        CancellationToken cancellationToken,
-        bool forceRefresh = false)
+    private async Task LoadCultureAsync(CultureInfo culture, string? key, CancellationToken cancellationToken, bool forceRefresh = false)
     {
-        if (!forceRefresh && _loadedCultures.ContainsKey(culture.Name))
-            return;
-
-        await _loadLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var state = _cultures.GetOrAdd(culture.Name, static _ => new CultureCache());
+        var candidates = Candidates(culture, key);
+        await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!forceRefresh && _loadedCultures.ContainsKey(culture.Name))
-                return;
+            var current = Volatile.Read(ref state.Documents);
+            if (!forceRefresh && current is not null && candidates.All(state.Attempted.Contains)) return;
+            var search = forceRefresh ? state.Attempted.Union(candidates, StringComparer.OrdinalIgnoreCase) : candidates;
 
-            var candidates = ResolveCandidates(culture);
-            var foundFile = false;
+            var next = forceRefresh ? new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase) :
+                current is null ? new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase) :
+                new Dictionary<string, JsonElement>(current, StringComparer.OrdinalIgnoreCase);
 
-            foreach (var fileName in candidates)
+            var attempted = new List<string>();
+            foreach (var fileName in search)
             {
-                if (!forceRefresh && _cache.ContainsKey(fileName))
+                if (!forceRefresh && state.Attempted.Contains(fileName))
                 {
-                    foundFile = true;
+                    if (key is not null && next.TryGetValue(fileName, out var cached) && HasValue(cached, fileName, key)) break;
                     continue;
                 }
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, GetRequestUri(fileName));
-                request.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true };
-                using var response = await _httpClient.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken).ConfigureAwait(false);
-
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    if (forceRefresh && _cache.TryRemove(fileName, out var removedDocument))
-                        _retiredDocuments.Add(removedDocument);
-                    continue;
-                }
-
+                attempted.Add(fileName);
+                using var response = await _httpClient.GetAsync(GetRequestUri(fileName), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.NotFound) continue;
                 response.EnsureSuccessStatusCode();
 #if NET8_0_OR_GREATER
                 await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 #else
                 using Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 #endif
-                var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
-                if (forceRefresh)
-                {
-                    JsonDocument? oldDocument = null;
-                    _cache.AddOrUpdate(fileName, document, (_, previous) =>
-                    {
-                        oldDocument = previous;
-                        return document;
-                    });
-                    if (oldDocument is not null)
-                        _retiredDocuments.Add(oldDocument);
-                    foundFile = true;
-                }
-                else if (_cache.TryAdd(fileName, document))
-                {
-                    foundFile = true;
-                }
-                else
-                {
-                    document.Dispose();
-                }
+                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                next[fileName] = document.RootElement.Clone();
+                if (!forceRefresh && key is not null && HasValue(next[fileName], fileName, key))
+                    break;
             }
 
-            if (!foundFile && _options.ThrowOnMissingStore)
-                throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}'.");
-
-            _loadedCultures.TryAdd(culture.Name, 0);
+            state.Attempted = forceRefresh ? new HashSet<string>(attempted, StringComparer.OrdinalIgnoreCase) :
+                new HashSet<string>(state.Attempted.Concat(attempted), StringComparer.OrdinalIgnoreCase);
+            Volatile.Write(ref state.Documents, next);
         }
         finally
         {
-            _loadLock.Release();
+            state.Gate.Release();
         }
+    }
+
+    private IReadOnlyList<string> Candidates(CultureInfo culture, string? key) => key is null
+        ? JsonStoreCore.ResolveCandidates(culture, culture.Name, _options.FileMappings)
+        : JsonStoreCore.ResolveFileCandidates(culture, culture.Name, _options.FileMappings, key);
+
+    private static bool HasValue(JsonElement root, string fileName, string key) =>
+        JsonStoreCore.TryGetValue(root, key, out _) ||
+        (JsonStoreCore.IsNamespaceFile(fileName, key) &&
+         JsonStoreCore.TryGetValue(root, JsonStoreCore.GetLookupKey(key), out _));
+
+    private string? FindTemplate(string key, CultureInfo culture)
+    {
+        if (!_cultures.TryGetValue(culture.Name, out var state)) return null;
+        var documents = Volatile.Read(ref state.Documents);
+        if (documents is null) return null;
+        foreach (var fileName in Candidates(culture, key))
+        {
+            if (!documents.TryGetValue(fileName, out var root)) continue;
+            if (JsonStoreCore.TryGetValue(root, key, out var value) ||
+                (JsonStoreCore.IsNamespaceFile(fileName, key) &&
+                 JsonStoreCore.TryGetValue(root, JsonStoreCore.GetLookupKey(key), out value)))
+                return value;
+        }
+        return null;
     }
 
     private void EnsureLoaded(CultureInfo culture)
     {
-        if (!_loadedCultures.ContainsKey(culture.Name))
-        {
-            throw new InvalidOperationException(
-                $"Translation files for culture '{culture.Name}' have not been loaded. " +
-                "Call LoadAsync before using synchronous translation resolution, or use ResolveAsync.");
-        }
+        if (!_cultures.TryGetValue(culture.Name, out var state) || Volatile.Read(ref state.Documents) is null)
+            throw new InvalidOperationException($"Translation files for culture '{culture.Name}' have not been loaded. Call LoadAsync before synchronous resolution, or use ResolveAsync.");
     }
 
-    private string? FindTemplate(string key, CultureInfo culture)
+    private void EnsureAvailable(CultureInfo culture)
     {
-        foreach (var fileName in ResolveCandidates(culture))
-        {
-            if (_cache.TryGetValue(fileName, out var document) && JsonStoreCore.TryGetValue(document.RootElement, key, out var value))
-                return value;
-        }
-
-        return null;
+        if (!_options.ThrowOnMissingStore) return;
+        var fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
+        if (HasDocuments(culture) || HasDocuments(fallback)) return;
+        throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{fallback.Name}'.");
     }
 
-    private List<string> ResolveCandidates(CultureInfo culture) =>
-        JsonStoreCore.ResolveCandidates(culture, _options.FallbackCulture, _options.FileMappings);
+    private bool HasDocuments(CultureInfo culture) =>
+        _cultures.TryGetValue(culture.Name, out var state) && Volatile.Read(ref state.Documents)?.Count > 0;
 
     private string GetRequestUri(string fileName)
     {
+        fileName = ValidateHttpFileName(fileName);
+        ValidateResourcePath(_options.ResourcesPath);
         var path = _options.ResourcesPath.Trim('/');
-        var relativePath = string.IsNullOrEmpty(path) ? fileName : $"{path}/{fileName}";
-        return string.Join("/", relativePath.Split('/').Select(Uri.EscapeDataString));
+        var relative = string.IsNullOrEmpty(path) ? fileName : path + "/" + fileName;
+        return string.Join("/", relative.Replace('\\', '/').Split('/').Select(Uri.EscapeDataString));
     }
 
-    /// <summary>
-    /// Releases cached JSON documents. The supplied <see cref="HttpClient"/> remains owned by its caller.
-    /// </summary>
+    private static string ValidateHttpFileName(string fileName)
+    {
+        var normalized = JsonStoreCore.ValidateRelativeJsonPath(fileName);
+        if (normalized.IndexOf('%') >= 0)
+            throw new ArgumentException("Percent-encoded translation paths are not supported.", nameof(fileName));
+        return normalized;
+    }
+
+    private static void ValidateResourcePath(string path)
+    {
+        if (path.IndexOfAny(['?', '#', '%', '\0', ':', '\\']) >= 0 ||
+            path.Split('/').Any(static segment => segment is "." or "..") ||
+            path.StartsWith("/", StringComparison.Ordinal))
+            throw new ArgumentException("ResourcesPath must be a relative URL path.", nameof(path));
+    }
+
+    /// <summary>Releases the store's synchronization resources. The supplied HttpClient remains caller-owned.</summary>
     public void Dispose()
     {
-        foreach (var document in _cache.Values)
-            document.Dispose();
-
-        foreach (var document in _retiredDocuments)
-            document.Dispose();
-
-        _loadLock.Dispose();
+        foreach (var state in _cultures.Values)
+            state.Gate.Dispose();
     }
 }

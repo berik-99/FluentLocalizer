@@ -145,6 +145,18 @@ public sealed class JsonFileStoreTests
     }
 
     [Theory]
+    [InlineData("../outside.json")]
+    [InlineData("nested/../../outside.json")]
+    [InlineData("/outside.json")]
+    public void Rejects_mappings_outside_the_resource_directory(string mapping)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        var options = new JsonFileStoreOptions { ResourcesPath = files.Path };
+        options.FileMappings["it-IT"] = mapping;
+        Assert.Throws<ArgumentException>(() => new JsonFileStore(options));
+    }
+
+    [Theory]
     [InlineData("Home: Welcome ", "Benvenuto")]
     [InlineData("Home::Welcome", "Benvenuto")]
     [InlineData("Missing", null)]

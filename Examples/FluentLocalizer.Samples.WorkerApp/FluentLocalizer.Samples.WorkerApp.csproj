@@ -16,4 +16,8 @@
 		<ProjectReference Include="..\..\Sources\FluentLocalizer.Store.Json\FluentLocalizer.Store.Json.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<None Update="Locales\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
 </Project>

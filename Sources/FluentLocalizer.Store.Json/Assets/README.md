@@ -115,7 +115,9 @@ var message = await translator.Get("Welcome").WithCulture("it-IT").ResolveAsync(
 await store.RefreshStoreAsync();
 ```
 
-`ResolveAsync()` can also load a culture lazily. Synchronous `Resolve()` requires the requested culture to have been preloaded with `LoadAsync`. Call `RefreshStoreAsync()` to re-download the cultures already loaded by the current store.
+`ResolveAsync()` can load a culture lazily. For a key such as `common:Title`, it tries `it-IT.common.json` and `it-IT/common.json` before the combined `it-IT.json`, then applies the same order to the neutral and fallback cultures. It stops downloading once it finds the key. After that lookup, `Resolve()` can use the cached bundle synchronously. `LoadAsync()` preloads the combined culture files for synchronous lookups; namespace-only bundles need a prior asynchronous lookup. `RefreshStoreAsync()` re-downloads files already attempted by this store. Each culture is replaced only after all responses parse successfully; a failed refresh leaves its previous values available.
+
+Keep source files as ordinary JSON. Configure gzip or Brotli `Content-Encoding` on the server or CDN to reduce transfer size. On desktop/server .NET, configure the caller-owned `HttpClientHandler.AutomaticDecompression` for the desired encodings; on WebAssembly, configure compression in the web server/browser path, since that handler property is not supported in the browser. The store receives decoded JSON from the HTTP stack. The store does not refresh on a timer; call `RefreshStoreAsync()` when the application needs newer values, and use normal HTTP cache headers for the deployment's freshness policy. A preload only covers files chosen by the application and does not make the first browser visit work offline.
 
 The repository's Blazor WebAssembly sample preloads English and Italian at startup. Its `+` and `−` buttons update the plural count in component state, so the localized message changes on each click; the language selector changes the rendered locale.
 
@@ -125,9 +127,12 @@ All three store options inherit `JsonStoreSettings`:
 
 - `FallbackCulture` selects the fallback culture; defaults to `en-US`.
 - `FileMappings` maps culture names to custom JSON file names.
+- Mapping values must be relative `.json` paths inside `ResourcesPath`; traversal and absolute paths are rejected. HTTP `ResourcesPath` must be a relative URL path.
 - `ThrowOnMissingStore` makes missing translation files throw. When disabled, file and embedded-resource stores skip individual read or parse errors. The HTTP store always throws for failed requests and invalid JSON; when missing files are allowed, lookups with no value return `null`.
 
 The stores are separate classes so filesystem watching, assembly resource selection, and asynchronous HTTP loading remain explicit. They share the same fallback and JSON key resolution.
+
+Treat translation JSON as deployment data. The stores return text; applications should render it through their UI framework's normal text escaping, not insert it as raw HTML. Large or hostile JSON can still consume substantial memory and formatting time, so deployments accepting untrusted catalogs should enforce response-size budgets at the server or HTTP client boundary.
 
 ## Migration from the separate HTTP package
 
