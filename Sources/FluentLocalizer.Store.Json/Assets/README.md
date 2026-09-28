@@ -12,7 +12,7 @@ Install `FluentLocalizer.Extensions.DependencyInjection` separately when you wan
 
 ## JSON format and keys
 
-Use one JSON file per culture. Nested object properties are addressed with colon-separated keys.
+Use one JSON file per culture. Nested object properties are addressed with colon-separated keys. The filesystem store reads files on demand and retains at most 512 recently used templates in memory.
 
 ```json
 {
@@ -24,6 +24,8 @@ Use one JSON file per culture. Nested object properties are addressed with colon
 ```
 
 The `Notifications:MessageCount` key resolves to the nested value. FluentLocalizer then formats the returned template using the requested culture.
+
+`JsonFileStore` can split a large locale into namespace files such as `it-IT.common.json` or `it-IT/common.json`, then address entries with the namespace as the first key segment, for example `common:Notifications:MessageCount`. Namespace files contain the nested section directly. Existing combined culture files remain supported, with the namespace represented as an object in the JSON.
 
 By default, each store tries the requested culture file, its two-letter neutral culture file, then the configured fallback culture and its neutral file. `FileMappings` lets a culture use a custom file name. For example, map `it-IT` to `italiano.json`.
 
@@ -39,12 +41,15 @@ Configure the consuming application to copy its JSON files to the output and pub
 </ItemGroup>
 ```
 
-Relative `ResourcesPath` values use the application base directory. The store scans that directory for top-level `*.json` files. `JsonFileStore` requires filesystem access and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` in the browser.
+Relative `ResourcesPath` values use the application base directory. The store scans that directory recursively for `*.json` files. `JsonFileStore` requires filesystem access and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` in the browser.
 
 ```text
 Locales/
   en-US.json
   it-IT.json
+  it-IT.common.json
+  it/
+    common.json
 ```
 
 ```csharp

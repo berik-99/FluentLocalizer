@@ -30,6 +30,107 @@ public sealed class JsonFileStoreTests
         Assert.Equal("fallback", store.GetTemplate("Value", new CultureInfo("de-DE")));
     }
 
+    [Theory]
+    [InlineData("it-IT.common.json", "specific flat namespace")]
+    [InlineData("it-IT/common.json", "specific folder namespace")]
+    public void Resolves_specific_namespace_file_paths(string file, string expected)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write(file, "{\"Section\":{\"Key\":\"" + expected + "\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+
+        Assert.Equal(expected, store.GetTemplate("common:Section:Key", new CultureInfo("it-IT")));
+    }
+
+    [Theory]
+    [InlineData("it.common.json", "neutral flat namespace")]
+    [InlineData("it/common.json", "neutral folder namespace")]
+    public void Resolves_neutral_namespace_files(string file, string expected)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write(file, "{\"Section\":{\"Key\":\"" + expected + "\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+
+        Assert.Equal(expected, store.GetTemplate("common:Section:Key", new CultureInfo("it-IT")));
+    }
+
+    [Theory]
+    [InlineData("en-US.common.json", "fallback flat namespace")]
+    [InlineData("en-US/common.json", "fallback folder namespace")]
+    public void Resolves_fallback_namespace_files(string file, string expected)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write(file, "{\"Section\":{\"Key\":\"" + expected + "\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions
+        {
+            ResourcesPath = files.Path,
+            FallbackCulture = "en-US"
+        });
+
+        Assert.Equal(expected, store.GetTemplate("common:Section:Key", new CultureInfo("de-DE")));
+    }
+
+    [Theory]
+    [InlineData("it.json", "it-IT", "neutral combined file")]
+    [InlineData("en-US.json", "de-DE", "fallback combined file")]
+    public void Resolves_namespaces_inside_neutral_and_fallback_combined_files(string file, string culture, string expected)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write(file, "{\"common\":{\"Section\":{\"Key\":\"" + expected + "\"}}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions
+        {
+            ResourcesPath = files.Path,
+            FallbackCulture = "en-US"
+        });
+
+        Assert.Equal(expected, store.GetTemplate("common:Section:Key", new CultureInfo(culture)));
+    }
+
+    [Fact]
+    public void Prefers_specific_namespace_then_specific_combined_then_neutral_namespace()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("it-IT.common.json", "{\"Section\":{\"Key\":\"specific namespace\"}}");
+        files.Write("it-IT.json", "{\"common\":{\"Section\":{\"Key\":\"specific combined\"}}}");
+        files.Write("it/common.json", "{\"Section\":{\"Key\":\"neutral namespace\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path, ReloadOnChange = true });
+        var culture = new CultureInfo("it-IT");
+
+        Assert.Equal("specific namespace", store.GetTemplate("common:Section:Key", culture));
+
+        File.Delete(Path.Combine(files.Path, "it-IT.common.json"));
+        AssertEventually(() => Assert.Equal("specific combined", store.GetTemplate("common:Section:Key", culture)));
+
+        File.Delete(Path.Combine(files.Path, "it-IT.json"));
+        AssertEventually(() => Assert.Equal("neutral namespace", store.GetTemplate("common:Section:Key", culture)));
+    }
+
+    [Fact]
+    public void Keeps_namespaced_and_legacy_nested_keys_separate()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("it-IT.json", "{\"Home\":{\"Welcome\":\"nested\"},\"common\":{\"Home\":{\"Welcome\":\"combined namespace\"}}}");
+        files.Write("it-IT.common.json", "{\"Home\":{\"Welcome\":\"split namespace\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+        var culture = new CultureInfo("it-IT");
+
+        Assert.Equal("split namespace", store.GetTemplate("common:Home:Welcome", culture));
+        Assert.Equal("nested", store.GetTemplate("Home:Welcome", culture));
+        Assert.Null(store.GetTemplate("other:Home:Welcome", culture));
+    }
+
+    [Fact]
+    public void Supports_nested_file_mappings_for_namespaced_keys()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("mapped/italian.json", "{\"common\":{\"Section\":{\"Key\":\"mapped\"}}}");
+        var options = new JsonFileStoreOptions { ResourcesPath = files.Path };
+        options.FileMappings["it-IT"] = "mapped/italian.json";
+        using var store = new JsonFileStore(options);
+
+        Assert.Equal("mapped", store.GetTemplate("common:Section:Key", new CultureInfo("it-IT")));
+    }
+
     [Fact]
     public void Uses_file_mapping_before_standard_culture_file()
     {
@@ -118,6 +219,23 @@ public sealed class JsonFileStoreTests
         AssertEventually(() => Assert.Null(store.GetTemplate("Value", new CultureInfo("de-DE"))));
     }
 
+    [Fact]
+    public void Reload_on_change_handles_namespace_files_in_culture_folders()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        var path = files.Write("it-IT/common.json", "{\"Section\":{\"Key\":\"first\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path, ReloadOnChange = true });
+        var culture = new CultureInfo("it-IT");
+        const string key = "common:Section:Key";
+
+        Assert.Equal("first", store.GetTemplate(key, culture));
+        File.WriteAllText(path, "{\"Section\":{\"Key\":\"updated\"}}");
+        AssertEventually(() => Assert.Equal("updated", store.GetTemplate(key, culture)));
+
+        File.Delete(path);
+        AssertEventually(() => Assert.Null(store.GetTemplate(key, culture)));
+    }
+
     private static void AssertEventually(Action assertion)
     {
         var deadline = DateTime.UtcNow.AddSeconds(5);
@@ -154,6 +272,7 @@ internal sealed class TemporaryLocaleDirectory : IDisposable
     {
         Directory.CreateDirectory(Path);
         var file = System.IO.Path.Combine(Path, name);
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
         File.WriteAllText(file, json);
         return file;
     }

@@ -8,6 +8,11 @@ namespace FluentLocalizer.Store.Json;
 public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITranslationStore
 {
     private readonly ConcurrentDictionary<string, JsonElement> _documents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _templateCacheLock = new();
+    private readonly Dictionary<string, LinkedListNode<(string Key, string Value)>> _templateCache = new(StringComparer.Ordinal);
+    private readonly LinkedList<(string Key, string Value)> _templateCacheOrder = new();
+    // ponytail: cap retained strings at 512 entries; tune only if real workloads need a different bound.
+    private const int TemplateCacheCapacity = 512;
 
     /// <summary>Gets the shared fallback and file mapping settings used by this store.</summary>
     protected JsonStoreSettings Options { get; } = options;
@@ -36,14 +41,14 @@ public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITra
 
     /// <summary>Checks whether any candidate JSON document is cached for a culture.</summary>
     /// <param name="culture">The culture to check.</param>
-    protected bool HasCandidate(CultureInfo culture) =>
+    protected virtual bool HasCandidate(CultureInfo culture) =>
         ResolveCandidates(culture).Any(_documents.ContainsKey);
 
     /// <summary>Finds a template in cached JSON documents using the configured culture fallback order.</summary>
     /// <param name="key">The colon-separated JSON key.</param>
     /// <param name="culture">The requested culture.</param>
     /// <returns>The matching string value, or <see langword="null"/> when no value is found.</returns>
-    protected string? FindTemplate(string key, CultureInfo culture)
+    protected virtual string? FindTemplate(string key, CultureInfo culture)
     {
         foreach (var candidate in ResolveCandidates(culture))
         {
@@ -57,10 +62,55 @@ public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITra
     /// <inheritdoc />
     public virtual string? GetTemplate(string key, CultureInfo culture)
     {
+        var cacheKey = culture.Name + "\0" + key;
+        lock (_templateCacheLock)
+        {
+            if (_templateCache.TryGetValue(cacheKey, out var cached))
+            {
+                _templateCacheOrder.Remove(cached);
+                _templateCacheOrder.AddFirst(cached);
+                return cached.Value.Value;
+            }
+        }
+
         var result = FindTemplate(key, culture);
         if (result is null && Options.ThrowOnMissingStore && !HasCandidate(culture))
             throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{Options.FallbackCulture}'.");
+
+        if (result is not null)
+        {
+            lock (_templateCacheLock)
+            {
+                if (_templateCache.TryGetValue(cacheKey, out var existing))
+                {
+                    _templateCacheOrder.Remove(existing);
+                    _templateCacheOrder.AddFirst(existing);
+                }
+                else
+                {
+                    var node = _templateCacheOrder.AddFirst((cacheKey, result));
+                    _templateCache.Add(cacheKey, node);
+                    if (_templateCache.Count > TemplateCacheCapacity)
+                    {
+                        var oldest = _templateCacheOrder.Last!;
+                        _templateCacheOrder.RemoveLast();
+                        _templateCache.Remove(oldest.Value.Key);
+                    }
+                }
+            }
+        }
+
         return result;
+    }
+
+    /// <summary>Clears cached resolved templates after the underlying store changes.</summary>
+    protected void ClearTemplateCache()
+    {
+        lock (_templateCacheLock)
+        {
+            _templateCache.Clear();
+            _templateCacheOrder.Clear();
+        }
     }
 
     /// <inheritdoc />
@@ -95,6 +145,66 @@ internal static class JsonStoreCore
         }
 
         return candidates;
+    }
+
+    internal static List<string> ResolveFileCandidates(CultureInfo culture, string fallbackCulture, IDictionary<string, string> mappings, string key)
+    {
+        var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
+        var namespaced = segments.Length > 1 && segments[0].Length > 0 &&
+            segments[0].IndexOf('/') < 0 && segments[0].IndexOf('\\') < 0 && segments[0] is not "." and not "..";
+        var candidates = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void Add(string? path)
+        {
+            if (!string.IsNullOrWhiteSpace(path) && seen.Add(path!)) candidates.Add(path!);
+        }
+
+        void AddCulture(CultureInfo candidateCulture)
+        {
+            if (mappings.TryGetValue(candidateCulture.Name, out var mapped)) Add(mapped);
+            if (namespaced)
+            {
+                Add($"{candidateCulture.Name}.{segments[0]}.json");
+                Add(Path.Combine(candidateCulture.Name, segments[0] + ".json"));
+            }
+            Add(candidateCulture.Name + ".json");
+            if (!candidateCulture.Name.Equals(candidateCulture.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (namespaced)
+                {
+                    Add($"{candidateCulture.TwoLetterISOLanguageName}.{segments[0]}.json");
+                    Add(Path.Combine(candidateCulture.TwoLetterISOLanguageName, segments[0] + ".json"));
+                }
+                Add(candidateCulture.TwoLetterISOLanguageName + ".json");
+            }
+        }
+
+        AddCulture(culture);
+        if (!culture.Name.Equals(fallbackCulture, StringComparison.OrdinalIgnoreCase))
+            AddCulture(CultureInfo.GetCultureInfo(fallbackCulture));
+
+        return candidates;
+    }
+
+    internal static string GetLookupKey(string key)
+    {
+        var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
+        return segments.Length > 1 && segments[0].Length > 0 &&
+            segments[0].IndexOf('/') < 0 && segments[0].IndexOf('\\') < 0 && segments[0] is not "." and not ".."
+            ? string.Join(":", segments.Skip(1))
+            : key;
+    }
+
+    internal static bool IsNamespaceFile(string candidate, string key)
+    {
+        var segments = key.Split(':').Select(static segment => segment.Trim()).Where(static segment => segment.Length > 0).ToArray();
+        if (segments.Length < 2 || segments[0].IndexOf('/') >= 0 || segments[0].IndexOf('\\') >= 0 || segments[0] is "." or "..")
+            return false;
+
+        var normalized = candidate.Replace('\\', '/');
+        return normalized.EndsWith("." + segments[0] + ".json", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("/" + segments[0] + ".json", StringComparison.OrdinalIgnoreCase);
     }
 
     internal static string GetCacheKey(string resourceName)

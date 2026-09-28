@@ -123,13 +123,17 @@ Install the package:
 dotnet add package FluentLocalizer.Store.Json
 ```
 
-Use one file per culture under `Locales`:
+Use one file per culture under `Locales`. `JsonFileStore` reads files on demand and keeps a bounded cache of recently used templates. Namespace files can be flat or grouped by culture:
 
 ```text
 Locales/
-  en-US.json
-  it-IT.json
+    en-US.json
+    it-IT.json
+    it-IT.common.json
+    it/common.json
 ```
+
+`JsonFileStore` recognizes a namespaced key such as `common:Home:Welcome`: it checks the culture's `common` file before the combined culture file, then tries the neutral culture (`it`) and configured fallback. In a namespace file, omit the namespace object and keep only the nested section, for example `{ "Home": { "Welcome": "Benvenuto" } }`. The same key continues to work in `it-IT.json` when that file contains a `common` object.
 
 `JsonFileStore` reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
 
@@ -141,7 +145,7 @@ Locales/
 </ItemGroup>
 ```
 
-The store scans `ResourcesPath` (default `Locales`) for top-level `*.json` files. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
+The store scans `ResourcesPath` (default `Locales`) recursively for `*.json` files. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
 
 ```csharp
 using FluentLocalizer;
