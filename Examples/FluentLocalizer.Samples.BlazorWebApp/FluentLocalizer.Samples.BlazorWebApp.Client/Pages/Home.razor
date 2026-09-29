@@ -1,15 +1,15 @@
 @page "/"
 @using System.Globalization
-@inject ITranslator Translator
-@inject HttpJsonStore TranslationStore
+@inject ITranslator localizer
+@inject HttpJsonStore store
 
 <PageTitle>FluentLocalizer Blazor WebAssembly sample</PageTitle>
 
-<h1>@Text("Home:Title")</h1>
+<h1>@localizer.Get("Home:Title")</h1>
 
 <h2>Basic: preloaded HTTP translations</h2>
-<p>@Text("Home:Welcome", "name", "Ada")</p>
-<p aria-live="polite">@Text("Home:Unread", quantity: _quantity)</p>
+<p>@localizer.Get("Home:Welcome").WithArg("name", "Ada")</p>
+<p aria-live="polite">@localizer.Get("Home:Unread").Pluralize(_quantity)</p>
 
 <p>Unread message count: @_quantity</p>
 <p>
@@ -24,7 +24,7 @@
 </select>
 
 <h2>Advanced: fallback, lazy bundle, and refresh</h2>
-<p>@Text("Home:FallbackOnly")</p>
+<p>@localizer.Get("Home:FallbackOnly")</p>
 <p>
     <button type="button" @onclick="LoadNamespaceAsync">Load namespace asynchronously</button>
 </p>
@@ -48,24 +48,11 @@
     private string _lazyResult = string.Empty;
     private int _quantity = 1;
 
-    private string Text(string key, string? argumentName = null, object? argumentValue = null, int? quantity = null)
-    {
-        var translation = Translator.Get(key).WithCulture(_culture);
-
-        if (argumentName is not null)
-            translation.WithArg(argumentName, argumentValue);
-
-        if (quantity is not null)
-            translation.Pluralize(quantity.Value);
-
-        return translation.Resolve();
-    }
-
     private async Task RefreshTranslationsAsync()
     {
         try
         {
-            await TranslationStore.RefreshStoreAsync();
+            await store.RefreshStoreAsync();
             _refreshStatus = "Translations refreshed from the server.";
             _lazyResult = string.Empty;
         }
@@ -79,7 +66,7 @@
     {
         try
         {
-            _lazyResult = await Translator.Get("common:Status")
+            _lazyResult = await localizer.Get("common:Status")
                 .WithArg("name", "Ada")
                 .WithCulture(_culture)
                 .ResolveAsync();

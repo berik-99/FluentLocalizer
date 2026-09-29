@@ -12,10 +12,9 @@ public sealed class EmbeddedJsonStore : JsonTranslationStoreBase
         var assembly = storeOptions.ResourceAssembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var folder = storeOptions.ResourcesPath.Trim('.', '/', '\\').Replace('/', '.').Replace('\\', '.');
         var resourceNames = assembly.GetManifestResourceNames()
-            .Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-            .Where(name => string.IsNullOrEmpty(folder) ||
+            .Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && (string.IsNullOrEmpty(folder) ||
                 name.StartsWith(folder + ".", StringComparison.OrdinalIgnoreCase) ||
-                name.IndexOf("." + folder + ".", StringComparison.OrdinalIgnoreCase) >= 0);
+                name.Contains("." + folder + ".", StringComparison.OrdinalIgnoreCase)));
 
         var found = false;
         foreach (var resourceName in resourceNames)

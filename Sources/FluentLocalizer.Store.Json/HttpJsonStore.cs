@@ -25,9 +25,9 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
     {
         internal readonly string[] Files = files;
         internal readonly HashSet<string> FileSet = new(files, StringComparer.OrdinalIgnoreCase);
-        internal readonly string[] Cultures = files.Select(JsonStoreCore.CultureFromPath)
+        internal readonly string[] Cultures = [.. files.Select(JsonStoreCore.CultureFromPath)
             .Where(static name => name is not null).Select(static name => name!)
-            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     private sealed class CultureCache
@@ -47,7 +47,9 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
             ValidateHttpFileName(mapping);
     }
 
-    /// <summary>Preloads a culture and its fallback, including namespace files listed in manifest.json when present.</summary>
+    /// <summary>
+    /// Preloads a culture and its fallback, including namespace files listed in manifest.json when present.
+    /// </summary>
     public async Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
     {
         if (culture is null) throw new ArgumentNullException(nameof(culture));
@@ -57,7 +59,9 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         EnsureAvailable(culture);
     }
 
-    /// <summary>Preloads the requested cultures and fallback, including namespace files listed in manifest.json when present.</summary>
+    /// <summary>
+    /// Preloads the requested cultures and fallback, including namespace files listed in manifest.json when present.
+    /// </summary>
     public async Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)
     {
         if (cultures is null) throw new ArgumentNullException(nameof(cultures));
@@ -70,7 +74,9 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
             EnsureAvailable(CultureInfo.GetCultureInfo(name));
     }
 
-    /// <summary>Refreshes loaded cultures atomically. An invalid response leaves the previous culture snapshot available.</summary>
+    /// <summary>
+    /// Refreshes loaded cultures atomically. An invalid response leaves the previous culture snapshot available.
+    /// </summary>
     public async Task RefreshStoreAsync(CancellationToken cancellationToken = default)
     {
         await LoadManifestAsync(cancellationToken, refresh: true).ConfigureAwait(false);
@@ -123,7 +129,7 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
             var manifest = Volatile.Read(ref _manifest);
             var search = forceRefresh
                 ? state.Attempted.Union(candidates, StringComparer.OrdinalIgnoreCase)
-                    .Where(file => manifest is null || manifest.FileSet.Contains(file))
+                    .Where(file => manifest?.FileSet.Contains(file) != false)
                 : candidates;
 
             var next = forceRefresh ? new Dictionary<string, CachedFile>(StringComparer.OrdinalIgnoreCase) :
@@ -227,12 +233,14 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         finally { _manifestGate.Release(); }
     }
 
-    private IReadOnlyList<string> Candidates(CultureInfo culture, string? key)
+    private List<string> Candidates(CultureInfo culture, string? key)
     {
         var manifest = Volatile.Read(ref _manifest);
         if (manifest is null)
+        {
             return key is null ? JsonStoreCore.ResolveCandidates(culture, culture.Name, _options.FileMappings)
                 : JsonStoreCore.ResolveFileCandidates(culture, culture.Name, _options.FileMappings, key);
+        }
 
         var available = manifest.Cultures
             .Concat(_options.FileMappings.Where(mapping => manifest.FileSet.Contains(mapping.Value.Replace('\\', '/')))
@@ -241,12 +249,15 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         var selected = JsonStoreCore.SelectCulture(culture, available);
         if (selected is null) return [];
         if (key is null)
-            return manifest.Files.Where(file => JsonStoreCore.CultureFromPath(file)?.Equals(selected, StringComparison.OrdinalIgnoreCase) == true ||
-                _options.FileMappings.TryGetValue(selected, out var mapped) && file.Equals(mapped.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase))
-                .OrderBy(static file => file, StringComparer.OrdinalIgnoreCase).ToArray();
-        return JsonStoreCore.ResolveFileCandidates(CultureInfo.GetCultureInfo(selected), selected, _options.FileMappings, key)
+        {
+            return [.. manifest.Files.Where(file => JsonStoreCore.CultureFromPath(file)?.Equals(selected, StringComparison.OrdinalIgnoreCase) == true ||
+                (_options.FileMappings.TryGetValue(selected, out var mapped) && file.Equals(mapped.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(static file => file, StringComparer.OrdinalIgnoreCase)];
+        }
+
+        return [.. JsonStoreCore.ResolveFileCandidates(CultureInfo.GetCultureInfo(selected), selected, _options.FileMappings, key)
             .Select(static candidate => candidate.Replace('\\', '/'))
-            .Where(manifest.FileSet.Contains).ToArray();
+            .Where(manifest.FileSet.Contains)];
     }
 
     private static bool HasValue(JsonElement root, string fileName, string key) =>
@@ -262,10 +273,12 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         foreach (var fileName in Candidates(culture, key))
         {
             if (!documents.TryGetValue(fileName, out var root)) continue;
-            if (JsonStoreCore.TryGetValue(root.Root, key, out var value) ||
-                (JsonStoreCore.IsNamespaceFile(fileName, key) &&
-                 JsonStoreCore.TryGetValue(root.Root, JsonStoreCore.GetLookupKey(key), out value)))
+            if (JsonStoreCore.TryGetValue(root.Root, key, out var value)
+                || (JsonStoreCore.IsNamespaceFile(fileName, key)
+                && JsonStoreCore.TryGetValue(root.Root, JsonStoreCore.GetLookupKey(key), out value)))
+            {
                 return value;
+            }
         }
         return null;
     }
@@ -279,11 +292,14 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
     private void EnsureAvailable(CultureInfo culture)
     {
         var fallback = CultureInfo.GetCultureInfo(_options.FallbackCulture);
-        if (Volatile.Read(ref _manifest) is null && !culture.IsNeutralCulture &&
-            !culture.Name.Equals(fallback.Name, StringComparison.OrdinalIgnoreCase) &&
-            culture.Parent.Name.Equals(fallback.Parent.Name, StringComparison.OrdinalIgnoreCase) &&
-            !HasDocuments(culture))
+        if (Volatile.Read(ref _manifest) is null && !culture.IsNeutralCulture
+            && !culture.Name.Equals(fallback.Name, StringComparison.OrdinalIgnoreCase)
+            && culture.Parent.Name.Equals(fallback.Parent.Name, StringComparison.OrdinalIgnoreCase)
+            && !HasDocuments(culture))
+        {
             throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}'; only another regional variant is available.");
+        }
+
         if (!_options.ThrowOnMissingStore) return;
         if (HasDocuments(culture) || HasDocuments(fallback)) return;
         throw new FileNotFoundException($"No translation files were found for culture '{culture.Name}' or fallback '{fallback.Name}'.");
@@ -304,17 +320,19 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
     private static string ValidateHttpFileName(string fileName)
     {
         var normalized = JsonStoreCore.ValidateRelativeJsonPath(fileName);
-        if (normalized.IndexOf('%') >= 0)
+        if (normalized.Contains('%'))
             throw new ArgumentException("Percent-encoded translation paths are not supported.", nameof(fileName));
         return normalized;
     }
 
     private static void ValidateResourcePath(string path)
     {
-        if (path.IndexOfAny(['?', '#', '%', '\0', ':', '\\']) >= 0 ||
-            path.Split('/').Any(static segment => segment is "." or "..") ||
-            path.StartsWith("/", StringComparison.Ordinal))
+        if (path.IndexOfAny(['?', '#', '%', '\0', ':', '\\']) >= 0
+            || path.Split('/').Any(static segment => segment is "." or "..")
+            || path.StartsWith("/", StringComparison.Ordinal))
+        {
             throw new ArgumentException("ResourcesPath must be a relative URL path.", nameof(path));
+        }
     }
 
     /// <summary>Releases the store's synchronization resources. The supplied HttpClient remains caller-owned.</summary>

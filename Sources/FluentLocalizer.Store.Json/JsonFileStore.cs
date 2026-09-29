@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace FluentLocalizer.Store.Json;
@@ -78,7 +78,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     private string GetRelativePath(string path)
     {
         var root = _path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return path.Substring(root.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+        return path[root.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             .Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
     }
 
@@ -95,15 +95,15 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         var indexed = Volatile.Read(ref _indexedCultures);
         if (Options.FileMappings.Count == 0) return indexed;
         var files = Volatile.Read(ref _files);
-        return indexed
+        return [.. indexed
             .Concat(Options.FileMappings.Where(mapping => files.ContainsKey(mapping.Value.Replace('\\', '/'))).Select(static mapping => mapping.Key))
-            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     private void UpdateCultureIndex() => Volatile.Write(ref _indexedCultures,
-        Volatile.Read(ref _files).Keys.Select(JsonStoreCore.CultureFromPath)
+        [.. Volatile.Read(ref _files).Keys.Select(JsonStoreCore.CultureFromPath)
             .Where(static name => name is not null).Select(static name => name!)
-            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+            .Distinct(StringComparer.OrdinalIgnoreCase)]);
 
     /// <inheritdoc />
     protected override string? FindTemplate(string key, System.Globalization.CultureInfo culture)
@@ -115,7 +115,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         var candidates = new List<string>();
         if (selected is not null)
             candidates.AddRange(JsonStoreCore.ResolveFileCandidates(System.Globalization.CultureInfo.GetCultureInfo(selected), selected, Options.FileMappings, key));
-        if (fallback is not null && !fallback.Equals(selected, StringComparison.OrdinalIgnoreCase))
+        if (fallback?.Equals(selected, StringComparison.OrdinalIgnoreCase) == false)
             candidates.AddRange(JsonStoreCore.ResolveFileCandidates(System.Globalization.CultureInfo.GetCultureInfo(fallback), fallback, Options.FileMappings, key));
         foreach (var candidate in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -131,10 +131,12 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
                     using var document = JsonDocument.Parse(File.ReadAllText(path));
                     root = cache.GetOrAdd(candidate, document.RootElement.Clone());
                 }
-                if (JsonStoreCore.TryGetValue(root, key, out var value) ||
-                    (JsonStoreCore.IsNamespaceFile(candidate, key) &&
-                     JsonStoreCore.TryGetValue(root, JsonStoreCore.GetLookupKey(key), out value)))
+                if (JsonStoreCore.TryGetValue(root, key, out var value)
+                    || (JsonStoreCore.IsNamespaceFile(candidate, key)
+                    && JsonStoreCore.TryGetValue(root, JsonStoreCore.GetLookupKey(key), out value)))
+                {
                     return value;
+                }
             }
             catch (Exception ex) when (!Options.ThrowOnMissingStore && ex is IOException or JsonException or UnauthorizedAccessException)
             { }

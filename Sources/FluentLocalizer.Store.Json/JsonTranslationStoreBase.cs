@@ -8,7 +8,12 @@ namespace FluentLocalizer.Store.Json;
 public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITranslationStore
 {
     private readonly ConcurrentDictionary<string, JsonElement> _documents = new(StringComparer.OrdinalIgnoreCase);
+
+#if NET10_0_OR_GREATER
+    private readonly Lock _templateCacheLock = new();
+#else
     private readonly object _templateCacheLock = new();
+#endif
     private readonly Dictionary<string, LinkedListNode<(string Key, string Value)>> _templateCache = new(StringComparer.Ordinal);
     private readonly LinkedList<(string Key, string Value)> _templateCacheOrder = new();
     // ponytail: cap retained strings at 512 entries; tune only if real workloads need a different bound.
@@ -126,12 +131,12 @@ internal static class JsonStoreCore
         if (parts.Length == 2 && TryCulture(parts[0], out var folderCulture)) return folderCulture;
         if (parts.Length != 1 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return null;
 
-        var stem = parts[0].Substring(0, parts[0].Length - 5);
+        var stem = parts[0][..^5];
         if (TryCulture(stem, out var wholeCulture)) return wholeCulture;
         var separator = stem.IndexOf('.');
         if (separator < 0) return null;
-        if (TryCulture(stem.Substring(0, separator), out var prefixCulture)) return prefixCulture;
-        return TryCulture(stem.Substring(stem.LastIndexOf('.') + 1), out var suffixCulture) ? suffixCulture : null;
+        if (TryCulture(stem[..separator], out var prefixCulture)) return prefixCulture;
+        return TryCulture(stem[(stem.LastIndexOf('.') + 1)..], out var suffixCulture) ? suffixCulture : null;
     }
 
     private static bool TryCulture(string name, out string culture)
@@ -151,8 +156,10 @@ internal static class JsonStoreCore
         if (names.Contains(requested.Name, StringComparer.OrdinalIgnoreCase)) return requested.Name;
 
         if (requested.IsNeutralCulture)
+        {
             return names.Where(name => name.StartsWith(requested.Name + "-", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+        }
 
         var neutral = requested.Parent.Name;
         if (names.Contains(neutral, StringComparer.OrdinalIgnoreCase)) return neutral;
@@ -170,7 +177,9 @@ internal static class JsonStoreCore
         if (normalized.StartsWith("/", StringComparison.Ordinal) ||
             normalized.Split('/').Any(static segment => segment is "" or "." or ".." || segment.IndexOf(':') >= 0) ||
             !normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
             throw new ArgumentException("Translation paths must stay inside the configured resource path and end in .json.", nameof(path));
+        }
 
         return normalized;
     }
