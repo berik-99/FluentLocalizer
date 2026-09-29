@@ -77,7 +77,7 @@ var translator = new Translator(store);
 var greeting = translator.Get("Welcome").WithCulture("it-IT").WithArg("name", "Ada").Resolve();
 ```
 
-`ReloadOnChange` watches filesystem files and is disabled by default. A watcher error triggers a new scan and cache invalidation. The store rejects symbolic links and reparse points in the configured resource directory and matching file paths; keep the directory writable only by trusted processes because a concurrent link replacement cannot be ruled out by a path check. Dispose the store when finished to release the watcher.
+`ReloadOnChange` watches filesystem files and is disabled by default. A file event invalidates only that document; a watcher error triggers a new scan and full cache invalidation. The store rejects symbolic links and reparse points in the configured resource directory and matching file paths; keep the directory writable only by trusted processes because a concurrent link replacement cannot be ruled out by a path check. Dispose the store when finished to release the watcher.
 
 ## Embedded resources
 

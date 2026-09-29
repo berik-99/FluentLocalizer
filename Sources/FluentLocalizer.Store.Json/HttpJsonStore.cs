@@ -190,7 +190,7 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         try
         {
             EnsureAvailable(culture);
-            return FindTemplate(key, fallback);
+            return FindTemplate(key, culture) ?? FindTemplate(key, fallback);
         }
         finally { _catalogLock.ExitReadLock(); }
     }
