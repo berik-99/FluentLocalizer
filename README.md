@@ -179,7 +179,7 @@ using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 });
 ```
 
-For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` is the URL path below that base address, and the store requests `{ResourcesPath}/{culture}.json`. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. `RefreshStoreAsync()` reloads cultures already loaded by that store.
+For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` is the URL path below that base address. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. An optional `manifest.json` lists all culture and namespace files for complete preload and short-to-regional culture selection. `RefreshStoreAsync()` revalidates loaded files with HTTP cache validators when available.
 
 ```csharp
 using FluentLocalizer.Store.Json;

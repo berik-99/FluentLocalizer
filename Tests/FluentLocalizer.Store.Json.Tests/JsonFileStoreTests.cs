@@ -43,6 +43,40 @@ public sealed class JsonFileStoreTests
     }
 
     [Theory]
+    [InlineData("common.it-IT.json")]
+    [InlineData("it-IT.common.json")]
+    [InlineData("it-IT/common.json")]
+    public void Resolves_all_namespace_file_conventions(string path)
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write(path, "{\"Section\":{\"Title\":\"Titolo\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+        Assert.Equal("Titolo", store.GetTemplate("common:Section:Title", new CultureInfo("it-IT")));
+    }
+
+    [Fact]
+    public void Neutral_request_selects_first_available_specific_culture_and_does_not_cross_regions()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("en-US.json", "{\"Value\":\"US\"}");
+        files.Write("en-GB.json", "{\"Value\":\"GB\"}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+
+        Assert.Equal("GB", store.GetTemplate("Value", new CultureInfo("en")));
+        Assert.Equal("US", store.GetTemplate("Value", new CultureInfo("en-US")));
+        Assert.Throws<FileNotFoundException>(() => store.GetTemplate("Value", new CultureInfo("en-AU")));
+    }
+
+    [Fact]
+    public void Combined_file_can_live_inside_its_culture_folder()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("it-IT/it-IT.json", "{\"Home\":{\"Title\":\"Casa\"}}");
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+        Assert.Equal("Casa", store.GetTemplate("Home:Title", new CultureInfo("it")));
+    }
+
+    [Theory]
     [InlineData("it.common.json", "neutral flat namespace")]
     [InlineData("it/common.json", "neutral folder namespace")]
     public void Resolves_neutral_namespace_files(string file, string expected)
@@ -156,6 +190,20 @@ public sealed class JsonFileStoreTests
         Assert.Throws<ArgumentException>(() => new JsonFileStore(options));
     }
 
+#if NET8_0_OR_GREATER
+    [Fact]
+    public void Rejects_a_symbolic_link_to_a_json_file_outside_resources_path()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        using var outside = new TemporaryLocaleDirectory();
+        var target = outside.Write("secret.json", "{\"Value\":\"secret\"}");
+        try { File.CreateSymbolicLink(Path.Combine(files.Path, "en-US.json"), target); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or PlatformNotSupportedException or IOException) { return; }
+        using var store = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path });
+        Assert.Throws<System.Security.SecurityException>(() => store.GetTemplate("Value", new CultureInfo("en-US")));
+    }
+#endif
+
     [Theory]
     [InlineData("Home: Welcome ", "Benvenuto")]
     [InlineData("Home::Welcome", "Benvenuto")]
@@ -228,7 +276,7 @@ public sealed class JsonFileStoreTests
         AssertEventually(() => Assert.Equal("renamed", store.GetTemplate("Value", new CultureInfo("de-DE"))));
         MoveEventually(renamed, Path.Combine(files.Path, "de-AT.json"));
         AssertEventually(() => Assert.Equal("renamed", store.GetTemplate("Value", new CultureInfo("de-AT"))));
-        AssertEventually(() => Assert.Null(store.GetTemplate("Value", new CultureInfo("de-DE"))));
+        AssertEventually(() => Assert.Throws<FileNotFoundException>(() => store.GetTemplate("Value", new CultureInfo("de-DE"))));
     }
 
     [Fact]

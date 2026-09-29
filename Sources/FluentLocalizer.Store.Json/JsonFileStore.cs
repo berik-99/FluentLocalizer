@@ -13,7 +13,8 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
 {
     private readonly JsonFileStoreOptions _options;
     private readonly string _path;
-    private readonly ConcurrentDictionary<string, byte> _files = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, byte> _files = new(StringComparer.OrdinalIgnoreCase);
+    private string[] _indexedCultures = [];
     private ConcurrentDictionary<string, JsonElement> _documentCache = new(StringComparer.OrdinalIgnoreCase);
     private FileSystemWatcher? _watcher;
 
@@ -37,6 +38,8 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     {
         if (!Directory.Exists(_path))
         {
+            Interlocked.Exchange(ref _files, new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase));
+            UpdateCultureIndex();
             if (Options.ThrowOnMissingStore) throw new FileNotFoundException($"Translation directory '{_path}' was not found.");
             return;
         }
@@ -44,21 +47,29 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         var files = Directory.GetFiles(_path, "*.json", SearchOption.AllDirectories);
         if (files.Length == 0 && Options.ThrowOnMissingStore)
             throw new FileNotFoundException($"No translation JSON files were found in '{_path}'.");
+        var indexed = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in files)
         {
-            _files[GetRelativePath(path)] = 0;
+            indexed[GetRelativePath(path)] = 0;
             if (Options.ThrowOnMissingStore)
             {
+                EnsureNoLinks(path);
                 using var document = JsonDocument.Parse(File.ReadAllText(path));
             }
         }
+        Interlocked.Exchange(ref _files, indexed);
+        UpdateCultureIndex();
     }
 
     private void LoadFile(string path)
     {
         try
         {
-            if (File.Exists(path)) _files[GetRelativePath(path)] = 0;
+            if (File.Exists(path))
+            {
+                Volatile.Read(ref _files)[GetRelativePath(path)] = 0;
+                UpdateCultureIndex();
+            }
         }
         catch (Exception ex) when (!Options.ThrowOnMissingStore && ex is IOException or UnauthorizedAccessException)
         { }
@@ -74,32 +85,39 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
     /// <inheritdoc />
     protected override bool HasCandidate(System.Globalization.CultureInfo culture)
     {
-        var cultures = new List<System.Globalization.CultureInfo> { culture };
-        var fallback = System.Globalization.CultureInfo.GetCultureInfo(Options.FallbackCulture);
-        if (!culture.Name.Equals(fallback.Name, StringComparison.OrdinalIgnoreCase)) cultures.Add(fallback);
-
-        foreach (var candidateCulture in cultures)
-        {
-            var names = new[] { candidateCulture.Name, candidateCulture.TwoLetterISOLanguageName };
-            foreach (var name in names)
-            {
-                if (_files.Keys.Any(file => file.StartsWith(name + ".", StringComparison.OrdinalIgnoreCase) ||
-                                            file.StartsWith(name + "/", StringComparison.OrdinalIgnoreCase)))
-                    return true;
-            }
-
-            if (Options.FileMappings.TryGetValue(candidateCulture.Name, out var mapped) &&
-                _files.ContainsKey(mapped.Replace(Path.DirectorySeparatorChar, '/')))
-                return true;
-        }
-        return false;
+        var available = AvailableCultures();
+        return JsonStoreCore.SelectCulture(culture, available) is not null ||
+            JsonStoreCore.SelectCulture(System.Globalization.CultureInfo.GetCultureInfo(Options.FallbackCulture), available) is not null;
     }
+
+    private string[] AvailableCultures()
+    {
+        var indexed = Volatile.Read(ref _indexedCultures);
+        if (Options.FileMappings.Count == 0) return indexed;
+        var files = Volatile.Read(ref _files);
+        return indexed
+            .Concat(Options.FileMappings.Where(mapping => files.ContainsKey(mapping.Value.Replace('\\', '/'))).Select(static mapping => mapping.Key))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private void UpdateCultureIndex() => Volatile.Write(ref _indexedCultures,
+        Volatile.Read(ref _files).Keys.Select(JsonStoreCore.CultureFromPath)
+            .Where(static name => name is not null).Select(static name => name!)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
 
     /// <inheritdoc />
     protected override string? FindTemplate(string key, System.Globalization.CultureInfo culture)
     {
         var cache = Volatile.Read(ref _documentCache);
-        foreach (var candidate in JsonStoreCore.ResolveFileCandidates(culture, Options.FallbackCulture, Options.FileMappings, key))
+        var available = AvailableCultures();
+        var selected = JsonStoreCore.SelectCulture(culture, available);
+        var fallback = JsonStoreCore.SelectCulture(System.Globalization.CultureInfo.GetCultureInfo(Options.FallbackCulture), available);
+        var candidates = new List<string>();
+        if (selected is not null)
+            candidates.AddRange(JsonStoreCore.ResolveFileCandidates(System.Globalization.CultureInfo.GetCultureInfo(selected), selected, Options.FileMappings, key));
+        if (fallback is not null && !fallback.Equals(selected, StringComparison.OrdinalIgnoreCase))
+            candidates.AddRange(JsonStoreCore.ResolveFileCandidates(System.Globalization.CultureInfo.GetCultureInfo(fallback), fallback, Options.FileMappings, key));
+        foreach (var candidate in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var path = Path.GetFullPath(Path.Combine(_path, JsonStoreCore.ValidateRelativeJsonPath(candidate).Replace('/', Path.DirectorySeparatorChar)));
             if (!path.StartsWith(_path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -109,6 +127,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
                 if (!cache.TryGetValue(candidate, out var root))
                 {
                     if (!File.Exists(path)) continue;
+                    EnsureNoLinks(path);
                     using var document = JsonDocument.Parse(File.ReadAllText(path));
                     root = cache.GetOrAdd(candidate, document.RootElement.Clone());
                 }
@@ -122,6 +141,19 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         }
 
         return null;
+    }
+
+    private void EnsureNoLinks(string path)
+    {
+        var current = _path;
+        if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+            throw new System.Security.SecurityException($"Translation path '{current}' is a symbolic link or reparse point.");
+        foreach (var segment in GetRelativePath(path).Split('/'))
+        {
+            current = Path.Combine(current, segment);
+            if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+                throw new System.Security.SecurityException($"Translation path '{current}' is a symbolic link or reparse point.");
+        }
     }
 
     /// <inheritdoc />
@@ -146,8 +178,14 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         };
         _watcher.Changed += (_, e) => { LoadFile(e.FullPath); InvalidateCache(); };
         _watcher.Created += (_, e) => { LoadFile(e.FullPath); InvalidateCache(); };
-        _watcher.Renamed += (sender, e) => { _files.TryRemove(GetRelativePath(e.OldFullPath), out var ignored); LoadFile(e.FullPath); InvalidateCache(); };
-        _watcher.Deleted += (sender, e) => { _files.TryRemove(GetRelativePath(e.FullPath), out var ignored); InvalidateCache(); };
+        _watcher.Renamed += (sender, e) => { Volatile.Read(ref _files).TryRemove(GetRelativePath(e.OldFullPath), out _); LoadFile(e.FullPath); UpdateCultureIndex(); InvalidateCache(); };
+        _watcher.Deleted += (sender, e) => { Volatile.Read(ref _files).TryRemove(GetRelativePath(e.FullPath), out _); UpdateCultureIndex(); InvalidateCache(); };
+        _watcher.Error += (_, _) =>
+        {
+            try { LoadFiles(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { }
+            InvalidateCache();
+        };
         _watcher.EnableRaisingEvents = true;
     }
 

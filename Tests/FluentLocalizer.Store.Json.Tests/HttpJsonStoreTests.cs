@@ -166,6 +166,79 @@ public sealed class HttpJsonStoreTests
         Assert.DoesNotContain(handler.Requests, path => path.EndsWith("/it-IT.json", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Manifest_preloads_namespaces_and_selects_the_first_regional_variant()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath switch
+        {
+            "/locales/manifest.json" => "[\"en-US.json\",\"en-GB.json\",\"common.en-GB.json\",\"en-US/checkout.json\"]",
+            "/locales/en-US.json" => "{\"Value\":\"US\"}",
+            "/locales/en-GB.json" => "{\"Value\":\"GB\"}",
+            "/locales/common.en-GB.json" => "{\"Title\":\"Hello from GB\"}",
+            "/locales/en-US/checkout.json" => "{\"Buy\":\"Buy now\"}",
+            _ => null
+        })) { ServeManifest = true };
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+
+        await store.LoadAsync(["en", "en-US"], TestContext.Current.CancellationToken);
+        Assert.Equal("GB", store.GetTemplate("Value", new CultureInfo("en")));
+        Assert.Equal("Hello from GB", store.GetTemplate("common:Title", new CultureInfo("en")));
+        Assert.Equal("Buy now", store.GetTemplate("checkout:Buy", new CultureInfo("en-US")));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => store.GetTemplateAsync("Value", new CultureInfo("en-AU"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Without_manifest_a_missing_region_does_not_use_a_sibling_as_fallback()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath.EndsWith("/en-US.json", StringComparison.Ordinal)
+            ? "{\"Value\":\"US\"}" : null));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        await Assert.ThrowsAsync<FileNotFoundException>(() => store.GetTemplateAsync("Value", new CultureInfo("en-GB"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Manifest_rejects_paths_outside_resources_path()
+    {
+        var handler = new StubHttpHandler((_, _) => JsonResponse("[\"../secret.json\"]")) { ServeManifest = true };
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        await Assert.ThrowsAsync<ArgumentException>(() => store.GetTemplateAsync("Value", new CultureInfo("en-US"), TestContext.Current.CancellationToken));
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
+    public async Task Refresh_revalidates_etag_and_loads_new_manifest_files()
+    {
+        var includeNamespace = false;
+        var conditional = false;
+        var handler = new StubHttpHandler((request, _) =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/manifest.json", StringComparison.Ordinal))
+                return JsonResponse(includeNamespace ? "[\"en-US.json\",\"en-US.common.json\"]" : "[\"en-US.json\"]");
+            if (path.EndsWith("/en-US.common.json", StringComparison.Ordinal))
+                return JsonResponse("{\"Title\":\"New namespace\"}");
+            conditional = request.Headers.IfNoneMatch.Any(tag => tag.Tag == "\"v1\"") && request.Headers.CacheControl?.NoCache == true;
+            if (conditional)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotModified));
+            var response = CreateJsonResponse("{\"Value\":\"Original\"}");
+            response.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"v1\"");
+            return Task.FromResult(response);
+        }) { ServeManifest = true };
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        var culture = new CultureInfo("en-US");
+
+        await store.LoadAsync(culture, TestContext.Current.CancellationToken);
+        includeNamespace = true;
+        await store.RefreshStoreAsync(TestContext.Current.CancellationToken);
+        Assert.True(conditional);
+        Assert.Equal("Original", store.GetTemplate("Value", culture));
+        Assert.Equal("New namespace", store.GetTemplate("common:Title", culture));
+    }
+
     #if NET8_0_OR_GREATER
     [Fact]
     public async Task Independent_cultures_can_load_while_another_request_is_pending()
@@ -227,10 +300,13 @@ public sealed class HttpJsonStoreTests
     {
         public ConcurrentBag<string> Requests { get; } = [];
         public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> Respond { get; set; } = respond;
+        public bool ServeManifest { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add(request.RequestUri!.AbsolutePath);
+            if (!ServeManifest && request.RequestUri.AbsolutePath.EndsWith("/manifest.json", StringComparison.Ordinal))
+                return JsonResponse(null);
             return Respond(request, cancellationToken);
         }
     }

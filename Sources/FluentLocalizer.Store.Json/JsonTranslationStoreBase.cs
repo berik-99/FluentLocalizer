@@ -120,6 +120,47 @@ public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITra
 
 internal static class JsonStoreCore
 {
+    internal static string? CultureFromPath(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/');
+        if (parts.Length == 2 && TryCulture(parts[0], out var folderCulture)) return folderCulture;
+        if (parts.Length != 1 || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return null;
+
+        var stem = parts[0].Substring(0, parts[0].Length - 5);
+        if (TryCulture(stem, out var wholeCulture)) return wholeCulture;
+        var separator = stem.IndexOf('.');
+        if (separator < 0) return null;
+        if (TryCulture(stem.Substring(0, separator), out var prefixCulture)) return prefixCulture;
+        return TryCulture(stem.Substring(stem.LastIndexOf('.') + 1), out var suffixCulture) ? suffixCulture : null;
+    }
+
+    private static bool TryCulture(string name, out string culture)
+    {
+        culture = string.Empty;
+        try
+        {
+            culture = CultureInfo.GetCultureInfo(name).Name;
+            return culture.Length > 0 && culture.Equals(name, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (CultureNotFoundException) { return false; }
+    }
+
+    internal static string? SelectCulture(CultureInfo requested, IEnumerable<string> available)
+    {
+        var names = available.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if (names.Contains(requested.Name, StringComparer.OrdinalIgnoreCase)) return requested.Name;
+
+        if (requested.IsNeutralCulture)
+            return names.Where(name => name.StartsWith(requested.Name + "-", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+
+        var neutral = requested.Parent.Name;
+        if (names.Contains(neutral, StringComparer.OrdinalIgnoreCase)) return neutral;
+        if (names.Any(name => name.StartsWith(neutral + "-", StringComparison.OrdinalIgnoreCase)))
+            throw new FileNotFoundException($"No translation files were found for culture '{requested.Name}'; another regional variant exists.");
+        return null;
+    }
+
     internal static string ValidateRelativeJsonPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.IndexOfAny(['?', '#', '\0']) >= 0)
@@ -179,17 +220,21 @@ internal static class JsonStoreCore
             if (namespaced)
             {
                 Add($"{candidateCulture.Name}.{segments[0]}.json");
+                Add($"{segments[0]}.{candidateCulture.Name}.json");
                 Add(Path.Combine(candidateCulture.Name, segments[0] + ".json"));
             }
             Add(candidateCulture.Name + ".json");
+            Add(Path.Combine(candidateCulture.Name, candidateCulture.Name + ".json"));
             if (!candidateCulture.Name.Equals(candidateCulture.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase))
             {
                 if (namespaced)
                 {
                     Add($"{candidateCulture.TwoLetterISOLanguageName}.{segments[0]}.json");
+                    Add($"{segments[0]}.{candidateCulture.TwoLetterISOLanguageName}.json");
                     Add(Path.Combine(candidateCulture.TwoLetterISOLanguageName, segments[0] + ".json"));
                 }
                 Add(candidateCulture.TwoLetterISOLanguageName + ".json");
+                Add(Path.Combine(candidateCulture.TwoLetterISOLanguageName, candidateCulture.TwoLetterISOLanguageName + ".json"));
             }
         }
 
@@ -215,7 +260,8 @@ internal static class JsonStoreCore
             return false;
 
         var normalized = candidate.Replace('\\', '/');
-        return normalized.EndsWith("." + segments[0] + ".json", StringComparison.OrdinalIgnoreCase) ||
+        return normalized.StartsWith(segments[0] + ".", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("." + segments[0] + ".json", StringComparison.OrdinalIgnoreCase) ||
                normalized.EndsWith("/" + segments[0] + ".json", StringComparison.OrdinalIgnoreCase);
     }
 

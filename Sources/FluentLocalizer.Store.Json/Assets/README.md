@@ -12,7 +12,7 @@ Install `FluentLocalizer.Extensions.DependencyInjection` separately when you wan
 
 ## JSON format and keys
 
-Use one JSON file per culture. Nested object properties are addressed with colon-separated keys. The filesystem store reads files on demand and retains at most 512 recently used templates in memory.
+Keep translation files as readable JSON. Nested object properties are addressed with colon-separated keys. The filesystem store reads each needed document on demand and caches its parsed contents until a file change invalidates the cache or the store is disposed.
 
 ```json
 {
@@ -25,9 +25,18 @@ Use one JSON file per culture. Nested object properties are addressed with colon
 
 The `Notifications:MessageCount` key resolves to the nested value. FluentLocalizer then formats the returned template using the requested culture.
 
-`JsonFileStore` can split a large locale into namespace files such as `it-IT.common.json` or `it-IT/common.json`, then address entries with the namespace as the first key segment, for example `common:Notifications:MessageCount`. Namespace files contain the nested section directly. Existing combined culture files remain supported, with the namespace represented as an object in the JSON.
+`JsonFileStore` and `HttpJsonStore` support these layouts for either a short culture (`it`) or a regional culture (`it-IT`):
 
-By default, each store tries the requested culture file, its two-letter neutral culture file, then the configured fallback culture and its neutral file. `FileMappings` lets a culture use a custom file name. For example, map `it-IT` to `italiano.json`.
+| Layout | Example | Key |
+|---|---|---|
+| Combined file | `it-IT.json` or `it-IT/it-IT.json` | `Notifications:MessageCount` |
+| Culture then namespace | `it-IT.common.json` | `common:Notifications:MessageCount` |
+| Namespace then culture | `common.it-IT.json` | `common:Notifications:MessageCount` |
+| Culture folder | `it-IT/common.json` | `common:Notifications:MessageCount` |
+
+Namespace files contain the nested section directly; combined files contain the namespace as a top-level JSON object. For a key, the mapped file is tried first, followed by culture/namespace files, the combined file and then the configured fallback culture.
+
+An exact culture wins. A regional request such as `it-IT` may use a short `it` catalog. A short request such as `en` uses its own catalog when available; otherwise it selects the alphabetically first regional variant in the catalog, such as `en-GB` before `en-US`. A missing regional variant does not silently use a sibling: if only `en-US` exists, requesting `en-GB` throws `FileNotFoundException`. When no catalog for the requested language exists, the configured fallback culture is still used. `FileMappings` lets a culture use a custom relative JSON path.
 
 ## Local files
 
@@ -68,7 +77,7 @@ var translator = new Translator(store);
 var greeting = translator.Get("Welcome").WithCulture("it-IT").WithArg("name", "Ada").Resolve();
 ```
 
-`ReloadOnChange` watches filesystem files and is disabled by default. Dispose the store when finished to release the watcher.
+`ReloadOnChange` watches filesystem files and is disabled by default. A watcher error triggers a new scan and cache invalidation. The store rejects symbolic links and reparse points in the configured resource directory and matching file paths; keep the directory writable only by trusted processes because a concurrent link replacement cannot be ruled out by a path check. Dispose the store when finished to release the watcher.
 
 ## Embedded resources
 
@@ -115,7 +124,15 @@ var message = await translator.Get("Welcome").WithCulture("it-IT").ResolveAsync(
 await store.RefreshStoreAsync();
 ```
 
-`ResolveAsync()` can load a culture lazily. For a key such as `common:Title`, it tries `it-IT.common.json` and `it-IT/common.json` before the combined `it-IT.json`, then applies the same order to the neutral and fallback cultures. It stops downloading once it finds the key. After that lookup, `Resolve()` can use the cached bundle synchronously. `LoadAsync()` preloads the combined culture files for synchronous lookups; namespace-only bundles need a prior asynchronous lookup. `RefreshStoreAsync()` re-downloads files already attempted by this store. Each culture is replaced only after all responses parse successfully; a failed refresh leaves its previous values available.
+`ResolveAsync()` loads the required files on demand and stops downloading when it finds the key. To let HTTP discover available regional variants and preload every namespace for synchronous `Resolve()`, publish a `manifest.json` next to the locale files. It is a JSON array of relative paths:
+
+```json
+["en-US.json", "en-US.common.json", "checkout.en-US.json", "it-IT/common.json"]
+```
+
+The manifest is optional for existing servers. Without it, the store probes conventional filenames directly, and `LoadAsync()` preloads combined files only. In that mode a short culture cannot discover an arbitrary regional variant, and namespace-only files must first be loaded by `ResolveAsync()`. With a manifest, `LoadAsync()` preloads every listed file for the requested cultures and their fallback; subsequent synchronous lookups require no network. Manifest paths are validated and cannot escape `ResourcesPath`.
+
+`RefreshStoreAsync()` rechecks the manifest and files already loaded, including newly listed files. It sends `Cache-Control: no-cache` and, when supplied by the server, `If-None-Match`/`If-Modified-Since`; a `304 Not Modified` keeps the existing parsed document. Each culture is replaced only after its responses parse successfully. The operation is atomic per culture, not across every culture simultaneously.
 
 Keep source files as ordinary JSON. Configure gzip or Brotli `Content-Encoding` on the server or CDN to reduce transfer size. On desktop/server .NET, configure the caller-owned `HttpClientHandler.AutomaticDecompression` for the desired encodings; on WebAssembly, configure compression in the web server/browser path, since that handler property is not supported in the browser. The store receives decoded JSON from the HTTP stack. The store does not refresh on a timer; call `RefreshStoreAsync()` when the application needs newer values, and use normal HTTP cache headers for the deployment's freshness policy. A preload only covers files chosen by the application and does not make the first browser visit work offline.
 
