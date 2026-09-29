@@ -10,6 +10,9 @@ public class JsonStoreSettings
     /// <remarks>When disabled, filesystem and embedded-resource stores skip individual file read or JSON parse errors. HTTP request failures and invalid HTTP JSON always throw.</remarks>
     public bool ThrowOnMissingStore { get; set; }
 
+    /// <summary>Maximum size in bytes of one JSON document. Zero (the default) disables the limit.</summary>
+    public long MaxDocumentBytes { get; set; }
+
     /// <summary>Gets mappings from culture names to JSON file names.</summary>
     public IDictionary<string, string> FileMappings { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

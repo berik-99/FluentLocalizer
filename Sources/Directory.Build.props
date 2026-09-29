@@ -23,6 +23,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" />
 
 		<None Include="Assets\README.md"
 			  Pack="true"

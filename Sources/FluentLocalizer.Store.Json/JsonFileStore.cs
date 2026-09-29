@@ -25,6 +25,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
             throw new PlatformNotSupportedException("JsonFileStore is not supported in browser applications. Use EmbeddedJsonStore or HttpJsonStore instead.");
 
         _options = (JsonFileStoreOptions)Options;
+        if (_options.MaxDocumentBytes < 0) throw new ArgumentOutOfRangeException(nameof(options), "MaxDocumentBytes cannot be negative.");
         _path = Path.GetFullPath(Path.IsPathRooted(_options.ResourcesPath)
             ? _options.ResourcesPath
             : Path.Combine(AppContext.BaseDirectory, _options.ResourcesPath));
@@ -54,7 +55,7 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
             if (Options.ThrowOnMissingStore)
             {
                 EnsureNoLinks(path);
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
+                using var document = JsonDocument.Parse(ReadJson(path));
             }
         }
         Interlocked.Exchange(ref _files, indexed);
@@ -121,14 +122,14 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
         {
             var path = Path.GetFullPath(Path.Combine(_path, JsonStoreCore.ValidateRelativeJsonPath(candidate).Replace('/', Path.DirectorySeparatorChar)));
             if (!path.StartsWith(_path.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Translation path escapes ResourcesPath.", nameof(candidate));
+                throw new System.Security.SecurityException("Translation path escapes ResourcesPath.");
             try
             {
                 if (!cache.TryGetValue(candidate, out var root))
                 {
                     if (!File.Exists(path)) continue;
                     EnsureNoLinks(path);
-                    using var document = JsonDocument.Parse(File.ReadAllText(path));
+                    using var document = JsonDocument.Parse(ReadJson(path));
                     root = cache.GetOrAdd(candidate, document.RootElement.Clone());
                 }
                 if (JsonStoreCore.TryGetValue(root, key, out var value)
@@ -156,6 +157,25 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
             if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
                 throw new System.Security.SecurityException($"Translation path '{current}' is a symbolic link or reparse point.");
         }
+    }
+
+    private string ReadJson(string path)
+    {
+        var limit = _options.MaxDocumentBytes;
+        if (limit == 0) return File.ReadAllText(path);
+        using var stream = File.OpenRead(path);
+        if (stream.Length > limit) throw new InvalidDataException($"Translation file '{path}' exceeds MaxDocumentBytes.");
+        using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int read;
+        while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
+        {
+            if (buffer.Length + read > limit) throw new InvalidDataException($"Translation file '{path}' exceeds MaxDocumentBytes.");
+            buffer.Write(chunk, 0, read);
+        }
+        buffer.Position = 0;
+        using var reader = new StreamReader(buffer, System.Text.Encoding.UTF8, true);
+        return reader.ReadToEnd();
     }
 
     /// <inheritdoc />

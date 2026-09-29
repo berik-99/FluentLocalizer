@@ -191,7 +191,7 @@ await store.LoadAsync(["it-IT", "en-US"]);
 
 The Blazor WebAssembly sample in `Examples/FluentLocalizer.Samples.BlazorWebApp` uses `+` and `−` buttons to change the unread message count. The pluralized message rerenders immediately, and the language selector switches between the preloaded English and Italian files.
 
-All options support `FallbackCulture`, `FileMappings`, and `ThrowOnMissingStore`. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
+All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, and the optional `MaxDocumentBytes` limit. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
 
 When upgrading from the separate HTTP package, replace `FluentLocalizer.Store.Http` with `FluentLocalizer.Store.Json` and update the namespace to `FluentLocalizer.Store.Json`. The mode-based `JsonStore` and `JsonStoreOptions` API is deprecated; use a store-specific type above.
 
@@ -282,6 +282,7 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 ```text
 ├── Sources/
 │   ├── FluentLocalizer.Core/                         # Engine and core abstractions
+│   ├── FluentLocalizer.Polyfill/                     # Shared compatibility helpers
 │   ├── FluentLocalizer.Store.Json/                   # JSON storage provider
 │   └── FluentLocalizer.Extensions.DependencyInjection/ # Microsoft DI integrations
 ├── Examples/                                         # Runnable sample applications

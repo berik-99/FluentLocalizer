@@ -9,11 +9,7 @@ public abstract class JsonTranslationStoreBase(JsonStoreSettings options) : ITra
 {
     private readonly ConcurrentDictionary<string, JsonElement> _documents = new(StringComparer.OrdinalIgnoreCase);
 
-#if NET10_0_OR_GREATER
-    private readonly Lock _templateCacheLock = new();
-#else
     private readonly object _templateCacheLock = new();
-#endif
     private readonly Dictionary<string, LinkedListNode<(string Key, string Value)>> _templateCache = new(StringComparer.Ordinal);
     private readonly LinkedList<(string Key, string Value)> _templateCacheOrder = new();
     // ponytail: cap retained strings at 512 entries; tune only if real workloads need a different bound.
@@ -174,9 +170,9 @@ internal static class JsonStoreCore
             throw new ArgumentException("Translation paths must be relative JSON paths.", nameof(path));
 
         var normalized = path.Replace('\\', '/');
-        if (normalized.StartsWith("/", StringComparison.Ordinal) ||
-            normalized.Split('/').Any(static segment => segment is "" or "." or ".." || segment.IndexOf(':') >= 0) ||
-            !normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith('/')
+            || normalized.Split('/').Any(static segment => segment is "" or "." or ".." || segment.Contains(':'))
+            || !normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException("Translation paths must stay inside the configured resource path and end in .json.", nameof(path));
         }

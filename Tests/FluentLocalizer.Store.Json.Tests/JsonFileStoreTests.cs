@@ -256,6 +256,21 @@ public sealed class JsonFileStoreTests
     }
 
     [Fact]
+    public void File_document_limit_rejects_large_catalogs()
+    {
+        using var files = new TemporaryLocaleDirectory();
+        files.Write("en-US.json", "{\"Value\":\"too large\"}");
+        using var unlimited = new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = files.Path, MaxDocumentBytes = 0 });
+        Assert.Equal("too large", unlimited.GetTemplate("Value", new CultureInfo("en-US")));
+        Assert.Throws<InvalidDataException>(() => new JsonFileStore(new JsonFileStoreOptions
+        {
+            ResourcesPath = files.Path,
+            MaxDocumentBytes = 8,
+            ThrowOnMissingStore = true
+        }));
+    }
+
+    [Fact]
     public void Reload_on_change_handles_write_create_delete_and_rename()
     {
         using var files = new TemporaryLocaleDirectory();

@@ -147,6 +147,38 @@ public sealed class HttpJsonStoreTests
     }
 
     [Fact]
+    public async Task Failed_refresh_keeps_all_cultures_on_the_previous_version()
+    {
+        var changed = false;
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath switch
+        {
+            "/locales/en-US.json" => changed ? "{\"Value\":\"new English\"}" : "{\"Value\":\"old English\"}",
+            "/locales/it-IT.json" => changed ? "{invalid" : "{\"Value\":\"old Italian\"}",
+            _ => null
+        }));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        await store.LoadAsync(["en-US", "it-IT"], TestContext.Current.CancellationToken);
+
+        changed = true;
+        await Assert.ThrowsAnyAsync<System.Text.Json.JsonException>(() => store.RefreshStoreAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("old English", store.GetTemplate("Value", new CultureInfo("en-US")));
+        Assert.Equal("old Italian", store.GetTemplate("Value", new CultureInfo("it-IT")));
+    }
+
+    [Fact]
+    public async Task Http_document_limit_rejects_large_catalogs()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath.EndsWith("/en-US.json", StringComparison.Ordinal)
+            ? "{\"Value\":\"too large\"}" : null));
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client, new HttpJsonStoreOptions { MaxDocumentBytes = 8 });
+        await Assert.ThrowsAnyAsync<Exception>(() => store.LoadAsync(new CultureInfo("en-US"), TestContext.Current.CancellationToken));
+        using var unlimited = new HttpJsonStore(client, new HttpJsonStoreOptions { MaxDocumentBytes = 0 });
+        Assert.Equal("too large", await unlimited.GetTemplateAsync("Value", new CultureInfo("en-US"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task Namespaced_lazy_lookup_loads_only_the_matching_bundle()
     {
         var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath switch

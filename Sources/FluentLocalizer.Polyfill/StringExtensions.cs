@@ -1,34 +1,46 @@
-﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
+#if NETSTANDARD2_0
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 using FluentLocalizer.Polyfill;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace System;
 
-internal static class StringExtensions
+/// <summary>Provides string operations missing from .NET Standard 2.0.</summary>
+public static class StringExtensions
 {
-    public static string Replace(this string str, string oldValue, string newValue, StringComparison comparisonType)
+    /// <summary>Tests whether the string contains a character.</summary>
+    public static bool Contains(this string str, char value)
     {
-        Throw.IfNull(str, nameof(str));
-        Throw.IfNull(oldValue, nameof(oldValue));
+        Guard.IfNull(str);
+        return str.IndexOf(value) >= 0;
+    }
 
-        if (comparisonType is StringComparison.Ordinal or StringComparison.CurrentCulture or StringComparison.InvariantCulture)
+    /// <summary>Tests whether the string starts with a character.</summary>
+    public static bool StartsWith(this string str, char value)
+    {
+        Guard.IfNull(str);
+        return str.Length > 0 && str[0] == value;
+    }
+
+    /// <summary>Replaces matching text using the requested comparison mode.</summary>
+    public static string Replace(this string str, string oldValue, string? newValue, StringComparison comparisonType)
+    {
+        Guard.IfNull(str, nameof(str));
+        Guard.IfNull(oldValue, nameof(oldValue));
+
+        if (oldValue.Length == 0) throw new ArgumentException("String cannot be of zero length.", nameof(oldValue));
+        var start = 0;
+        var result = new StringBuilder(str.Length);
+        while (true)
         {
-            return str.Replace(oldValue, newValue);
+            var index = str.IndexOf(oldValue, start, comparisonType);
+            if (index < 0) break;
+            result.Append(str, start, index - start).Append(newValue);
+            start = index + oldValue.Length;
         }
-
-        var options = RegexOptions.None;
-
-        if (comparisonType is StringComparison.OrdinalIgnoreCase or StringComparison.InvariantCultureIgnoreCase)
-        {
-            options = RegexOptions.IgnoreCase;
-        }
-        else if (comparisonType is StringComparison.CurrentCultureIgnoreCase)
-        {
-            options = RegexOptions.IgnoreCase;
-        }
-
-        return Regex.Replace(str, Regex.Escape(oldValue), newValue ?? string.Empty, options);
+        return result.Append(str, start, str.Length - start).ToString();
     }
 }
 
 #pragma warning restore IDE0130 // Namespace does not match folder structure
+#endif

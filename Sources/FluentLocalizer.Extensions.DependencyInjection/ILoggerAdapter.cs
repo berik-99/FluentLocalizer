@@ -1,4 +1,4 @@
-﻿using FluentLocalizer.Logging;
+using FluentLocalizer.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace FluentLocalizer.Core;
@@ -9,7 +9,7 @@ internal sealed class ILoggerAdapter(ILogger<Translator> logger) : ITranslationL
     {
         var logLevel = Convert(level);
         if (logger.IsEnabled(logLevel))
-            logger.Log(logLevel, exception, message);
+            logger.Log(logLevel, exception, "{Message}", message);
     }
 
     private static LogLevel Convert(TranslationLogLevel level) => level switch

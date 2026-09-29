@@ -87,7 +87,7 @@ public sealed class TranslationOptions
     /// <remarks>If configured, <see cref="MissingKeyExceptionFactory"/> supplies the returned exception. Exceptions thrown by that callback are propagated.</remarks>
     public Exception CreateMissingKeyException(string key, CultureInfo? culture)
     {
-        Throw.IfNullOrWhiteSpace(key);
+        Guard.IfNullOrWhiteSpace(key);
 
         if (MissingKeyExceptionFactory is not null)
         {
@@ -113,7 +113,7 @@ public sealed class TranslationOptions
     /// <remarks>If configured, <see cref="FormattingErrorExceptionFactory"/> supplies the returned exception. Exceptions thrown by that callback are propagated.</remarks>
     public Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)
     {
-        Throw.IfNullOrWhiteSpace(key);
+        Guard.IfNullOrWhiteSpace(key);
 
         if (FormattingErrorExceptionFactory is not null)
         {

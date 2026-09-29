@@ -9,11 +9,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PolySharp" Version="1.16.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="System.Text.Json" Version="10.*" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+
 	</ItemGroup>
 
 	<ItemGroup>
@@ -21,7 +18,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+
+		<ProjectReference Include="..\FluentLocalizer.Polyfill\FluentLocalizer.Polyfill.csproj" />
+
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
+
 	</ItemGroup>
 
 </Project>
