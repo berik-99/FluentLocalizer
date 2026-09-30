@@ -196,7 +196,7 @@ All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, an
 When upgrading from the separate HTTP package, replace `FluentLocalizer.Store.Http` with `FluentLocalizer.Store.Json` and update the namespace to `FluentLocalizer.Store.Json`. The mode-based `JsonStore` and `JsonStoreOptions` API is deprecated; use a store-specific type above.
 
 ---
-## 🧩 Dependency Injection Plugin
+## 🧩 Dependency Injection Integration
 
 Integration with `IServiceCollection` for ASP.NET Core, Worker Services, or Console apps.
 
@@ -262,7 +262,9 @@ dotnet test FluentLocalizer.slnx --configuration Release
 
 ```
 
-**Run Sample Projects:**
+The library projects target `netstandard2.0`, `net8.0`, and `net10.0`; the samples target `net10.0`. The test projects also target `net472`, so run the full test matrix on Windows. On other platforms, run the `.NET 10` tests with `dotnet test FluentLocalizer.slnx --configuration Release --framework net10.0`.
+
+**Run sample projects:**
 
 See [the examples guide](Examples/README.md) for basic and advanced scenarios in the console, worker, and Blazor apps.
 
@@ -280,13 +282,20 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 ## 📂 Repository Layout
 
 ```text
+├── FluentLocalizer.slnx
+├── Assets/                                         # Repository branding assets
 ├── Sources/
-│   ├── FluentLocalizer.Core/                         # Engine and core abstractions
-│   ├── FluentLocalizer.Polyfill/                     # Shared compatibility helpers
-│   ├── FluentLocalizer.Store.Json/                   # JSON storage provider
-│   └── FluentLocalizer.Extensions.DependencyInjection/ # Microsoft DI integrations
-├── Examples/                                         # Runnable sample applications
-└── Tests/                                            # Unit & Integration tests
+│   ├── FluentLocalizer.Core/                        # Core engine and abstractions
+│   ├── FluentLocalizer.Extensions.DependencyInjection/
+│   ├── FluentLocalizer.Shared.Polyfill/             # Shared project (.shproj), not a NuGet package
+│   └── FluentLocalizer.Store.Json/                  # File, embedded-resource, and HTTP JSON stores
+├── Examples/
+│   ├── FluentLocalizer.Samples.ConsoleApp/
+│   ├── FluentLocalizer.Samples.WorkerApp/
+│   └── FluentLocalizer.Samples.BlazorWebApp/
+│       ├── FluentLocalizer.Samples.BlazorWebApp/    # ASP.NET Core host
+│       └── FluentLocalizer.Samples.BlazorWebApp.Client/ # Blazor WebAssembly client
+└── Tests/                                           # Core, JSON store, and DI test projects
 
 ```
 

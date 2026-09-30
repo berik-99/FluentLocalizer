@@ -29,6 +29,11 @@
 			  Pack="true"
 			  PackagePath="\" />
 
+		<Content Include="Assets\readme.txt"
+			 Pack="true"
+			 PackagePath="\"
+			 Condition="'$(IsPackable)' == 'true' and Exists('$(MSBuildProjectDirectory)\Assets\readme.txt')" />
+
 		<None Include="Assets\LICENSE"
 			  Pack="true"
 			  PackagePath="\" />

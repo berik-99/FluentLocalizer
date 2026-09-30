@@ -1,7 +1,13 @@
-FluentLocalizer.Store.Json provides JSON translation stores for local files, embedded assembly resources, and HTTP endpoints.
+FluentLocalizer.Store.Json
 
-Install with 'dotnet add package FluentLocalizer.Store.Json'. Use JsonFileStore with JsonFileStoreOptions for disk files, EmbeddedJsonStore with EmbeddedJsonStoreOptions for assembly resources, or HttpJsonStore with HttpJsonStoreOptions for remote files.
+Install with:
+dotnet add package FluentLocalizer.Store.Json
 
-The three stores share FallbackCulture, FileMappings, ThrowOnMissingStore, culture fallback resolution, and colon-separated nested JSON keys. JsonFileStore can watch files with ReloadOnChange. HttpJsonStore supports LoadAsync, ResolveAsync, and RefreshStoreAsync. An optional manifest.json lists culture and namespace files for complete preload and short-to-regional culture selection; refresh uses HTTP validators when available. Without a manifest, asynchronous namespaced lookups probe conventional names and LoadAsync preloads combined culture files. HTTP request failures and invalid HTTP JSON always throw, regardless of ThrowOnMissingStore. File mappings must be relative JSON paths inside ResourcesPath.
+Choose a store based on where the JSON files live:
+- JsonFileStore reads files from the application filesystem. Copy Locales/**/*.json to the output and publish directories.
+- EmbeddedJsonStore reads JSON resources embedded in an assembly.
+- HttpJsonStore downloads JSON from a server and supports asynchronous loading and refresh.
 
-See the package README for setup, examples, and configuration details.
+All stores support culture fallback, nested colon-separated keys, and file mappings. JsonFileStore can watch files when ReloadOnChange is enabled. HttpJsonStore can preload a manifest.json for complete synchronous lookup.
+
+See README.md in this package for setup examples and store-specific behavior.

@@ -6,12 +6,20 @@
       "path": ".gitignore"
     },
     {
+      "name": "ci.yml",
+      "path": ".github\\workflows\\ci.yml"
+    },
+    {
       "name": "Directory.Build.props",
       "path": "Sources\\Directory.Build.props"
     },
     {
       "name": "README.md",
       "path": "README.md"
+    },
+    {
+      "name": "release.yml",
+      "path": ".github\\workflows\\release.yml"
     }
   ]
 }

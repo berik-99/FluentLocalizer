@@ -1,26 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<PackageId>FluentLocalizer.Store.Json</PackageId>
 		<Product>FluentLocalizer.Store.Json</Product>
-		<Version>0.0.1</Version>
+		<Version>1.0.0</Version>
 		<Description>JSON translation stores for FluentLocalizer with culture-aware loading from files, embedded resources, or HTTP.</Description>
 		<PackageTags>json;http;localization;translation;store;messageformat;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="10.*" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-
+		<PackageReference Include="System.Text.Json" Version="10.0.12" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="Assets\readme.txt" Pack="true" PackagePath="readme.txt" />
-	</ItemGroup>
-
-	<ItemGroup>
-
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
-
 	</ItemGroup>
 
 	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
