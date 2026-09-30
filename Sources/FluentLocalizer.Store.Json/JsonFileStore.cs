@@ -138,7 +138,10 @@ public sealed class JsonFileStore : JsonTranslationStoreBase, IDisposable
                 JsonElement root;
                 lock (slot)
                 {
-                    if (slot.Root is JsonElement cached) root = cached;
+                    if (slot.Root is JsonElement cached)
+                    {
+                        root = cached;
+                    }
                     else
                     {
                         if (!File.Exists(path)) continue;

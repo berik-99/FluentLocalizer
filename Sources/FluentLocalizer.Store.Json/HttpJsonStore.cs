@@ -1,9 +1,9 @@
+using FluentLocalizer.Polyfill;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using FluentLocalizer.Polyfill;
 
 namespace FluentLocalizer.Store.Json;
 
@@ -267,7 +267,11 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
                     response.EnsureSuccessStatusCode();
                     if (_options.MaxDocumentBytes > 0)
                         await response.Content.LoadIntoBufferAsync(_options.MaxDocumentBytes).ConfigureAwait(false);
+#if NET8_0_OR_GREATER
+                    await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#else
                     using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#endif
                     using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
                     next[fileName] = new CachedFile(document.RootElement.Clone(), response.Headers.ETag?.ToString(), response.Content.Headers.LastModified);
                     if (!forceRefresh && key is not null && HasValue(next[fileName].Root, fileName, key))
@@ -318,7 +322,11 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
                 response.EnsureSuccessStatusCode();
                 if (_options.MaxDocumentBytes > 0)
                     await response.Content.LoadIntoBufferAsync(_options.MaxDocumentBytes).ConfigureAwait(false);
+#if NET8_0_OR_GREATER
+                await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#else
                 using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#endif
                 using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (document.RootElement.ValueKind != JsonValueKind.Array)
                     throw new JsonException("manifest.json must contain an array of relative JSON paths.");
