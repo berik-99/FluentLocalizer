@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<PackageId>FluentLocalizer.Extensions.DependencyInjection</PackageId>
 		<Product>FluentLocalizer.Extensions.DependencyInjection</Product>
 		<RootNamespace>FluentLocalizer.Core</RootNamespace>
-		<Version>1.0.0</Version>
+		<Version>0.1.0-alpha</Version>
 		<Description>
 			Dependency injection extensions for registering FluentLocalizer translators, stores, and logging services in .NET applications.
 		</Description>
