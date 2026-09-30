@@ -1,12 +1,11 @@
 #if NETSTANDARD2_0
-#pragma warning disable IDE0130 // Namespace does not match folder structure
 using FluentLocalizer.Polyfill;
 using System.Text;
 
 namespace System;
 
 /// <summary>Provides string operations missing from .NET Standard 2.0.</summary>
-public static class StringExtensions
+internal static class StringExtensions
 {
     /// <summary>Tests whether the string contains a character.</summary>
     public static bool Contains(this string str, char value)
@@ -41,6 +40,4 @@ public static class StringExtensions
         return result.Append(str, start, str.Length - start).ToString();
     }
 }
-
-#pragma warning restore IDE0130 // Namespace does not match folder structure
 #endif

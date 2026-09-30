@@ -10,7 +10,7 @@
   <Folder Name="/Sources/">
     <Project Path="Sources/FluentLocalizer.Core/FluentLocalizer.Core.csproj" />
     <Project Path="Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizer.Extensions.DependencyInjection.csproj" />
-    <Project Path="Sources/FluentLocalizer.Polyfill/FluentLocalizer.Polyfill.csproj" />
+    <Project Path="Sources/FluentLocalizer.Shared.Polyfill/FluentLocalizer.Shared.Polyfill.shproj" Id="f50de59b-fabb-44f6-9184-3fd3a7a5d083" />
   </Folder>
   <Folder Name="/Sources/Stores/">
     <Project Path="Sources/FluentLocalizer.Store.Json/FluentLocalizer.Store.Json.csproj" />

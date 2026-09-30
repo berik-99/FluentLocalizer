@@ -16,15 +16,12 @@
 		<PackageReference Include="MessageFormat" Version="8.0.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-
-		<ProjectReference Include="..\FluentLocalizer.Polyfill\FluentLocalizer.Polyfill.csproj" />
-
-	</ItemGroup>
-
 
 	<ItemGroup>
 		<Folder Include="Enums\" FolderSameAsRootNamespace="false" />
 	</ItemGroup>
+
+
+	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
 
 </Project>

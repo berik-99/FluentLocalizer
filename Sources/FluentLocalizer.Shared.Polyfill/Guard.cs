@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace FluentLocalizer.Polyfill;
 
 /// <summary>Provides argument guards on every supported target framework.</summary>
-public static class Guard
+internal static class Guard
 {
     /// <summary>Throws when <paramref name="value"/> is null.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

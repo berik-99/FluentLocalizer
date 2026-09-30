@@ -19,10 +19,10 @@
 
 	<ItemGroup>
 
-		<ProjectReference Include="..\FluentLocalizer.Polyfill\FluentLocalizer.Polyfill.csproj" />
-
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
 
 	</ItemGroup>
+
+	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
 
 </Project>

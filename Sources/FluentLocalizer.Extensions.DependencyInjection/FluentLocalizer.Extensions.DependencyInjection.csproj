@@ -13,7 +13,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\FluentLocalizer.Polyfill\FluentLocalizer.Polyfill.csproj" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
 
@@ -24,5 +23,7 @@
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
 
 	</ItemGroup>
+
+	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
 
 </Project>

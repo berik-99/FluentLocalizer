@@ -22,7 +22,7 @@
 		<PackageOutputPath>bin\$(Configuration)\Packages\</PackageOutputPath>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.shproj'">
 		<PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" />
 
 		<None Include="Assets\README.md"
