@@ -3,6 +3,7 @@ using FluentLocalizer.Store.Json;
 
 namespace FluentLocalizer.Test;
 
+#pragma warning disable CS0618 // The compatibility API is retained as part of the package surface.
 public class JsonTranslationStoreTests
 {
     [Fact]
@@ -231,7 +232,7 @@ public class JsonTranslationStoreTests
             {
                 ResourcesPath = temporaryDirectory,
                 SearchMode = JsonStoreLocation.FileSystem,
-                ThrowOnError = true
+                ThrowOnMissingStore = true
             };
 
             Assert.Throws<FileNotFoundException>(() => new JsonStore(options));
@@ -256,7 +257,7 @@ public class JsonTranslationStoreTests
             {
                 ResourcesPath = temporaryDirectory,
                 SearchMode = JsonStoreLocation.FileSystem,
-                ThrowOnError = true
+                ThrowOnMissingStore = true
             };
 
             Assert.ThrowsAny<Exception>(() => new JsonStore(options));
@@ -282,3 +283,4 @@ public class JsonTranslationStoreTests
         }
     }
 }
+#pragma warning restore CS0618

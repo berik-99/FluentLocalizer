@@ -1,11 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
-namespace FluentLocalizer.Core.Polyfill;
+namespace FluentLocalizer.Polyfill;
 
-internal static class Throw
+/// <summary>Provides argument guards on every supported target framework.</summary>
+internal static class Guard
 {
+    /// <summary>Throws when <paramref name="value"/> is null.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IfNull(object value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    public static void IfNull(object? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
 #if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(value, paramName);
@@ -14,8 +16,9 @@ internal static class Throw
 #endif
     }
 
+    /// <summary>Throws when <paramref name="value"/> is null or empty.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IfNullOrEmpty(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    public static void IfNullOrEmpty(string? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrEmpty(value, paramName);
@@ -24,8 +27,9 @@ internal static class Throw
 #endif
     }
 
+    /// <summary>Throws when <paramref name="value"/> is null or white space.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IfNullOrWhiteSpace(string value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    public static void IfNullOrWhiteSpace(string? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(value, paramName);

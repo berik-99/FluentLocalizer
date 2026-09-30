@@ -39,14 +39,14 @@ Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string
 Install the core package:
 
 ```bash
-dotnet add package FluentLocalizer.Core
+dotnet add package FluentLocalizer
 
 ```
 
 Create a quick in-memory store and resolve your first message:
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using System.Globalization;
 
 public sealed class InMemoryStore : ITranslationStore
@@ -109,42 +109,59 @@ var options = new TranslationOptions
 
 ---
 
-## 📄 JSON Store Plugin
+## 📄 JSON Stores
 
-Load translations directly from JSON files with hot-reloading and fallback support.
+The `FluentLocalizer.Store.Json` package provides three stores that share culture fallback, file mappings, JSON parsing, and nested-key lookup:
+
+- `JsonFileStore` reads files from disk and can reload them when they change.
+- `EmbeddedJsonStore` reads JSON resources from an assembly.
+- `HttpJsonStore` downloads files asynchronously and caches them in memory.
+
+Install the package:
 
 ```bash
 dotnet add package FluentLocalizer.Store.Json
-
 ```
 
-### Folder Structure
+Use one file per culture under `Locales`. `JsonFileStore` reads files on demand and keeps a bounded cache of recently used templates. Namespace files can be flat or grouped by culture:
 
 ```text
 Locales/
-  ├── en-US.json
-  └── it-IT.json
-
+    en-US.json
+    it-IT.json
+    it-IT.common.json
+    it/common.json
 ```
 
-Place one JSON file per culture in the `Locales` folder. A simple example is shown below:
+`JsonFileStore` recognizes a namespaced key such as `common:Home:Welcome`: it checks the culture's `common` file before the combined culture file, then tries the neutral culture (`it`) and configured fallback. In a namespace file, omit the namespace object and keep only the nested section, for example `{ "Home": { "Welcome": "Benvenuto" } }`. The same key continues to work in `it-IT.json` when that file contains a `common` object.
 
-**Example `en-US.json`:**
+`JsonFileStore` reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
 
-```json
+```xml
+<ItemGroup>
+  <Content Include="Locales\**\*.json"
+           CopyToOutputDirectory="PreserveNewest"
+           CopyToPublishDirectory="PreserveNewest" />
+</ItemGroup>
+```
+
+The store scans `ResourcesPath` (default `Locales`) recursively for `*.json` files. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
+
+```csharp
+using FluentLocalizer;
+using FluentLocalizer.Store.Json;
+
+using var store = new JsonFileStore(new JsonFileStoreOptions
 {
-  "Welcome": "Hello {name}!",
-  "Notifications": {
-    "MessageCount": "You have {count, plural, =0 {no messages} one {# message} other {# messages}}."
-  }
-}
+    ResourcesPath = "Locales",
+    FallbackCulture = "en-US",
+    ThrowOnMissingStore = true
+});
+var translator = new Translator(store);
+var greeting = translator.Get("Welcome").WithCulture("it-IT").WithArg("name", "Ada").Resolve();
 ```
 
-### Locales folder and output inclusion
-
-By default, the JSON store package includes every `.json` file under `Locales` in the build output, so the translations are copied next to your application binaries when you build. That makes `JsonStoreLocation.FileSystem` the simplest option for most projects.
-
-If you prefer to bundle translations as embedded resources instead, switch the project file to include them as embedded content and configure the store to read embedded files:
+For embedded resources, include the locale files as `EmbeddedResource` and create an `EmbeddedJsonStore`:
 
 ```xml
 <ItemGroup>
@@ -152,47 +169,34 @@ If you prefer to bundle translations as embedded resources instead, switch the p
 </ItemGroup>
 ```
 
+The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and converts the final resource name to the culture filename. Set `ResourceAssembly` if the files are embedded in a different assembly.
+
 ```csharp
-var options = new JsonStoreOptions
+using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
-    ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.EmbeddedResources,
     ResourceAssembly = typeof(Program).Assembly,
-    ThrowOnError = true
-};
+    ResourcesPath = "Locales"
+});
 ```
 
-Use `FileSystem` when you want files on disk, and `EmbeddedResources` when you want translations baked into the assembly.
-
-### Usage
+For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` is the URL path below that base address. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. An optional `manifest.json` lists all culture and namespace files for complete preload and short-to-regional culture selection. `RefreshStoreAsync()` revalidates loaded files with HTTP cache validators when available.
 
 ```csharp
-using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 
-var options = new JsonStoreOptions
-{
-    ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.FileSystem,
-    FallbackCulture = "en-US",
-    ThrowOnError = true
-};
-
-using var store = new JsonStore(options);
-var translator = new Translator(store);
-
-var message = translator
-    .Get("Welcome")
-    .WithArg("name", "Ada")
-    .Resolve();
-
-Console.WriteLine(message); // Output: Ciao Ada!
-
+var client = new HttpClient { BaseAddress = new Uri("https://example.com/") };
+using var store = new HttpJsonStore(client, new HttpJsonStoreOptions { ResourcesPath = "locales" });
+await store.LoadAsync(["it-IT", "en-US"]);
 ```
 
----
+The Blazor WebAssembly sample in `Examples/FluentLocalizer.Samples.BlazorWebApp` uses `+` and `−` buttons to change the unread message count. The pluralized message rerenders immediately, and the language selector switches between the preloaded English and Italian files.
 
-## 🧩 Dependency Injection Plugin
+All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, and the optional `MaxDocumentBytes` limit. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
+
+When upgrading from the separate HTTP package, replace `FluentLocalizer.Store.Http` with `FluentLocalizer.Store.Json` and update the namespace to `FluentLocalizer.Store.Json`. The mode-based `JsonStore` and `JsonStoreOptions` API is deprecated; use a store-specific type above.
+
+---
+## 🧩 Dependency Injection Integration
 
 Integration with `IServiceCollection` for ASP.NET Core, Worker Services, or Console apps.
 
@@ -204,7 +208,7 @@ dotnet add package FluentLocalizer.Extensions.DependencyInjection
 ### Registration & Worker Example
 
 ```csharp
-using FluentLocalizer.Core;
+using FluentLocalizer;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -216,12 +220,11 @@ builder.Services.AddFluentLocalizer(options =>
     options.MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue;
     options.MissingKeyFallbackValue = "[{key}]";
 })
-.WithStore(new JsonStore(new JsonStoreOptions
+.WithStore(new JsonFileStore(new JsonFileStoreOptions
 {
     ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.FileSystem,
     FallbackCulture = "en-US",
-    ThrowOnError = true
+    ThrowOnMissingStore = true
 }))
 .WithLogger();
 
@@ -229,17 +232,17 @@ builder.Services.AddHostedService<NotificationWorker>();
 
 await builder.Build().RunAsync();
 
-public sealed class NotificationWorker(ITranslationService translator) : BackgroundService
+public sealed class NotificationWorker(ITranslator translator) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var message = translator
             .Get("Notifications:MessageCount")
-            .WithCulture("it-IT")
-            .WithArg("quantity", 3)
+            .WithCulture("en-US")
+            .Pluralize(3)
             .Resolve();
 
-        Console.WriteLine(message); // Output: Hai 3 messaggi non letti.
+        Console.WriteLine(message); // Output: You have 3 messages.
         return Task.CompletedTask;
     }
 }
@@ -259,7 +262,11 @@ dotnet test FluentLocalizer.slnx --configuration Release
 
 ```
 
-**Run Sample Projects:**
+The library projects target `netstandard2.0`, `net8.0`, and `net10.0`; the samples target `net10.0`. The test projects also target `net472`, so run the full test matrix on Windows. On other platforms, run the `.NET 10` tests with `dotnet test FluentLocalizer.slnx --configuration Release --framework net10.0`.
+
+**Run sample projects:**
+
+See [the examples guide](Examples/README.md) for basic and advanced scenarios in the console, worker, and Blazor apps.
 
 ```bash
 # Console Sample
@@ -275,12 +282,20 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 ## 📂 Repository Layout
 
 ```text
+├── FluentLocalizer.slnx
+├── Assets/                                         # Repository branding assets
 ├── Sources/
-│   ├── FluentLocalizer.Core/                         # Engine and core abstractions
-│   ├── FluentLocalizer.Store.Json/                   # JSON storage provider
-│   └── FluentLocalizer.Extensions.DependencyInjection/ # Microsoft DI integrations
-├── Examples/                                         # Runnable sample applications
-└── Tests/                                            # Unit & Integration tests
+│   ├── FluentLocalizer.Core/                        # Core engine and abstractions
+│   ├── FluentLocalizer.Extensions.DependencyInjection/
+│   ├── FluentLocalizer.Shared.Polyfill/             # Shared project (.shproj), not a NuGet package
+│   └── FluentLocalizer.Store.Json/                  # File, embedded-resource, and HTTP JSON stores
+├── Examples/
+│   ├── FluentLocalizer.Samples.ConsoleApp/
+│   ├── FluentLocalizer.Samples.WorkerApp/
+│   └── FluentLocalizer.Samples.BlazorWebApp/
+│       ├── FluentLocalizer.Samples.BlazorWebApp/    # ASP.NET Core host
+│       └── FluentLocalizer.Samples.BlazorWebApp.Client/ # Blazor WebAssembly client
+└── Tests/                                           # Core, JSON store, and DI test projects
 
 ```
 
@@ -290,8 +305,8 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 
-- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/your-username/FluentLocalizer/issues).
-- 🐛 **Found a bug?** Submit an [Issue](https://github.com/your-username/FluentLocalizer/issues) with steps to reproduce it.
+- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/berik-99/FluentLocalizer/issues).
+- 🐛 **Found a bug?** Submit an [Issue](https://github.com/berik-99/FluentLocalizer/issues) with steps to reproduce it.
 - 🔧 **Want to contribute code?** Fork the repo and submit a **Pull Request**. New storage backends (e.g., Redis, Database, YAML) or engine improvements are warmly welcome!
 
 > [!NOTE]

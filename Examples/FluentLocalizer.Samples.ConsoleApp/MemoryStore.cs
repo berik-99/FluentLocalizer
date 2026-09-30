@@ -1,4 +1,3 @@
-using FluentLocalizer.Core;
 using System.Globalization;
 
 namespace FluentLocalizer.Samples.ConsoleApp;
@@ -7,6 +6,7 @@ class MemoryStore : ITranslationStore
 {
     private readonly Dictionary<string, string> _storeIT = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["Hello"] = "Ciao!",
         ["Welcome"] = "{gender, select, male {Benvenuto} female {Benvenuta} other {Benvenuto/a}}, {name}! Hai {quantity, plural, one {un solo messaggio} other {# messaggi}}.",
         ["Notifications:MessageCount"] = "Notifica per {name}: hai {quantity, plural, one {un solo messaggio} other {# messaggi}}.",
         ["BrokenTemplate"] = "Messaggio non valido {name"
@@ -14,6 +14,7 @@ class MemoryStore : ITranslationStore
 
     private readonly Dictionary<string, string> _storeEN = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["Hello"] = "Hello!",
         ["Welcome"] = "Welcome, {name}! You have {quantity, plural, one {only one message} other {# messages}}.",
         ["Notifications:MessageCount"] = "Notification for {name}: you have {quantity, plural, one {one message} other {# messages}}.",
         ["BrokenTemplate"] = "Broken template {name"
@@ -30,11 +31,12 @@ class MemoryStore : ITranslationStore
             _ => _storeEN
         };
 
-        return templates.TryGetValue(key, out var template)
-            ? template
-            : throw new KeyNotFoundException($"No template found for key '{key}'.");
+        return templates.TryGetValue(key, out var template) ? template : null;
     }
 
     public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)
-        => Task.FromResult(GetTemplate(key, culture));
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(GetTemplate(key, culture));
+    }
 }

@@ -3,19 +3,19 @@
 	<PropertyGroup>
 		<PackageId>FluentLocalizer</PackageId>
 		<Product>FluentLocalizer</Product>
-		<Version>0.0.1</Version>
+		<RootNamespace>FluentLocalizer</RootNamespace>
+		<Version>1.0.0</Version>
 		<Description>
 			Core library for building culture-aware translation pipelines in .NET with fluent APIs, MessageFormat-style interpolation, and configurable fallback and error handling.
 		</Description>
 		<PackageTags>localization;translation;messageformat;culture;fluent;dotnet</PackageTags>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="MessageFormat" Version="8.0.0" />
-		<PackageReference Include="PolySharp" Version="1.16.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 	</ItemGroup>
+
+	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
 
 </Project>

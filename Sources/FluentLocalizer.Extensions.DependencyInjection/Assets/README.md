@@ -8,9 +8,16 @@ FluentLocalizer.Extensions.DependencyInjection provides ASP.NET Core and generic
 dotnet add package FluentLocalizer.Extensions.DependencyInjection
 ```
 
+The JSON store examples also require `FluentLocalizer.Store.Json`:
+
+```bash
+dotnet add package FluentLocalizer.Store.Json
+```
+
 ## Basic registration
 
 ```csharp
+using FluentLocalizer;
 using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +29,7 @@ services.AddFluentLocalizer(options =>
     options.MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue;
     options.MissingKeyFallbackValue = "[{key}]";
 })
-    .WithStore(new JsonStore(new JsonStoreOptions
+    .WithStore(new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
         FallbackCulture = "en-US"
@@ -43,6 +50,7 @@ var message = translator.Get("Welcome")
 If you are building a hosted service, worker, or background processor, you can register the translator once and inject it into your service class.
 
 ```csharp
+using FluentLocalizer;
 using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,12 +59,11 @@ using Microsoft.Extensions.Hosting;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddFluentLocalizer()
-    .WithStore(new JsonStore(new JsonStoreOptions
+    .WithStore(new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
-        SearchMode = JsonStoreLocation.FileSystem,
         FallbackCulture = "en-US",
-        ThrowOnError = true
+        ThrowOnMissingStore = true
     }));
 
 builder.Services.AddHostedService<NotificationWorker>();
@@ -90,13 +97,14 @@ This pattern is useful when the translator is reused across several services and
 
 This makes the translator available throughout your app via dependency injection.
 
+
 ## Using a custom store factory
 
 If you prefer to resolve the store from the service provider, you can register it lazily:
 
 ```csharp
 services.AddFluentLocalizer()
-    .WithStore(sp => new JsonStore(new JsonStoreOptions
+    .WithStore(sp => new JsonFileStore(new JsonFileStoreOptions
     {
         ResourcesPath = "Locales",
         FallbackCulture = "en-US"
@@ -130,4 +138,4 @@ In practice, this means you can keep using your existing logging pipeline and be
 
 ## Notes
 
-This package is intentionally lightweight. It focuses on wiring FluentLocalizer into dependency injection containers so the rest of the translation pipeline remains in `FluentLocalizer.Core` and your chosen store implementation.
+This package is intentionally lightweight. It wires FluentLocalizer and your chosen store implementation into dependency injection containers.

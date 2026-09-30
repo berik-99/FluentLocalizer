@@ -22,11 +22,17 @@
 		<PackageOutputPath>bin\$(Configuration)\Packages\</PackageOutputPath>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.shproj'">
+		<PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" />
 
 		<None Include="Assets\README.md"
 			  Pack="true"
 			  PackagePath="\" />
+
+		<Content Include="Assets\readme.txt"
+			 Pack="true"
+			 PackagePath="\"
+			 Condition="'$(IsPackable)' == 'true' and Exists('$(MSBuildProjectDirectory)\Assets\readme.txt')" />
 
 		<None Include="Assets\LICENSE"
 			  Pack="true"

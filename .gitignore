@@ -490,3 +490,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+#Project specific
+test-ui/

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Build, test, and pack
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore FluentLocalizer.slnx
+
+      - name: Build
+        run: dotnet build FluentLocalizer.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test FluentLocalizer.slnx --configuration Release --no-build --no-restore
+
+      - name: Pack library projects
+        shell: pwsh
+        env:
+          CI_PACKAGE_VERSION: 0.0.0-ci.${{ github.run_number }}
+        run: |
+          $packageDirectory = Join-Path $PWD 'artifacts/packages'
+          New-Item -ItemType Directory -Force -Path $packageDirectory | Out-Null
+
+          $projects = foreach ($project in Get-ChildItem -Path 'Sources' -Recurse -Filter '*.csproj') {
+            $isPackable = dotnet msbuild $project.FullName -getProperty:IsPackable
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if (($isPackable | Out-String).Trim() -eq 'true') { $project }
+          }
+
+          if (-not $projects) {
+            throw 'No packable library projects were found under Sources.'
+          }
+
+          foreach ($project in $projects) {
+            dotnet pack $project.FullName --configuration Release --no-build --no-restore `
+              -p:PackageVersion=$env:CI_PACKAGE_VERSION --output $packageDirectory
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-ci-${{ github.run_number }}
+          path: artifacts/packages/*
+          if-no-files-found: error

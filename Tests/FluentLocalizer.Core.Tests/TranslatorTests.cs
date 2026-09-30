@@ -1,7 +1,6 @@
+using FluentLocalizer.Logging;
 using System.Collections.Concurrent;
 using System.Globalization;
-using FluentLocalizer.Core;
-using FluentLocalizer.Core.Logging;
 
 namespace FluentLocalizer.Test;
 

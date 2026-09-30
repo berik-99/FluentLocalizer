@@ -1,0 +1,123 @@
+@page "/"
+@using System.Globalization
+@using FluentLocalizer.Store.Json
+@inject HttpClient Http
+@inject ITranslator localizer
+@inject HttpJsonStore store
+
+<PageTitle>FluentLocalizer Blazor WebAssembly sample</PageTitle>
+
+<h1>@localizer.Get("Home:Title").WithCulture(_culture)</h1>
+
+<h2>Basic: preloaded HTTP translations</h2>
+<p>@localizer.Get("Home:Welcome").WithArg("name", "Ada").WithCulture(_culture)</p>
+<p aria-live="polite">@localizer.Get("Home:Unread").Pluralize(_quantity).WithCulture(_culture)</p>
+
+<p>Unread message count: @_quantity</p>
+<p>
+    <button type="button" aria-label="Decrease unread message count" @onclick="DecreaseCount" disabled="@(_quantity == 0)">−</button>
+    <button type="button" aria-label="Increase unread message count" @onclick="IncreaseCount">+</button>
+</p>
+
+<label for="culture">Language</label>
+<select id="culture" @bind="_culture" @bind:after="ClearLazyResult">
+    <option value="en-US">English</option>
+    <option value="it-IT">Italiano</option>
+</select>
+
+<h2>Advanced: fallback, lazy bundle, and refresh</h2>
+<p>@localizer.Get("Home:FallbackOnly").WithCulture(_culture)</p>
+<p>
+    <button type="button" @onclick="LoadNamespaceAsync">Load namespace asynchronously</button>
+</p>
+@if (!string.IsNullOrEmpty(_lazyResult))
+{
+    <p role="status">@_lazyResult</p>
+}
+
+<p>
+    <button type="button" @onclick="RefreshTranslationsAsync">Refresh translations</button>
+</p>
+
+@if (!string.IsNullOrEmpty(_refreshStatus))
+{
+    <p role="status">@_refreshStatus</p>
+}
+
+<h2>Manifest: automatic locale selection</h2>
+<p>The manifest lets the HTTP store find a locale file whose name differs from the requested culture.</p>
+<p>
+    <button type="button" @onclick="ResolveShortLocaleAsync">Request en-US from en.json</button>
+    <button type="button" @onclick="ResolveRegionalLocaleAsync">Request en from en-US.json</button>
+</p>
+@if (!string.IsNullOrEmpty(_localeResolutionResult))
+{
+    <p role="status">@_localeResolutionResult</p>
+}
+
+@code {
+    private string _culture = GetInitialCulture();
+    private string _refreshStatus = string.Empty;
+    private string _lazyResult = string.Empty;
+    private string _localeResolutionResult = string.Empty;
+    private int _quantity = 1;
+
+    private async Task ResolveShortLocaleAsync() =>
+        _localeResolutionResult = await ResolveFromCatalogAsync("locales/locale-resolution/short", "en-US");
+
+    private async Task ResolveRegionalLocaleAsync() =>
+        _localeResolutionResult = await ResolveFromCatalogAsync("locales/locale-resolution/regional", "en");
+
+    private async Task<string> ResolveFromCatalogAsync(string resourcesPath, string requestedCulture)
+    {
+        using var sampleStore = new HttpJsonStore(Http, new HttpJsonStoreOptions
+        {
+            ResourcesPath = resourcesPath,
+            FallbackCulture = requestedCulture
+        });
+
+        await sampleStore.LoadAsync([requestedCulture]);
+        var value = await sampleStore.GetTemplateAsync("LocaleResolution:Message", CultureInfo.GetCultureInfo(requestedCulture));
+        return $"Requested {requestedCulture}: {value}";
+    }
+
+    private async Task RefreshTranslationsAsync()
+    {
+        try
+        {
+            await store.RefreshStoreAsync();
+            _refreshStatus = "Translations refreshed from the server.";
+            _lazyResult = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _refreshStatus = $"Refresh failed: {ex.Message}";
+        }
+    }
+
+    private async Task LoadNamespaceAsync()
+    {
+        try
+        {
+            _lazyResult = await localizer.Get("common:Status")
+                .WithArg("name", "Ada")
+                .WithCulture(_culture)
+                .ResolveAsync();
+        }
+        catch (Exception ex)
+        {
+            _lazyResult = $"Loading failed: {ex.Message}";
+        }
+    }
+
+    private void ClearLazyResult() => _lazyResult = string.Empty;
+
+    private void DecreaseCount() => _quantity = Math.Max(0, _quantity - 1);
+
+    private void IncreaseCount() => _quantity++;
+
+    private static string GetInitialCulture() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("it", StringComparison.OrdinalIgnoreCase)
+            ? "it-IT"
+            : "en-US";
+}

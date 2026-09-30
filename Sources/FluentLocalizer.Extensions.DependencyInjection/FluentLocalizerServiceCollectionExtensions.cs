@@ -1,6 +1,8 @@
-﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+using FluentLocalizer;
 using FluentLocalizer.Core;
-using FluentLocalizer.Core.Logging;
+using FluentLocalizer.Logging;
+using FluentLocalizer.Polyfill;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -16,8 +18,11 @@ public static class FluentLocalizerServiceCollectionExtensions
     /// <param name="services">The service collection to populate.</param>
     /// <param name="configure">An optional callback used to configure translation behavior.</param>
     /// <returns>A builder that can register additional FluentLocalizer services.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     public static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)
     {
+        Guard.IfNull(services);
+        services.AddOptions();
         if (configure != null)
             services.Configure(configure);
         services.AddSingleton<ITranslator>(sp =>
@@ -36,7 +41,14 @@ public static class FluentLocalizerServiceCollectionExtensions
     /// <param name="services">The service collection to populate.</param>
     /// <param name="translationOptions">The translation options to use.</param>
     /// <returns>A builder that can register additional FluentLocalizer services.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="translationOptions"/> is <see langword="null"/>.</exception>
     public static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)
-        => AddFluentLocalizer(services, options => options = translationOptions);
+    {
+        Guard.IfNull(services);
+        Guard.IfNull(translationOptions);
+
+        services.AddSingleton(Options.Options.Create(translationOptions));
+        return AddFluentLocalizer(services);
+    }
 }
 #pragma warning restore IDE0130 // Namespace does not match folder structure

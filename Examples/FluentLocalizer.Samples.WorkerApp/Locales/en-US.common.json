@@ -1,0 +1,5 @@
+{
+  "Notifications": {
+    "MessageCount": "Hello {name}, {quantity, plural, =0 {no messages} one {one message} other {# messages}}."
+  }
+}

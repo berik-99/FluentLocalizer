@@ -1,0 +1,8 @@
+{
+  "Home": {
+    "Title": "FluentLocalizer in Blazor WebAssembly",
+    "Welcome": "Hello {name}! These messages were downloaded from the server.",
+    "Unread": "{quantity, plural, =0 {You have no unread messages} one {You have one unread message} other {You have # unread messages}}",
+    "FallbackOnly": "This text is provided by the English fallback catalog."
+  }
+}

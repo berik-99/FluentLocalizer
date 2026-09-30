@@ -1,4 +1,3 @@
-using FluentLocalizer.Core;
 using System.Globalization;
 
 namespace FluentLocalizer.Test;

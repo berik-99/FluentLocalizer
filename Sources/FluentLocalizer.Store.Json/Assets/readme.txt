@@ -1,33 +1,13 @@
-FluentLocalizer.Store.Json looks for translation files in the /Locales folder in the project root.
+FluentLocalizer.Store.Json
 
-The message templates used by FluentLocalizer are based on ICU / MessageFormat concepts. ICU is the Unicode standard for culture-aware formatting, covering plurals, numbers, dates, and message selection rules. For the official reference, see https://unicode-org.github.io/icu/.
+Install with:
+dotnet add package FluentLocalizer.Store.Json
 
-A simple structure is:
+Choose a store based on where the JSON files live:
+- JsonFileStore reads files from the application filesystem. Copy Locales/**/*.json to the output and publish directories.
+- EmbeddedJsonStore reads JSON resources embedded in an assembly.
+- HttpJsonStore downloads JSON from a server and supports asynchronous loading and refresh.
 
-Locales/
-  en-US.json
-  it-IT.json
+All stores support culture fallback, nested colon-separated keys, and file mappings. JsonFileStore can watch files when ReloadOnChange is enabled. HttpJsonStore can preload a manifest.json for complete synchronous lookup.
 
-Example en-US.json:
-
-{
-  "Welcome": "Hello {name}!",
-  "Notifications": {
-    "MessageCount": "You have {count, plural, =0 {no messages} one {# message} other {# messages}}."
-  }
-}
-
-By default, the package targets include every .json file inside Locales in the build output. If you prefer to ship them as embedded resources instead, change your project file to use EmbeddedResource for the JSON files and set 'JsonStoreOptions.SearchMode' to 'JsonStoreLocation.EmbeddedResources'.
-
-Example for embedded resources:
-
-<ItemGroup>
-  <EmbeddedResource Include="Locales\**\*.json" />
-</ItemGroup>
-
-var options = new JsonStoreOptions
-{
-    ResourcesPath = "Locales",
-    SearchMode = JsonStoreLocation.EmbeddedResources,
-    ResourceAssembly = typeof(Program).Assembly,
-};
+See README.md in this package for setup examples and store-specific behavior.
