@@ -1,6 +1,9 @@
 <Project>
-	<PropertyGroup>
+	<PropertyGroup Condition="'$(MSBuildProjectName)' != 'FluentLocalizer.WebApp'">
 		<TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+	</PropertyGroup>
+
+	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -22,7 +25,7 @@
 		<PackageOutputPath>bin\$(Configuration)\Packages\</PackageOutputPath>
 	</PropertyGroup>
 
-	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.shproj'">
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.shproj' and '$(MSBuildProjectName)' != 'FluentLocalizer.WebApp'">
 		<PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" />
 
 		<None Include="Assets\README.md"

@@ -1,0 +1,329 @@
+@page "/playground"
+@using System.Globalization
+@using System.Text.RegularExpressions
+@using FluentLocalizer
+@inject IJSRuntime JS
+
+<PageTitle>MessageFormat playground · FluentLocalizer</PageTitle>
+
+<section class="playground-hero">
+    <div class="shell">
+        <span class="eyebrow">THE PLAYGROUND / 01</span>
+        <h1>Make a message.<br /><em>See it come alive.</em></h1>
+        <p>Write a template for each language, set its arguments, and see the real FluentLocalizer engine resolve it in your browser.</p>
+    </div>
+</section>
+
+<section class="playground-section shell">
+    <div class="playground-topline">
+        <div><span class="eyebrow">START WITH AN EXAMPLE</span><p>Choose a pattern, then make it yours in each language.</p></div>
+        <div class="example-buttons">
+            <button type="button" class="example-button @(ActiveExample == "placeholder" ? "selected" : "")" @onclick="LoadPlaceholder">Placeholder</button>
+            <button type="button" class="example-button @(ActiveExample == "plural" ? "selected" : "")" @onclick="LoadPlural">Plural</button>
+            <button type="button" class="example-button @(ActiveExample == "select" ? "selected" : "")" @onclick="LoadSelect">Select</button>
+        </div>
+    </div>
+
+    <div class="playground-grid">
+        <div class="editor-stack">
+            <div class="editor-panel">
+                <div class="panel-heading"><div><span class="panel-index">01</span><h2>Message templates</h2></div><span class="panel-hint">MESSAGEFORMAT</span></div>
+                <div class="editor-body">
+                    <p class="editor-intro">Each tab has its own template. Select a language to edit and preview it; your other templates stay in place.</p>
+                    <div class="language-tabs" role="tablist" aria-label="Template language">
+                        @foreach (var locale in Locales)
+                        {
+                            <button type="button" role="tab" id="locale-@locale.Code" aria-controls="template-panel" aria-selected="@(locale.Code == _culture ? "true" : "false")" class="language-tab @(locale.Code == _culture ? "selected" : "")" @onclick="() => SelectCulture(locale.Code)" @key="locale.Code">
+                                <span>@locale.Label</span><small>@locale.Code</small>
+                            </button>
+                        }
+                    </div>
+                    <div id="template-panel" role="tabpanel" aria-labelledby="locale-@_culture">
+                        <label for="template">@CurrentLocale.Label template</label>
+                        <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Evaluate" aria-describedby="template-help"></textarea>
+                        <p id="template-help" class="field-help">Use <code>{name}</code>, <code>{quantity, plural, ...}</code>, or <code>{gender, select, ...}</code>.</p>
+                    </div>
+                    @if (_suggestions.Count > 0)
+                    {
+                        <div class="inline-tip" role="note"><strong>Tip</strong><ul>@foreach (var suggestion in _suggestions) { <li>@suggestion</li> }</ul></div>
+                    }
+                </div>
+            </div>
+
+            <div class="editor-panel">
+                <div class="panel-heading"><div><span class="panel-index">02</span><h2>Arguments</h2></div><span class="panel-hint">INPUT</span></div>
+                <div class="editor-body">
+                    <div class="control-grid argument-controls">
+                        <div class="field"><label for="letter-case">Text transform</label><select id="letter-case" @bind="_letterCase" @bind:after="Evaluate"><option value="AsIs">As written</option><option value="Upper">UPPERCASE</option><option value="Lower">lowercase</option><option value="CamelCase">camelCase</option><option value="PascalCase">PascalCase</option><option value="SnakeCase">snake_case</option><option value="KebabCase">kebab-case</option></select></div>
+                        <div class="field"><label for="quantity">Quantity <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:after="Evaluate" /></div>
+                        <div class="field"><label for="gender">Select value <span class="label-code">gender</span></label><select id="gender" @bind="_gender" @bind:after="Evaluate"><option value="Unspecified">unspecified</option><option value="Female">female</option><option value="Male">male</option><option value="Neuter">neuter</option></select></div>
+                    </div>
+                    <div class="argument-heading"><div><h3>Custom arguments</h3><p>Names and values passed to <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument">+ Add argument</button></div>
+                    @if (_arguments.Count == 0)
+                    {
+                        <p class="empty-arguments">No custom arguments yet. Add one for a placeholder like <code>{name}</code>.</p>
+                    }
+                    @foreach (var argument in _arguments)
+                    {
+                        <div class="argument-row" @key="argument.Id">
+                            <div class="field"><label for="name-@argument.Id">Name</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Evaluate" placeholder="name" /></div>
+                            <div class="field"><label for="value-@argument.Id">Value</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Evaluate" placeholder="Ada" /></div>
+                            <div class="field argument-type"><label for="type-@argument.Id">Type</label><select id="type-@argument.Id" @bind="argument.Type" @bind:after="Evaluate"><option value="text">Text</option><option value="number">Number</option></select></div>
+                            <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="Remove argument @argument.Name">×</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="result-stack">
+            <div class="preview-panel">
+                <div class="panel-heading"><div><span class="panel-index">03</span><h2>Live output</h2></div><span class="live-tag"><span class="status-dot"></span> LIVE</span></div>
+                <div class="preview-body" aria-live="polite" aria-atomic="true">
+                    @if (string.IsNullOrWhiteSpace(CurrentTemplate))
+                    {
+                        <div class="preview-empty">The @_culture message will appear here as you type.</div>
+                    }
+                    else if (_error is not null)
+                    {
+                        <div class="preview-error"><span>Formatting error</span><p>@_error</p></div>
+                    }
+                    else
+                    {
+                        <div class="preview-result">@_result</div>
+                    }
+                </div>
+                <div class="preview-footer"><span>RESOLVED BY FLUENTLOCALIZER</span><span>@_culture</span></div>
+            </div>
+
+            <div class="pipeline-panel">
+                <div class="pipeline-heading"><div><span class="eyebrow">UNDER THE HOOD</span><h2>Your fluent pipeline</h2></div><button type="button" class="copy-button" @onclick="CopyPipelineAsync" aria-label="Copy fluent pipeline">Copy code</button></div>
+                <pre><code>@PipelineCode</code></pre>
+                <p class="copy-status" role="status" aria-live="polite">@_copyStatus</p>
+                <p>Templates are served from an in-memory <code>ITranslationStore</code>. All formatting runs locally in WebAssembly.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="playground-more"><div class="shell"><div><span class="eyebrow">KEEP GOING</span><h2>Bring it into your app.</h2><p>Explore the API, stores, and samples in the documentation.</p></div><NavLink class="button button-primary" href="docs">Read the documentation <span aria-hidden="true">↗</span></NavLink></div></section>
+
+@code {
+    private static readonly Locale[] Locales =
+    [
+        new("en-US", "English"), new("it-IT", "Italiano"),
+        new("fr-FR", "Français"), new("de-DE", "Deutsch"), new("es-ES", "Español")
+    ];
+
+    private readonly PlaygroundStore _store = new();
+    private readonly Dictionary<string, string> _templates = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<PlaygroundArgument> _arguments = [];
+    private readonly List<string> _suggestions = [];
+    private string _culture = "en-US";
+    private LetterCase _letterCase = LetterCase.AsIs;
+    private Gender _gender = Gender.Female;
+    private int _quantity = 3;
+    private string _result = string.Empty;
+    private string? _error;
+    private string _copyStatus = string.Empty;
+    private string ActiveExample = "plural";
+
+    private Locale CurrentLocale => Locales.First(locale => locale.Code == _culture);
+    private string CurrentTemplate
+    {
+        get => _templates.GetValueOrDefault(_culture) ?? string.Empty;
+        set => _templates[_culture] = value;
+    }
+
+    protected override void OnInitialized() => LoadExample("plural");
+
+    private void LoadPlaceholder() => LoadExample("placeholder");
+    private void LoadPlural() => LoadExample("plural");
+    private void LoadSelect() => LoadExample("select");
+
+    private void LoadExample(string example)
+    {
+        _templates.Clear();
+        _arguments.Clear();
+        _letterCase = LetterCase.AsIs;
+        _quantity = 3;
+        _gender = Gender.Female;
+
+        switch (example)
+        {
+            case "placeholder":
+                SetTemplates(
+                    "Hello, {name}! Welcome back.",
+                    "Ciao, {name}! Bentornato.",
+                    "Bonjour, {name} ! Bon retour.",
+                    "Hallo, {name}! Willkommen zurück.",
+                    "¡Hola, {name}! Te damos la bienvenida.");
+                _arguments.Add(new("name", "Ada"));
+                break;
+            case "select":
+                SetTemplates(
+                    "{gender, select, female{She} male{He} other{They}} sent a note to {name}.",
+                    "{gender, select, female{Lei} male{Lui} other{Qualcuno}} ha inviato una nota a {name}.",
+                    "{gender, select, female{Elle} male{Il} other{Cette personne}} a envoyé une note à {name}.",
+                    "{gender, select, female{Sie} male{Er} other{Die Person}} hat {name} eine Nachricht geschickt.",
+                    "{gender, select, female{Ella} male{Él} other{Esa persona}} envió una nota a {name}.");
+                _arguments.Add(new("name", "Ada"));
+                break;
+            default:
+                SetTemplates(
+                    "You have {quantity, plural, =0{no unread messages} one{# unread message} other{# unread messages}}.",
+                    "Hai {quantity, plural, =0{nessun messaggio non letto} one{# messaggio non letto} other{# messaggi non letti}}.",
+                    "Vous avez {quantity, plural, =0{aucun message non lu} one{# message non lu} other{# messages non lus}}.",
+                    "Du hast {quantity, plural, =0{keine ungelesenen Nachrichten} one{# ungelesene Nachricht} other{# ungelesene Nachrichten}}.",
+                    "Tienes {quantity, plural, =0{ningún mensaje sin leer} one{# mensaje sin leer} other{# mensajes sin leer}}.");
+                break;
+        }
+
+        Evaluate();
+        ActiveExample = example;
+    }
+
+    private void SetTemplates(string english, string italian, string french, string german, string spanish)
+    {
+        _templates["en-US"] = english;
+        _templates["it-IT"] = italian;
+        _templates["fr-FR"] = french;
+        _templates["de-DE"] = german;
+        _templates["es-ES"] = spanish;
+    }
+
+    private void SelectCulture(string culture)
+    {
+        _culture = culture;
+        Evaluate();
+    }
+
+    private void AddArgument()
+    {
+        _arguments.Add(new("", ""));
+        Evaluate();
+    }
+
+    private void RemoveArgument(PlaygroundArgument argument)
+    {
+        _arguments.Remove(argument);
+        Evaluate();
+    }
+
+    private void Evaluate()
+    {
+        ActiveExample = string.Empty;
+        _copyStatus = string.Empty;
+        _suggestions.Clear();
+        _error = null;
+        _result = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(CurrentTemplate))
+        {
+            _suggestions.Add("Write a template for this language to see its output.");
+            return;
+        }
+
+        if (Regex.IsMatch(CurrentTemplate, @",\s*(plural|select)\s*,", RegexOptions.IgnoreCase) &&
+            !Regex.IsMatch(CurrentTemplate, @"\bother\s*\{", RegexOptions.IgnoreCase))
+            _suggestions.Add("Plural and select expressions usually need an other{...} branch.");
+
+        try
+        {
+            _store.Template = CurrentTemplate;
+            var translator = new Translator(_store, new TranslationOptions
+            {
+                FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+                MissingKeyBehavior = MissingTranslationBehavior.ThrowException
+            });
+            var request = translator.Get("playground")
+                .WithCulture(CultureInfo.GetCultureInfo(_culture))
+                .Pluralize(_quantity)
+                .Genderize(_gender)
+                .WithCase(_letterCase);
+
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "quantity", "gender" };
+            foreach (var argument in _arguments)
+            {
+                var name = argument.Name.Trim();
+                if (name.Length == 0)
+                {
+                    if (argument.Value.Length > 0)
+                        _suggestions.Add("Give each custom argument a name before it can be used.");
+                    continue;
+                }
+                if (!names.Add(name))
+                {
+                    _suggestions.Add($"Argument '{name}' is duplicated or reserved for quantity/gender.");
+                    continue;
+                }
+                if (argument.Type == "number")
+                {
+                    if (!decimal.TryParse(argument.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+                    {
+                        _error = $"Argument '{name}' needs a valid number (use a dot for decimals).";
+                        return;
+                    }
+                    request.WithArg(name, number);
+                }
+                else
+                    request.WithArg(name, argument.Value);
+            }
+            _result = request.Resolve();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task CopyPipelineAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("fluentSite.copyText", PipelineCode);
+            _copyStatus = "Copied to clipboard.";
+        }
+        catch (JSException)
+        {
+            _copyStatus = "Clipboard access is unavailable in this browser.";
+        }
+    }
+
+    private string PipelineCode
+    {
+        get
+        {
+            var lines = new List<string>
+            {
+                "translator.Get(\"playground\")",
+                $"    .WithCulture(\"{_culture}\")",
+                $"    .Pluralize({_quantity})",
+                $"    .Genderize(Gender.{_gender})"
+            };
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "quantity", "gender" };
+            foreach (var argument in _arguments)
+            {
+                var name = argument.Name.Trim();
+                if (name.Length == 0 || !names.Add(name)) continue;
+                var value = argument.Type == "number" ? argument.Value : $"\"{Escape(argument.Value)}\"";
+                lines.Add($"    .WithArg(\"{Escape(name)}\", {value})");
+            }
+            lines.Add($"    .WithCase(LetterCase.{_letterCase})");
+            lines.Add("    .Resolve();");
+            return string.Join(Environment.NewLine, lines);
+        }
+    }
+
+    private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
+
+    private sealed record Locale(string Code, string Label);
+
+    private sealed class PlaygroundArgument(string name, string value)
+    {
+        public Guid Id { get; } = Guid.NewGuid();
+        public string Name { get; set; } = name;
+        public string Value { get; set; } = value;
+        public string Type { get; set; } = "text";
+    }
+}

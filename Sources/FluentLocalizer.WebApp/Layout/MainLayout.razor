@@ -1,0 +1,51 @@
+﻿@inherits LayoutComponentBase
+
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+<a class="skip-link" href="@(Navigation.ToBaseRelativePath(Navigation.Uri) + "#main-content")">Skip to content</a>
+<header class="site-header">
+    <div class="shell header-inner">
+        <NavLink class="brand" href="" Match="NavLinkMatch.All" aria-label="FluentLocalizer home">
+            <span class="brand-mark" aria-hidden="true">{ f }</span>
+            <span>Fluent<span class="brand-accent">Localizer</span></span>
+        </NavLink>
+        <nav class="main-nav" aria-label="Main navigation">
+            <NavLink href="" Match="NavLinkMatch.All">Overview</NavLink>
+            <NavLink href="playground">Playground</NavLink>
+            <NavLink href="docs">Docs</NavLink>
+        </nav>
+        <div class="header-actions">
+            <label class="sr-only" for="theme-choice">Color theme</label>
+            <select id="theme-choice" class="theme-choice" @bind="_theme" @bind:after="ChangeThemeAsync" aria-label="Color theme">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        <a class="header-github" href="https://github.com/berik-99/FluentLocalizer" target="_blank" rel="noopener noreferrer" aria-label="View FluentLocalizer on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
+</header>
+
+<main id="main-content">@Body</main>
+
+<footer class="site-footer">
+    <div class="shell footer-inner">
+        <div><span class="footer-brand">{ f } FluentLocalizer</span><p>Localization that reads like your code.</p></div>
+        <div class="footer-links"><NavLink href="docs">Docs</NavLink><a href="https://github.com/berik-99/FluentLocalizer" target="_blank" rel="noopener noreferrer">GitHub</a><a href="https://www.nuget.org/packages/FluentLocalizer" target="_blank" rel="noopener noreferrer">NuGet</a><a href="https://github.com/berik-99/FluentLocalizer/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a></div>
+    </div>
+</footer>
+
+@code {
+    private string _theme = "system";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _theme = await JS.InvokeAsync<string>("fluentSite.getTheme");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ChangeThemeAsync() => await JS.InvokeVoidAsync("fluentSite.setTheme", _theme);
+}

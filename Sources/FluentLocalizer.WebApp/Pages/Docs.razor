@@ -1,0 +1,143 @@
+@page "/docs"
+
+<PageTitle>Documentation · FluentLocalizer</PageTitle>
+
+<section class="docs-hero">
+    <div class="shell">
+        <span class="eyebrow">DOCUMENTATION / GET STARTED</span>
+        <h1>Build messages<br /><em>that travel well.</em></h1>
+        <p>Everything you need to get started with FluentLocalizer, its MessageFormat templates, and the packages around it.</p>
+    </div>
+</section>
+
+<div class="shell docs-grid">
+    <aside class="docs-sidebar" aria-label="Documentation sections">
+        <span class="eyebrow">ON THIS PAGE</span>
+        <nav>
+            <a href="docs#quick-start">Quick start</a>
+            <a href="docs#messageformat">MessageFormat</a>
+            <a href="docs#fluent-api">Fluent API</a>
+            <a href="docs#options">Options &amp; fallback</a>
+            <a href="docs#json-stores">JSON stores</a>
+            <a href="docs#dependency-injection">Dependency injection</a>
+            <a href="docs#more-resources">More resources</a>
+        </nav>
+    </aside>
+
+    <article class="docs-content">
+        <section id="quick-start" class="docs-section">
+            <span class="eyebrow">01 / FIRST STEPS</span>
+            <h2>Quick start</h2>
+            <p>Install the core package and give <code>Translator</code> an <code>ITranslationStore</code>. The store returns a template for a key and culture; the translator formats it with the arguments in your request.</p>
+            <pre><code>dotnet add package FluentLocalizer</code></pre>
+            <p>For a small in-memory store, implement both lookup methods:</p>
+            <pre><code>using FluentLocalizer;
+using System.Globalization;
+
+public sealed class InMemoryStore : ITranslationStore
+{
+    public string? GetTemplate(string key, CultureInfo culture)
+        =&gt; key == "welcome" ? "Ciao, {name}!" : null;
+
+    public Task&lt;string?&gt; GetTemplateAsync(
+        string key, CultureInfo culture,
+        CancellationToken cancellationToken = default)
+        =&gt; Task.FromResult(GetTemplate(key, culture));
+}
+
+var translator = new Translator(new InMemoryStore());</code></pre>
+            <p>Now resolve a message with a culture and argument:</p>
+            <pre><code>var message = translator.Get("welcome")
+    .WithCulture("it-IT")
+    .WithArg("name", "Ada")
+    .Resolve();</code></pre>
+            <p>Use <code>ResolveAsync()</code> when a store needs asynchronous I/O, such as loading translation files over HTTP.</p>
+        </section>
+
+        <section id="messageformat" class="docs-section">
+            <span class="eyebrow">02 / TEMPLATES</span>
+            <h2>MessageFormat patterns</h2>
+            <p>FluentLocalizer passes templates to its MessageFormat formatter. These are the patterns used throughout this site and the repository samples:</p>
+            <div class="docs-patterns"><div><strong>Placeholder</strong><code>Hello, {name}!</code><p>Insert a named argument.</p></div><div><strong>Plural</strong><code>{quantity, plural, one{# item} other{# items}}</code><p>Choose a branch using the culture and quantity.</p></div><div><strong>Select</strong><code>{gender, select, female{She} male{He} other{They}}</code><p>Choose a branch from a named value.</p></div></div>
+            <p>Use <code>other</code> as a fallback branch in plural and select patterns. The exact supported syntax follows the MessageFormat package used by FluentLocalizer; the <NavLink href="playground">playground</NavLink> runs that formatter directly, so you can check a pattern before using it.</p>
+        </section>
+
+        <section id="fluent-api" class="docs-section">
+            <span class="eyebrow">03 / REQUESTS</span>
+            <h2>The fluent API</h2>
+            <p>Build one translation request at a time. Arguments are matched without regard to case, and values supplied on the request override default arguments.</p>
+            <div class="docs-methods"><div><code>.Get(key)</code><span>Choose a translation key.</span></div><div><code>.WithCulture(culture)</code><span>Choose lookup and formatting culture.</span></div><div><code>.WithArg(name, value)</code><span>Supply one named argument.</span></div><div><code>.Pluralize(number)</code><span>Set the <code>quantity</code> argument.</span></div><div><code>.Genderize(gender)</code><span>Set the <code>gender</code> argument.</span></div><div><code>.WithCase(letterCase)</code><span>Transform the resolved text.</span></div><div><code>.Resolve()</code><span>Return the formatted message synchronously.</span></div><div><code>.ResolveAsync()</code><span>Load and resolve asynchronously.</span></div></div>
+            <pre><code>var summary = translator.Get("items")
+    .WithCulture("en-US")
+    .Pluralize(3)
+    .WithCase(LetterCase.AsIs)
+    .Resolve();</code></pre>
+        </section>
+
+        <section id="options" class="docs-section">
+            <span class="eyebrow">04 / BEHAVIOR</span>
+            <h2>Options &amp; fallback</h2>
+            <p><code>TranslationOptions</code> controls what happens when a key is missing or a template cannot be formatted. You can return a placeholder, a configured value, or throw an exception.</p>
+            <pre><code>var options = new TranslationOptions
+{
+    MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
+    MissingKeyFallbackValue = "Missing '{key}' for '{culture}'.",
+    FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+    DefaultArguments = new Dictionary&lt;string, object?&gt;
+    {
+        ["name"] = "Ada"
+    }
+};
+
+var translator = new Translator(store, options);</code></pre>
+            <p>Culture fallback for JSON catalogs is configured on the JSON store. For example, a request for <code>it-IT</code> can use an <code>it</code> catalog and then a configured fallback such as <code>en-US</code>.</p>
+        </section>
+
+        <section id="json-stores" class="docs-section">
+            <span class="eyebrow">05 / STORAGE</span>
+            <h2>JSON translation stores</h2>
+            <p>Install <code>FluentLocalizer.Store.Json</code> to keep translations in JSON files. Nested properties use colon-separated keys such as <code>Home:Welcome</code>.</p>
+            <pre><code>dotnet add package FluentLocalizer.Store.Json</code></pre>
+            <pre><code>{
+  "Home": {
+    "Welcome": "Hello, {name}!"
+  }
+}</code></pre>
+            <div class="docs-store-grid"><div><h3>JsonFileStore</h3><p>Reads files from disk, with optional reload on change. Use it in desktop and server applications.</p></div><div><h3>EmbeddedJsonStore</h3><p>Reads JSON embedded in an assembly. It also works in browser applications.</p></div><div><h3>HttpJsonStore</h3><p>Downloads static JSON catalogs and caches them in memory. It fits Blazor WebAssembly.</p></div></div>
+            <p>For <code>HttpJsonStore</code>, publish locale files under your site's <code>wwwroot</code> and use an <code>HttpClient</code> whose base address points at the site:</p>
+            <pre><code>using var store = new HttpJsonStore(httpClient,
+    new HttpJsonStoreOptions { ResourcesPath = "locales" });
+
+var translator = new Translator(store);
+var message = await translator.Get("Home:Welcome")
+    .WithCulture("it-IT")
+    .WithArg("name", "Ada")
+    .ResolveAsync();</code></pre>
+        </section>
+
+        <section id="dependency-injection" class="docs-section">
+            <span class="eyebrow">06 / INTEGRATION</span>
+            <h2>Dependency injection</h2>
+            <p>The extension package registers <code>ITranslator</code> with Microsoft's dependency injection container. Supply the store you want to use, then inject the translator into application services.</p>
+            <pre><code>dotnet add package FluentLocalizer.Extensions.DependencyInjection</code></pre>
+            <pre><code>services.AddFluentLocalizer(options =&gt;
+{
+    options.MissingKeyBehavior =
+        MissingTranslationBehavior.ReturnConfiguredValue;
+    options.MissingKeyFallbackValue = "[{key}]";
+})
+.WithStore(new JsonFileStore(new JsonFileStoreOptions
+{
+    ResourcesPath = "Locales",
+    FallbackCulture = "en-US"
+}));</code></pre>
+        </section>
+
+        <section id="more-resources" class="docs-section">
+            <span class="eyebrow">07 / NEXT STEPS</span>
+            <h2>More resources</h2>
+            <p>Continue with the detailed package guides and runnable samples in the repository.</p>
+            <div class="docs-links"><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Assets/README.md" target="_blank" rel="noopener noreferrer">Core API guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Store.Json/Assets/README.md" target="_blank" rel="noopener noreferrer">JSON store guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Extensions.DependencyInjection/Assets/README.md" target="_blank" rel="noopener noreferrer">Dependency injection guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/tree/main/Examples" target="_blank" rel="noopener noreferrer">Runnable examples <span aria-hidden="true">↗</span></a></div>
+        </section>
+    </article>
+</div>
