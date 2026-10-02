@@ -12,6 +12,7 @@ jobs:
   build:
     name: Build, test, and pack
     runs-on: windows-latest
+
     outputs:
       version: ${{ steps.version.outputs.value }}
       prerelease: ${{ steps.version.outputs.prerelease }}
@@ -28,7 +29,9 @@ jobs:
           TAGGED_COMMIT: ${{ github.sha }}
         run: |
           git fetch origin +refs/heads/main:refs/remotes/origin/main
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
           git merge-base --is-ancestor $env:TAGGED_COMMIT origin/main
           if ($LASTEXITCODE -ne 0) {
@@ -47,10 +50,13 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         run: |
           $version = $env:TAG_NAME.Substring(1)
+
           if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z-]+)*)?$') {
             throw "Tag '$env:TAG_NAME' must be vMAJOR.MINOR.PATCH, optionally followed by a prerelease suffix."
           }
+
           "value=$version" >> $env:GITHUB_OUTPUT
+
           $prerelease = $version.Contains('-')
           "prerelease=$($prerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
@@ -73,8 +79,14 @@ jobs:
 
           $projects = foreach ($project in Get-ChildItem -Path 'Sources' -Recurse -Filter '*.csproj') {
             $isPackable = dotnet msbuild $project.FullName -getProperty:IsPackable
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            if (($isPackable | Out-String).Trim() -eq 'true') { $project }
+
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+
+            if (($isPackable | Out-String).Trim() -eq 'true') {
+              $project
+            }
           }
 
           if (-not $projects) {
@@ -82,9 +94,16 @@ jobs:
           }
 
           foreach ($project in $projects) {
-            dotnet pack $project.FullName --configuration Release --no-build --no-restore `
-              -p:PackageVersion=$env:PACKAGE_VERSION --output $packageDirectory
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet pack $project.FullName `
+              --configuration Release `
+              --no-build `
+              --no-restore `
+              -p:PackageVersion=$env:PACKAGE_VERSION `
+              --output $packageDirectory
+
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
           }
 
       - name: Upload packages
@@ -99,6 +118,7 @@ jobs:
     needs: build
     runs-on: windows-latest
     environment: release
+
     permissions:
       contents: write
       id-token: write
@@ -128,19 +148,22 @@ jobs:
         run: |
           $packages = Get-ChildItem -Path 'artifacts/packages' -Filter '*.nupkg' |
             Where-Object { $_.Name -notlike '*.snupkg' }
-          if (-not $packages) { throw 'No NuGet packages were produced.' }
 
-          foreach ($package in $packages) {
-            dotnet nuget push $package.FullName --source https://api.nuget.org/v3/index.json `
-              --api-key $env:NUGET_API_KEY
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not $packages) {
+            throw 'No NuGet packages were produced.'
           }
 
-          $symbolPackages = Get-ChildItem -Path 'artifacts/packages' -Filter '*.snupkg'
-          foreach ($package in $symbolPackages) {
-            dotnet nuget push $package.FullName --source https://api.nuget.org/v3/index.json `
-              --api-key $env:NUGET_API_KEY
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($package in $packages) {
+            Write-Host "Publishing $($package.Name)..."
+
+            dotnet nuget push $package.FullName `
+              --source https://api.nuget.org/v3/index.json `
+              --api-key $env:NUGET_API_KEY `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
           }
 
       - name: Create GitHub Release
