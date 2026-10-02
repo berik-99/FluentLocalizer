@@ -1,4 +1,6 @@
 @page "/docs"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <PageTitle>Documentation · FluentLocalizer</PageTitle>
 
@@ -13,14 +15,11 @@
 <div class="shell docs-grid">
     <aside class="docs-sidebar" aria-label="Documentation sections">
         <span class="eyebrow">ON THIS PAGE</span>
-        <nav>
-            <a href="docs#quick-start">Quick start</a>
-            <a href="docs#messageformat">MessageFormat</a>
-            <a href="docs#fluent-api">Fluent API</a>
-            <a href="docs#options">Options &amp; fallback</a>
-            <a href="docs#json-stores">JSON stores</a>
-            <a href="docs#dependency-injection">Dependency injection</a>
-            <a href="docs#more-resources">More resources</a>
+        <nav @ref="_sidebar">
+            @foreach (var (id, title) in Sections)
+            {
+                <a href="docs#@id">@title</a>
+            }
         </nav>
     </aside>
 
@@ -137,7 +136,42 @@ var message = await translator.Get("Home:Welcome")
             <span class="eyebrow">07 / NEXT STEPS</span>
             <h2>More resources</h2>
             <p>Continue with the detailed package guides and runnable samples in the repository.</p>
-            <div class="docs-links"><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Assets/README.md" target="_blank" rel="noopener noreferrer">Core API guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Store.Json/Assets/README.md" target="_blank" rel="noopener noreferrer">JSON store guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Extensions.DependencyInjection/Assets/README.md" target="_blank" rel="noopener noreferrer">Dependency injection guide <span aria-hidden="true">↗</span></a><a href="https://github.com/berik-99/FluentLocalizer/tree/main/Examples" target="_blank" rel="noopener noreferrer">Runnable examples <span aria-hidden="true">↗</span></a></div>
+            <div class="docs-links">
+                <a href="@SiteLinks.Readme("FluentLocalizer.Core")" target="_blank" rel="noopener noreferrer">Core API guide <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Readme("FluentLocalizer.Store.Json")" target="_blank" rel="noopener noreferrer">JSON store guide <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Readme("FluentLocalizer.Extensions.DependencyInjection")" target="_blank" rel="noopener noreferrer">Dependency injection guide <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Examples" target="_blank" rel="noopener noreferrer">Runnable examples <span aria-hidden="true">↗</span></a>
+            </div>
         </section>
     </article>
 </div>
+
+@code {
+    private static readonly (string Id, string Title)[] Sections =
+    [
+        ("quick-start", "Quick start"), ("messageformat", "MessageFormat"), ("fluent-api", "Fluent API"),
+        ("options", "Options & fallback"), ("json-stores", "JSON stores"),
+        ("dependency-injection", "Dependency injection"), ("more-resources", "More resources")
+    ];
+
+    private ElementReference _sidebar;
+    private IJSObjectReference? _sectionWatcher;
+
+    // Highlights the sidebar link of the section being read.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _sectionWatcher = await JS.InvokeAsync<IJSObjectReference>("fluentSite.watchSections", _sidebar);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sectionWatcher is null) return;
+        try
+        {
+            await _sectionWatcher.InvokeVoidAsync("dispose");
+            await _sectionWatcher.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+    }
+}

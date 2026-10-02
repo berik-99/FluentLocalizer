@@ -18,9 +18,10 @@
     <div class="playground-topline">
         <div><span class="eyebrow">START WITH AN EXAMPLE</span><p>Choose a pattern, then make it yours in each language.</p></div>
         <div class="example-buttons">
-            <button type="button" class="example-button @(ActiveExample == "placeholder" ? "selected" : "")" @onclick="LoadPlaceholder">Placeholder</button>
-            <button type="button" class="example-button @(ActiveExample == "plural" ? "selected" : "")" @onclick="LoadPlural">Plural</button>
-            <button type="button" class="example-button @(ActiveExample == "select" ? "selected" : "")" @onclick="LoadSelect">Select</button>
+            @foreach (var (example, label) in Examples)
+            {
+                <button type="button" class="example-button @(_activeExample == example ? "selected" : null)" aria-pressed="@(_activeExample == example ? "true" : "false")" @onclick="() => LoadExample(example)">@label</button>
+            }
         </div>
     </div>
 
@@ -31,16 +32,20 @@
                 <div class="editor-body">
                     <p class="editor-intro">Each tab has its own template. Select a language to edit and preview it; your other templates stay in place.</p>
                     <div class="language-tabs" role="tablist" aria-label="Template language">
-                        @foreach (var locale in Locales)
+                        @for (var i = 0; i < Locales.Length; i++)
                         {
-                            <button type="button" role="tab" id="locale-@locale.Code" aria-controls="template-panel" aria-selected="@(locale.Code == _culture ? "true" : "false")" class="language-tab @(locale.Code == _culture ? "selected" : "")" @onclick="() => SelectCulture(locale.Code)" @key="locale.Code">
+                            var index = i;
+                            var locale = Locales[index];
+                            var selected = locale.Code == _culture;
+                            <button type="button" role="tab" id="locale-@locale.Code" aria-controls="template-panel" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? 0 : -1)"
+                                    class="language-tab @(selected ? "selected" : null)" @onclick="() => SelectCulture(locale.Code)" @onkeydown="e => OnTabKeyDownAsync(e, index)" @ref="_tabs[index]" @key="locale.Code">
                                 <span>@locale.Label</span><small>@locale.Code</small>
                             </button>
                         }
                     </div>
-                    <div id="template-panel" role="tabpanel" aria-labelledby="locale-@_culture">
+                    <div id="template-panel" class="field" role="tabpanel" aria-labelledby="locale-@_culture">
                         <label for="template">@CurrentLocale.Label template</label>
-                        <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Evaluate" aria-describedby="template-help"></textarea>
+                        <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Edit" aria-describedby="template-help"></textarea>
                         <p id="template-help" class="field-help">Use <code>{name}</code>, <code>{quantity, plural, ...}</code>, or <code>{gender, select, ...}</code>.</p>
                     </div>
                     @if (_suggestions.Count > 0)
@@ -54,11 +59,11 @@
                 <div class="panel-heading"><div><span class="panel-index">02</span><h2>Arguments</h2></div><span class="panel-hint">INPUT</span></div>
                 <div class="editor-body">
                     <div class="control-grid argument-controls">
-                        <div class="field"><label for="letter-case">Text transform</label><select id="letter-case" @bind="_letterCase" @bind:after="Evaluate"><option value="AsIs">As written</option><option value="Upper">UPPERCASE</option><option value="Lower">lowercase</option><option value="CamelCase">camelCase</option><option value="PascalCase">PascalCase</option><option value="SnakeCase">snake_case</option><option value="KebabCase">kebab-case</option></select></div>
-                        <div class="field"><label for="quantity">Quantity <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:after="Evaluate" /></div>
-                        <div class="field"><label for="gender">Select value <span class="label-code">gender</span></label><select id="gender" @bind="_gender" @bind:after="Evaluate"><option value="Unspecified">unspecified</option><option value="Female">female</option><option value="Male">male</option><option value="Neuter">neuter</option></select></div>
+                        <div class="field"><span class="field-label" id="letter-case-label">Text transform</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
+                        <div class="field"><label for="quantity">Quantity <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
+                        <div class="field"><span class="field-label" id="gender-label">Select value <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
                     </div>
-                    <div class="argument-heading"><div><h3>Custom arguments</h3><p>Names and values passed to <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument">+ Add argument</button></div>
+                    <div class="argument-heading"><div><h3>Custom arguments</h3><p>Names and values passed to <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> Add argument</button></div>
                     @if (_arguments.Count == 0)
                     {
                         <p class="empty-arguments">No custom arguments yet. Add one for a placeholder like <code>{name}</code>.</p>
@@ -66,9 +71,9 @@
                     @foreach (var argument in _arguments)
                     {
                         <div class="argument-row" @key="argument.Id">
-                            <div class="field"><label for="name-@argument.Id">Name</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Evaluate" placeholder="name" /></div>
-                            <div class="field"><label for="value-@argument.Id">Value</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Evaluate" placeholder="Ada" /></div>
-                            <div class="field argument-type"><label for="type-@argument.Id">Type</label><select id="type-@argument.Id" @bind="argument.Type" @bind:after="Evaluate"><option value="text">Text</option><option value="number">Number</option></select></div>
+                            <div class="field"><label for="name-@argument.Id">Name</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Edit" placeholder="name" /></div>
+                            <div class="field"><label for="value-@argument.Id">Value</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Edit" placeholder="Ada" /></div>
+                            <div class="field argument-type"><span class="field-label" id="type-@(argument.Id)-label">Type</span><Dropdown Id="@($"type-{argument.Id}")" LabelledBy="@($"type-{argument.Id}-label")" Options="ArgumentTypeOptions" @bind-Value="argument.Type" @bind-Value:after="Edit" /></div>
                             <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="Remove argument @argument.Name">×</button>
                         </div>
                     }
@@ -90,16 +95,15 @@
                     }
                     else
                     {
-                        <div class="preview-result">@_result</div>
+                        <div class="preview-result" @key="_culture">@_result</div>
                     }
                 </div>
                 <div class="preview-footer"><span>RESOLVED BY FLUENTLOCALIZER</span><span>@_culture</span></div>
             </div>
 
             <div class="pipeline-panel">
-                <div class="pipeline-heading"><div><span class="eyebrow">UNDER THE HOOD</span><h2>Your fluent pipeline</h2></div><button type="button" class="copy-button" @onclick="CopyPipelineAsync" aria-label="Copy fluent pipeline">Copy code</button></div>
+                <div class="pipeline-heading"><div><span class="eyebrow">UNDER THE HOOD</span><h2>Your fluent pipeline</h2></div><CopyButton Text="@PipelineCode" Label="Copy code" AriaLabel="Copy fluent pipeline" /></div>
                 <pre><code>@PipelineCode</code></pre>
-                <p class="copy-status" role="status" aria-live="polite">@_copyStatus</p>
                 <p>Templates are served from an in-memory <code>ITranslationStore</code>. All formatting runs locally in WebAssembly.</p>
             </div>
         </div>
@@ -115,7 +119,27 @@
         new("fr-FR", "Français"), new("de-DE", "Deutsch"), new("es-ES", "Español")
     ];
 
+    private static readonly (string Key, string Label)[] Examples =
+        [("placeholder", "Placeholder"), ("plural", "Plural"), ("select", "Select")];
+
+    private static readonly DropdownOption<LetterCase>[] LetterCaseOptions =
+    [
+        new(LetterCase.AsIs, "As written"), new(LetterCase.Upper, "UPPERCASE"), new(LetterCase.Lower, "lowercase"),
+        new(LetterCase.CamelCase, "camelCase"), new(LetterCase.PascalCase, "PascalCase"),
+        new(LetterCase.SnakeCase, "snake_case"), new(LetterCase.KebabCase, "kebab-case")
+    ];
+
+    private static readonly DropdownOption<Gender>[] GenderOptions =
+    [
+        new(Gender.Unspecified, "unspecified"), new(Gender.Female, "female"),
+        new(Gender.Male, "male"), new(Gender.Neuter, "neuter")
+    ];
+
+    private static readonly DropdownOption<string>[] ArgumentTypeOptions = [new("text", "Text"), new("number", "Number")];
+
     private readonly PlaygroundStore _store = new();
+    private readonly Translator _translator;
+    private readonly ElementReference[] _tabs = new ElementReference[Locales.Length];
     private readonly Dictionary<string, string> _templates = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<PlaygroundArgument> _arguments = [];
     private readonly List<string> _suggestions = [];
@@ -125,8 +149,13 @@
     private int _quantity = 3;
     private string _result = string.Empty;
     private string? _error;
-    private string _copyStatus = string.Empty;
-    private string ActiveExample = "plural";
+    private string _activeExample = "plural";
+
+    public Playground() => _translator = new Translator(_store, new TranslationOptions
+    {
+        FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+        MissingKeyBehavior = MissingTranslationBehavior.ThrowException
+    });
 
     private Locale CurrentLocale => Locales.First(locale => locale.Code == _culture);
     private string CurrentTemplate
@@ -136,10 +165,6 @@
     }
 
     protected override void OnInitialized() => LoadExample("plural");
-
-    private void LoadPlaceholder() => LoadExample("placeholder");
-    private void LoadPlural() => LoadExample("plural");
-    private void LoadSelect() => LoadExample("select");
 
     private void LoadExample(string example)
     {
@@ -179,8 +204,8 @@
                 break;
         }
 
+        _activeExample = example;
         Evaluate();
-        ActiveExample = example;
     }
 
     private void SetTemplates(string english, string italian, string french, string german, string spanish)
@@ -198,22 +223,44 @@
         Evaluate();
     }
 
+    // Tabs use a roving tabindex: arrow keys, Home and End move between languages.
+    private async Task OnTabKeyDownAsync(KeyboardEventArgs e, int index)
+    {
+        var target = e.Key switch
+        {
+            "ArrowRight" => (index + 1) % Locales.Length,
+            "ArrowLeft" => (index - 1 + Locales.Length) % Locales.Length,
+            "Home" => 0,
+            "End" => Locales.Length - 1,
+            _ => -1
+        };
+        if (target < 0) return;
+
+        SelectCulture(Locales[target].Code);
+        await _tabs[target].FocusAsync();
+    }
+
     private void AddArgument()
     {
         _arguments.Add(new("", ""));
-        Evaluate();
+        Edit();
     }
 
     private void RemoveArgument(PlaygroundArgument argument)
     {
         _arguments.Remove(argument);
+        Edit();
+    }
+
+    /// <summary>Re-evaluates after a user change, which means the template no longer matches an example.</summary>
+    private void Edit()
+    {
+        _activeExample = string.Empty;
         Evaluate();
     }
 
     private void Evaluate()
     {
-        ActiveExample = string.Empty;
-        _copyStatus = string.Empty;
         _suggestions.Clear();
         _error = null;
         _result = string.Empty;
@@ -231,12 +278,7 @@
         try
         {
             _store.Template = CurrentTemplate;
-            var translator = new Translator(_store, new TranslationOptions
-            {
-                FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
-                MissingKeyBehavior = MissingTranslationBehavior.ThrowException
-            });
-            var request = translator.Get("playground")
+            var request = _translator.Get("playground")
                 .WithCulture(CultureInfo.GetCultureInfo(_culture))
                 .Pluralize(_quantity)
                 .Genderize(_gender)
@@ -274,19 +316,6 @@
         catch (Exception ex)
         {
             _error = ex.Message;
-        }
-    }
-
-    private async Task CopyPipelineAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("fluentSite.copyText", PipelineCode);
-            _copyStatus = "Copied to clipboard.";
-        }
-        catch (JSException)
-        {
-            _copyStatus = "Clipboard access is unavailable in this browser.";
         }
     }
 

@@ -1,0 +1,127 @@
+@typeparam TValue
+@inject IJSRuntime JS
+
+@* A select-only combobox (WAI-ARIA APG pattern). Focus stays on the trigger; options never take focus,
+   so leaving the trigger is the single place where the menu closes. *@
+<div class="dropdown @Class @(_open ? "is-open" : null) @(_dropUp ? "is-up" : null)" @ref="_element" @onfocusout="Close">
+    <div id="@Id" class="dropdown-trigger" role="combobox" tabindex="0"
+         aria-haspopup="listbox" aria-expanded="@(_open ? "true" : "false")" aria-controls="@ListId"
+         aria-labelledby="@LabelledBy" aria-label="@AriaLabel"
+         aria-activedescendant="@(_open ? OptionId(_activeIndex) : null)"
+         @onclick="ToggleAsync" @onkeydown="OnKeyDownAsync">
+        <span class="dropdown-value">@(SelectedIndex >= 0 ? Options[SelectedIndex].Label : Placeholder)</span>
+        <svg class="dropdown-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 6l4 4 4-4" /></svg>
+    </div>
+    <ul id="@ListId" class="dropdown-menu" role="listbox" aria-labelledby="@LabelledBy" aria-label="@AriaLabel">
+        @for (var i = 0; i < Options.Count; i++)
+        {
+            var index = i;
+            <li id="@OptionId(index)" role="option" aria-selected="@(index == SelectedIndex ? "true" : "false")"
+                class="dropdown-option @(index == _activeIndex ? "is-active" : null)"
+                @onmousedown:preventDefault @onclick="() => SelectAsync(index)" @onmouseenter="() => _activeIndex = index">
+                <span>@Options[index].Label</span>
+                <svg class="dropdown-check" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 8.5l3 3 6-7" /></svg>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public IReadOnlyList<DropdownOption<TValue>> Options { get; set; } = [];
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    /// <summary>The id of the visible label. Prefer it to <see cref="AriaLabel"/>.</summary>
+    [Parameter] public string? LabelledBy { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private ElementReference _element;
+    private bool _open;
+    private bool _dropUp;
+    private int _activeIndex;
+
+    private string ListId => $"{Id}-list";
+    private string OptionId(int index) => $"{Id}-option-{index}";
+    private int SelectedIndex
+    {
+        get
+        {
+            for (var i = 0; i < Options.Count; i++)
+                if (EqualityComparer<TValue>.Default.Equals(Options[i].Value, Value))
+                    return i;
+            return -1;
+        }
+    }
+
+    private async Task ToggleAsync()
+    {
+        if (_open) Close();
+        else await OpenAsync(SelectedIndex);
+    }
+
+    private async Task OpenAsync(int activeIndex)
+    {
+        _activeIndex = Math.Clamp(activeIndex, 0, Options.Count - 1);
+        if (_open) return;
+        // Open upwards when the menu would not fit below the trigger.
+        _dropUp = await JS.InvokeAsync<bool>("fluentSite.shouldDropUp", _element);
+        _open = true;
+    }
+
+    private void Close() => _open = false;
+
+    private async Task SelectAsync(int index)
+    {
+        Close();
+        if (index == SelectedIndex) return;
+        Value = Options[index].Value;
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        var last = Options.Count - 1;
+        switch (e.Key)
+        {
+            case "ArrowDown" when !_open:
+            case "ArrowUp" when !_open:
+            case "Enter" when !_open:
+            case " " when !_open:
+                await OpenAsync(SelectedIndex);
+                break;
+            case "ArrowDown":
+                _activeIndex = Math.Min(_activeIndex + 1, last);
+                break;
+            case "ArrowUp":
+                _activeIndex = Math.Max(_activeIndex - 1, 0);
+                break;
+            case "Home":
+                await OpenAsync(0);
+                break;
+            case "End":
+                await OpenAsync(last);
+                break;
+            case "Enter" or " ":
+                await SelectAsync(_activeIndex);
+                break;
+            case "Escape" or "Tab":
+                Close();
+                break;
+            case { Length: 1 } when !e.CtrlKey && !e.AltKey && !e.MetaKey:
+                // Type-ahead: jump to the next option that starts with the typed character.
+                var start = _open ? _activeIndex : SelectedIndex;
+                for (var step = 1; step <= Options.Count; step++)
+                {
+                    var index = (start + step + Options.Count) % Options.Count;
+                    if (Options[index].Label.StartsWith(e.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await OpenAsync(index);
+                        break;
+                    }
+                }
+                break;
+        }
+    }
+}

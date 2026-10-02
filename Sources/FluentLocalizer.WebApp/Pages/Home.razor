@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 
 @using FluentLocalizer
 @implements IAsyncDisposable
@@ -18,16 +18,20 @@
             </div>
             <div class="hero-meta"><span>MIT licensed</span><span class="meta-divider"></span><span>MessageFormat powered</span><span class="meta-divider"></span><span>Blazor ready</span></div>
         </div>
-        <div class="hero-visual" aria-label="Code example and localized output">
-            <div class="code-window">
-                <div class="window-top"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Program.cs</span><span class="window-csharp">C#</span></div>
+        <div class="hero-visual" role="img" aria-label="A fluent C# request that resolves a greeting in English, Italian, French, German, and Spanish.">
+            <div class="code-window" aria-hidden="true">
+                <div class="window-top"><span class="window-dots"><i></i><i></i><i></i></span><span>Program.cs</span><span class="window-csharp">C#</span></div>
                 <pre><code><span class="code-muted">// Translate with a fluent API</span>
 <span class="code-keyword">var</span> greeting = translator
     .Get(<span class="code-string">"welcome"</span>)
-    .WithCulture(<span class="code-string">"@_displayCulture"</span>)
+    .WithCulture(<span class="code-string">"<span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span>"</span>)
     .WithArg(<span class="code-string">"name"</span>, <span class="code-string">"Ada"</span>)
     .Resolve();</code></pre>
-                <div class="code-output"><span class="output-label">OUTPUT <span class="output-led"></span></span><strong class="typed-output" aria-hidden="true">@_displayText<span class="typing-caret"></span></strong><span class="sr-only">Localized greetings are shown in English, Italian, French, German, and Spanish.</span><span class="output-locale">@_displayCulture</span></div>
+                <div class="code-output">
+                    <span class="output-label">OUTPUT <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
+                    <strong class="typed-output @(_typing ? "is-typing" : null)">@_displayText<span class="typing-caret"></span></strong>
+                    <span class="output-locale"><span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span></span>
+                </div>
             </div>
             <span class="visual-caption">01 / WRITE ONCE, SPEAK EVERYWHERE</span>
         </div>
@@ -36,44 +40,105 @@
 
 <section class="features section-padding" id="features">
     <div class="shell">
-        <div class="section-intro"><div><span class="eyebrow">WHY FLUENTLOCALIZER</span><h2>Everything your messages need.<br /><span>Nothing they don't.</span></h2></div><p>From a simple hello to nuanced, culture-aware content, compose translations without wrestling with resource files or string builders.</p></div>
+        <div class="section-intro">
+            <div><span class="eyebrow">WHY FLUENTLOCALIZER</span><h2>Everything your messages need.<br /><span>Nothing they don't.</span></h2></div>
+            <p>From a simple hello to nuanced, culture-aware content, compose translations without wrestling with resource files or string builders.</p>
+        </div>
         <div class="feature-grid">
-            <article class="feature-card"><span class="feature-icon icon-lime" aria-hidden="true">{ }</span><span class="feature-number">01</span><h3>Fluent by design</h3><p>Chain culture, arguments, and formatting in readable C# that stays easy to maintain.</p></article>
-            <article class="feature-card"><span class="feature-icon icon-peach" aria-hidden="true">#</span><span class="feature-number">02</span><h3>Messages with nuance</h3><p>Use placeholders, plural rules, and select expressions through the MessageFormat engine.</p></article>
-            <article class="feature-card"><span class="feature-icon icon-blue" aria-hidden="true">◎</span><span class="feature-number">03</span><h3>Culture &amp; fallback</h3><p>Choose a culture per request and configure fallback behavior for missing translations.</p></article>
-            <article class="feature-card"><span class="feature-icon icon-purple" aria-hidden="true">↗</span><span class="feature-number">04</span><h3>Built to extend</h3><p>Plug in your own translation store or use JSON storage and dependency injection packages.</p></article>
+            @foreach (var (feature, index) in Features.Select((feature, index) => (feature, index)))
+            {
+                <article class="feature-card">
+                    <span class="feature-icon icon-@feature.Tone" aria-hidden="true">@feature.Icon</span>
+                    <span class="feature-number">@((index + 1).ToString("00"))</span>
+                    <h3>@feature.Title</h3>
+                    <p>@feature.Description</p>
+                </article>
+            }
         </div>
     </div>
 </section>
 
 <section class="flow-section section-padding">
     <div class="shell flow-grid">
-        <div><span class="eyebrow">THE WORKFLOW</span><h2>From template<br />to <span>translation.</span></h2><p>Write a message once. Supply values and a culture when you need it. FluentLocalizer handles the rest.</p><NavLink class="text-link" href="playground">Explore in the playground <span aria-hidden="true">↗</span></NavLink></div>
-        <div class="flow-steps"><div class="flow-step"><span>01</span><div><h3>Store a template</h3><p><code>"You have {quantity, plural, one{# item} other{# items}}."</code></p></div></div><div class="flow-step"><span>02</span><div><h3>Build a request</h3><p><code>.Get("items").WithCulture("en-US").Pluralize(3)</code></p></div></div><div class="flow-step"><span>03</span><div><h3>Resolve a message</h3><p class="flow-result">You have 3 items.</p></div></div></div>
+        <div>
+            <span class="eyebrow">THE WORKFLOW</span>
+            <h2>From template<br />to <span>translation.</span></h2>
+            <p>Write a message once. Supply values and a culture when you need it. FluentLocalizer handles the rest.</p>
+            <NavLink class="text-link" href="playground">Explore in the playground <span aria-hidden="true">↗</span></NavLink>
+        </div>
+        <ol class="flow-steps">
+            <li class="flow-step"><span>01</span><div><h3>Store a template</h3><p><code>"You have {quantity, plural, one{# item} other{# items}}."</code></p></div></li>
+            <li class="flow-step"><span>02</span><div><h3>Build a request</h3><p><code>.Get("items").WithCulture("en-US").Pluralize(3)</code></p></div></li>
+            <li class="flow-step"><span>03</span><div><h3>Resolve a message</h3><p class="flow-result">You have 3 items.</p></div></li>
+        </ol>
     </div>
 </section>
 
 <section class="packages section-padding" id="packages">
     <div class="shell">
-        <div class="section-intro"><div><span class="eyebrow">THE ECOSYSTEM</span><h2>Start small.<br /><span>Add what you need.</span></h2></div><p>Three focused NuGet packages, designed to fit your application instead of dictating its architecture.</p></div>
+        <div class="section-intro">
+            <div><span class="eyebrow">THE ECOSYSTEM</span><h2>Start small.<br /><span>Add what you need.</span></h2></div>
+            <p>Three focused NuGet packages, designed to fit your application instead of dictating its architecture.</p>
+        </div>
         <div class="package-list">
-            <article class="package-card"><div class="package-index">01 / CORE</div><div class="package-info"><h3>FluentLocalizer</h3><p>The translator, fluent API, MessageFormat formatting, and store abstractions.</p><code>dotnet add package FluentLocalizer</code></div><div class="package-end"><span class="version">v1.0.0</span><a href="https://www.nuget.org/packages/FluentLocalizer" target="_blank" rel="noopener noreferrer" aria-label="FluentLocalizer on NuGet">↗</a></div></article>
-            <article class="package-card"><div class="package-index">02 / STORAGE</div><div class="package-info"><h3>FluentLocalizer.Store.Json</h3><p>File, embedded resource, and HTTP JSON stores for translation catalogs.</p><code>dotnet add package FluentLocalizer.Store.Json</code></div><div class="package-end"><span class="version">v1.0.0</span><a href="https://www.nuget.org/packages/FluentLocalizer.Store.Json" target="_blank" rel="noopener noreferrer" aria-label="FluentLocalizer.Store.Json on NuGet">↗</a></div></article>
-            <article class="package-card"><div class="package-index">03 / INTEGRATION</div><div class="package-info"><h3>FluentLocalizer.Extensions.DependencyInjection</h3><p>Register translation services with Microsoft's dependency injection container.</p><code>dotnet add package FluentLocalizer.Extensions.DependencyInjection</code></div><div class="package-end"><span class="version">v1.0.0</span><a href="https://www.nuget.org/packages/FluentLocalizer.Extensions.DependencyInjection" target="_blank" rel="noopener noreferrer" aria-label="FluentLocalizer.Extensions.DependencyInjection on NuGet">↗</a></div></article>
+            @foreach (var (package, index) in Packages.Select((package, index) => (package, index)))
+            {
+                var command = $"dotnet add package {package.Id}";
+                <article class="package-card">
+                    <div class="package-index">@((index + 1).ToString("00")) / @package.Category</div>
+                    <div class="package-info">
+                        <h3>@package.Id</h3>
+                        <p>@package.Description</p>
+                        <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@($"Copy install command for {package.Id}")" /></div>
+                    </div>
+                    <div class="package-end">
+                        <span class="version">v@(SiteLinks.PackageVersion)</span>
+                        <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@($"{package.Id} on NuGet")">↗</a>
+                    </div>
+                </article>
+            }
         </div>
         <p class="package-note">Versions shown reflect the package versions declared in this repository.</p>
     </div>
 </section>
 
-<section class="cta-section"><div class="shell cta-inner"><div><span class="eyebrow">READY TO EXPLORE?</span><h2>Make every message<br /><em>feel at home.</em></h2><p>Experiment with real FluentLocalizer formatting directly in your browser.</p></div><NavLink class="button button-dark" href="playground">Open the playground <span aria-hidden="true">↗</span></NavLink></div></section>
+<section class="cta-section">
+    <div class="shell cta-inner">
+        <div><span class="eyebrow">READY TO EXPLORE?</span><h2>Make every message<br /><em>feel at home.</em></h2><p>Experiment with real FluentLocalizer formatting directly in your browser.</p></div>
+        <NavLink class="button button-dark" href="playground">Open the playground <span aria-hidden="true">↗</span></NavLink>
+    </div>
+</section>
 
 @code {
     private static readonly string[] Cultures = ["en-US", "it-IT", "fr-FR", "de-DE", "es-ES"];
+
+    private static readonly Feature[] Features =
+    [
+        new("{ }", "lime", "Fluent by design", "Chain culture, arguments, and formatting in readable C# that stays easy to maintain."),
+        new("#", "peach", "Messages with nuance", "Use placeholders, plural rules, and select expressions through the MessageFormat engine."),
+        new("◎", "blue", "Culture & fallback", "Choose a culture per request and configure fallback behavior for missing translations."),
+        new("↗", "purple", "Built to extend", "Plug in your own translation store or use JSON storage and dependency injection packages.")
+    ];
+
+    private static readonly Package[] Packages =
+    [
+        new("FluentLocalizer", "CORE", "The translator, fluent API, MessageFormat formatting, and store abstractions."),
+        new("FluentLocalizer.Store.Json", "STORAGE", "File, embedded resource, and HTTP JSON stores for translation catalogs."),
+        new("FluentLocalizer.Extensions.DependencyInjection", "INTEGRATION", "Register translation services with Microsoft's dependency injection container.")
+    ];
+
+    // Timings of the hero greeting animation, in milliseconds.
+    private const int HoldDelay = 2400, EraseDelay = 30, SwapOutDelay = 220, SwapInDelay = 260, TypeDelay = 60;
+
     private readonly Translator _translator = new(new HeroTranslationStore());
     private readonly CancellationTokenSource _animationCancellation = new();
     private Task? _animationTask;
     private string _displayCulture = "it-IT";
     private string _displayText = string.Empty;
+    private bool _typing;
+    private bool _swappingOut;
+
+    private string? SwapClass => _swappingOut ? "is-leaving" : null;
 
     protected override void OnInitialized() => _displayText = ResolveGreeting(_displayCulture);
 
@@ -95,27 +160,33 @@
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(2400, cancellationToken);
+                await Task.Delay(HoldDelay, cancellationToken);
+
+                _typing = true;
                 var previous = _displayText;
                 for (var length = previous.Length - 1; length >= 0; length--)
-                {
-                    _displayText = previous[..length];
-                    await InvokeAsync(StateHasChanged);
-                    await Task.Delay(35, cancellationToken);
-                }
+                    await RenderAsync(() => _displayText = previous[..length], EraseDelay, cancellationToken);
 
+                // The culture slides out, then the re-keyed element slides in with the new value.
+                await RenderAsync(() => _swappingOut = true, SwapOutDelay, cancellationToken);
                 index = (index + 1) % Cultures.Length;
-                _displayCulture = Cultures[index];
+                await RenderAsync(() => (_swappingOut, _displayCulture) = (false, Cultures[index]), SwapInDelay, cancellationToken);
+
                 var next = ResolveGreeting(_displayCulture);
                 for (var length = 1; length <= next.Length; length++)
-                {
-                    _displayText = next[..length];
-                    await InvokeAsync(StateHasChanged);
-                    await Task.Delay(65, cancellationToken);
-                }
+                    await RenderAsync(() => _displayText = next[..length], TypeDelay, cancellationToken);
+                _typing = false;
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (OperationCanceledException) { }
+    }
+
+    private async Task RenderAsync(Action change, int delay, CancellationToken cancellationToken)
+    {
+        change();
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(delay, cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
@@ -125,4 +196,8 @@
             await _animationTask;
         _animationCancellation.Dispose();
     }
+
+    private sealed record Feature(string Icon, string Tone, string Title, string Description);
+
+    private sealed record Package(string Id, string Category, string Description);
 }
