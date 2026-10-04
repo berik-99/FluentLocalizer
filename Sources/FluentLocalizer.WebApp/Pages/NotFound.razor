@@ -1,0 +1,14 @@
+﻿@page "/not-found"
+@layout MainLayout
+
+<PageTitle>@T["Ui:NotFoundTitle"]</PageTitle>
+<section class="shell not-found">
+    <span class="eyebrow">@T["Ui:MissingKey"]</span>
+    <h1>@T["Ui:NotFound"]</h1>
+    <p>@T["Ui:NotFoundHelp"]</p>
+    <NavLink class="button button-primary" href="">@T["Ui:BackHome"] <span aria-hidden="true">↗</span></NavLink>
+</section>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+}

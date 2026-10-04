@@ -1,0 +1,57 @@
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Sources/FluentLocalizer.WebApp/**'
+      - 'Sources/FluentLocalizer.Core/**'
+      - 'Sources/FluentLocalizer.Store.Json/**'
+      - 'Sources/FluentLocalizer.Shared.Polyfill/**'
+      - 'Sources/Directory.Build.props'
+      - 'global.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/configure-pages@v5
+      - name: Publish Blazor WebAssembly
+        run: dotnet publish Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj --configuration Release --output site
+      - name: Prepare repository path and route fallback
+        shell: pwsh
+        run: |
+          $siteRoot = Join-Path $PWD 'site/wwwroot'
+          $index = Join-Path $siteRoot 'index.html'
+          $content = Get-Content -Raw -LiteralPath $index
+          $content = $content.Replace('<base href="/" />', '<base href="/FluentLocalizer/" />')
+          if ($content -notmatch '<base href="/FluentLocalizer/" />') {
+            throw 'Could not set the GitHub Pages base path.'
+          }
+          Set-Content -LiteralPath $index -Value $content -NoNewline
+          Remove-Item -LiteralPath (Join-Path $siteRoot 'index.html.br'), (Join-Path $siteRoot 'index.html.gz') -ErrorAction SilentlyContinue
+          Copy-Item -LiteralPath $index -Destination (Join-Path $siteRoot '404.html')
+          New-Item -ItemType File -Path (Join-Path $siteRoot '.nojekyll') -Force | Out-Null
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/wwwroot
+      - id: deployment
+        uses: actions/deploy-pages@v4

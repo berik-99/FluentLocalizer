@@ -20,4 +20,7 @@
     <Project Path="Tests/FluentLocalizer.DependencyInjection.Tests/FluentLocalizer.DependencyInjection.Tests.csproj" />
     <Project Path="Tests/FluentLocalizer.Store.Json.Tests/FluentLocalizer.Store.Json.Tests.csproj" />
   </Folder>
+  <Folder Name="/Web/">
+    <Project Path="Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj" Id="1a2a9b4e-3823-4cae-a6a2-4a8b8de25f48" />
+  </Folder>
 </Solution>

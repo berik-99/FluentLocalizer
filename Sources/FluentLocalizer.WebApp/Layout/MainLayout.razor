@@ -1,0 +1,73 @@
+@inherits LayoutComponentBase
+
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+<a class="skip-link" href="@SkipLinkHref">@T["Ui:Skip"]</a>
+<header class="site-header">
+    <div class="shell header-inner">
+        <NavLink class="brand" href="" Match="NavLinkMatch.All" aria-label="@T["Ui:HomeLabel"]">
+            <BrandLogo />
+            <span>Fluent<span class="brand-accent">Localizer</span></span>
+        </NavLink>
+        <nav class="main-nav" aria-label="@T["Ui:Navigation"]">
+            <NavLink href="" Match="NavLinkMatch.All">@T["Ui:Overview"]</NavLink>
+            <NavLink href="playground">@T["Ui:Playground"]</NavLink>
+            <NavLink href="docs">@T["Ui:Docs"]</NavLink>
+        </nav>
+        <div class="header-actions">
+            <Dropdown TValue="string" Id="language-choice" Class="dropdown-ink language-choice" AriaLabel="@T["Ui:Language"]" Options="LanguageOptions" Value="@T.Culture.TwoLetterISOLanguageName" ValueChanged="ChangeLanguageAsync" />
+            <Dropdown Id="theme-choice" Class="dropdown-ink theme-choice" AriaLabel="@T["Ui:Theme"]" Options="ThemeOptions" @bind-Value="_theme" @bind-Value:after="ChangeThemeAsync" />
+            <a class="header-github" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer" aria-label="@T["Ui:GitHubLabel"]">GitHub <span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
+</header>
+
+<main id="main-content"><CascadingValue Value="T.Culture">@Body</CascadingValue></main>
+
+<footer class="site-footer">
+    <div class="shell footer-inner">
+        <div>
+            <span class="footer-brand"><BrandLogo /> FluentLocalizer</span>
+            <p>@T["Ui:Tagline"]</p>
+        </div>
+        <nav class="footer-links" aria-label="@T["Ui:Footer"]">
+            <NavLink href="docs">@T["Ui:Docs"]</NavLink>
+            <a href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="@SiteLinks.NuGet("FluentLocalizer")" target="_blank" rel="noopener noreferrer">NuGet</a>
+            <a href="@SiteLinks.License" target="_blank" rel="noopener noreferrer">@T["Ui:License"]</a>
+        </nav>
+    </div>
+</footer>
+
+@code {
+    private static readonly DropdownOption<string>[] LanguageOptions =
+        [new("en", "English"), new("it", "Italiano"), new("fr", "Français"), new("de", "Deutsch"), new("es", "Español")];
+
+    private DropdownOption<string>[] ThemeOptions =>
+        [new("system", T["Ui:System"]), new("light", T["Ui:Light"]), new("dark", T["Ui:Dark"])];
+
+    private string _theme = "system";
+
+    // Drop any fragment already in the address so the link always targets #main-content.
+    private string SkipLinkHref => Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0] + "#main-content";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _theme = await JS.InvokeAsync<string>("fluentSite.getTheme");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ChangeThemeAsync() => await JS.InvokeVoidAsync("fluentSite.setTheme", _theme);
+
+    private async Task ChangeLanguageAsync(string language)
+    {
+        T.Culture = SiteText.SelectCulture([language]);
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = T.Culture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = T.Culture;
+        await JS.InvokeVoidAsync("fluentSite.saveLanguage", T.Culture.TwoLetterISOLanguageName);
+        await JS.InvokeVoidAsync("fluentSite.setLanguage", T.Culture.Name, T.BrowserLabels);
+    }
+}

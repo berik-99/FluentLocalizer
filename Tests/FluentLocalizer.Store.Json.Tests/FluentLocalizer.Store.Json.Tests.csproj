@@ -21,6 +21,8 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Locales\en-US.json" LogicalName="FluentLocalizer.Store.Json.Tests.Locales.en-US.json" />
+    <EmbeddedResource Include="..\..\Sources\FluentLocalizer.WebApp\Locales\*.json" LogicalName="FluentLocalizer.WebApp.Tests.WebLocales.%(Filename)%(Extension)" />
+    <Compile Include="..\..\Sources\FluentLocalizer.WebApp\SiteText.cs" Link="SiteText.cs" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

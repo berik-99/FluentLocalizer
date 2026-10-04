@@ -1,0 +1,179 @@
+@page "/docs"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>@T["Ui:DocsTitle"]</PageTitle>
+
+<section class="docs-hero">
+    <div class="shell">
+        <span class="eyebrow">@T["Ui:DocsEyebrow"]</span>
+        <h1>@T["Ui:BuildMessages"]<br /><em>@T["Ui:Travel"]</em></h1>
+        <p>@T["Ui:DocsDescription"]</p>
+    </div>
+</section>
+
+<div class="shell docs-grid">
+    <aside class="docs-sidebar" aria-label="@T["Ui:DocsSections"]">
+        <span class="eyebrow">@T["Ui:OnPage"]</span>
+        <nav @ref="_sidebar">
+            @foreach (var (id, title) in Sections)
+            {
+                <a href="docs#@id">@title</a>
+            }
+        </nav>
+    </aside>
+
+    <article class="docs-content">
+        <section id="quick-start" class="docs-section">
+            <span class="eyebrow">@T["Ui:FirstSteps"]</span>
+            <h2>@T["Ui:QuickStart"]</h2>
+            <p>@T["Ui:InstallCore"] <code>Translator</code> @T["Ui:An"] <code>ITranslationStore</code>@T["Ui:StoreExplained"]</p>
+            <pre><code>dotnet add package FluentLocalizer</code></pre>
+            <p>@T["Ui:SmallStore"]</p>
+            <pre><code>using FluentLocalizer;
+using System.Globalization;
+
+public sealed class InMemoryStore : ITranslationStore
+{
+    public string? GetTemplate(string key, CultureInfo culture)
+        =&gt; key == "welcome" ? "Ciao, {name}!" : null;
+
+    public Task&lt;string?&gt; GetTemplateAsync(
+        string key, CultureInfo culture,
+        CancellationToken cancellationToken = default)
+        =&gt; Task.FromResult(GetTemplate(key, culture));
+}
+
+var translator = new Translator(new InMemoryStore());</code></pre>
+            <p>@T["Ui:ResolveExample"]</p>
+            <pre><code>var message = translator.Get("welcome")
+    .WithCulture("it-IT")
+    .WithArg("name", "Ada")
+    .Resolve();</code></pre>
+            <p>@T["Ui:Use"] <code>ResolveAsync()</code> @T["Ui:AsyncStore"]</p>
+        </section>
+
+        <section id="messageformat" class="docs-section">
+            <span class="eyebrow">@T["Ui:TemplatesEyebrow"]</span>
+            <h2>@T["Ui:Patterns"]</h2>
+            <p>@T["Ui:PatternsDescription"]</p>
+            <div class="docs-patterns"><div><strong>@T["Ui:Placeholder"]</strong><code>Hello, {name}!</code><p>@T["Ui:InsertArgument"]</p></div><div><strong>@T["Ui:Plural"]</strong><code>{quantity, plural, one{# item} other{# items}}</code><p>@T["Ui:PluralBranch"]</p></div><div><strong>@T["Ui:Select"]</strong><code>{gender, select, female{She} male{He} other{They}}</code><p>@T["Ui:SelectBranch"]</p></div></div>
+            <p>@T["Ui:Use"] <code>other</code> @T["Ui:PatternFallback"] <NavLink href="playground">@T["Ui:PlaygroundInline"]</NavLink> @T["Ui:PatternCheck"]</p>
+        </section>
+
+        <section id="fluent-api" class="docs-section">
+            <span class="eyebrow">@T["Ui:RequestsEyebrow"]</span>
+            <h2>@T["Ui:FluentApi"]</h2>
+            <p>@T["Ui:RequestsDescription"]</p>
+            <div class="docs-methods"><div><code>.Get(key)</code><span>@T["Ui:ChooseKey"]</span></div><div><code>.WithCulture(culture)</code><span>@T["Ui:ChooseCulture"]</span></div><div><code>.WithArg(name, value)</code><span>@T["Ui:SupplyArgument"]</span></div><div><code>.Pluralize(number)</code><span>@T["Ui:SetArgument"] <code>quantity</code>@T["Ui:ArgumentSuffix"]</span></div><div><code>.Genderize(gender)</code><span>@T["Ui:SetArgument"] <code>gender</code>@T["Ui:ArgumentSuffix"]</span></div><div><code>.WithCase(letterCase)</code><span>@T["Ui:TransformResolved"]</span></div><div><code>.Resolve()</code><span>@T["Ui:ReturnSync"]</span></div><div><code>.ResolveAsync()</code><span>@T["Ui:ResolveAsync"]</span></div></div>
+            <pre><code>var summary = translator.Get("items")
+    .WithCulture("en-US")
+    .Pluralize(3)
+    .WithCase(LetterCase.AsIs)
+    .Resolve();</code></pre>
+        </section>
+
+        <section id="options" class="docs-section">
+            <span class="eyebrow">@T["Ui:BehaviorEyebrow"]</span>
+            <h2>@T["Ui:OptionsFallback"]</h2>
+            <p><code>TranslationOptions</code> @T["Ui:OptionsDescription"]</p>
+            <pre><code>var options = new TranslationOptions
+{
+    MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
+    MissingKeyFallbackValue = "Missing '{key}' for '{culture}'.",
+    FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+    DefaultArguments = new Dictionary&lt;string, object?&gt;
+    {
+        ["name"] = "Ada"
+    }
+};
+
+var translator = new Translator(store, options);</code></pre>
+            <p>@T["Ui:JsonFallback"] <code>it-IT</code> @T["Ui:CanUse"] <code>it</code> @T["Ui:ThenFallback"] <code>en-US</code>.</p>
+        </section>
+
+        <section id="json-stores" class="docs-section">
+            <span class="eyebrow">@T["Ui:StorageEyebrow"]</span>
+            <h2>@T["Ui:JsonStores"]</h2>
+            <p>@T["Ui:Install"] <code>FluentLocalizer.Store.Json</code> @T["Ui:JsonKeys"] <code>Home:Welcome</code>.</p>
+            <pre><code>dotnet add package FluentLocalizer.Store.Json</code></pre>
+            <pre><code>{
+  "Home": {
+    "Welcome": "Hello, {name}!"
+  }
+}</code></pre>
+            <div class="docs-store-grid"><div><h3>JsonFileStore</h3><p>@T["Ui:FileStore"]</p></div><div><h3>EmbeddedJsonStore</h3><p>@T["Ui:EmbeddedStore"]</p></div><div><h3>HttpJsonStore</h3><p>@T["Ui:HttpStore"]</p></div></div>
+            <p>@T["Ui:For"] <code>HttpJsonStore</code>@T["Ui:PublishLocales"] <code>wwwroot</code> @T["Ui:UseClient"] <code>HttpClient</code> @T["Ui:BaseAddress"]</p>
+            <pre><code>using var store = new HttpJsonStore(httpClient,
+    new HttpJsonStoreOptions { ResourcesPath = "locales" });
+
+var translator = new Translator(store);
+var message = await translator.Get("Home:Welcome")
+    .WithCulture("it-IT")
+    .WithArg("name", "Ada")
+    .ResolveAsync();</code></pre>
+        </section>
+
+        <section id="dependency-injection" class="docs-section">
+            <span class="eyebrow">@T["Ui:IntegrationEyebrow"]</span>
+            <h2>@T["Ui:DependencyInjection"]</h2>
+            <p>@T["Ui:Registers"] <code>ITranslator</code> @T["Ui:InjectionDescription"]</p>
+            <pre><code>dotnet add package FluentLocalizer.Extensions.DependencyInjection</code></pre>
+            <pre><code>services.AddFluentLocalizer(options =&gt;
+{
+    options.MissingKeyBehavior =
+        MissingTranslationBehavior.ReturnConfiguredValue;
+    options.MissingKeyFallbackValue = "[{key}]";
+})
+.WithStore(new JsonFileStore(new JsonFileStoreOptions
+{
+    ResourcesPath = "Locales",
+    FallbackCulture = "en-US"
+}));</code></pre>
+        </section>
+
+        <section id="more-resources" class="docs-section">
+            <span class="eyebrow">@T["Ui:NextSteps"]</span>
+            <h2>@T["Ui:MoreResources"]</h2>
+            <p>@T["Ui:ResourcesDescription"]</p>
+            <div class="docs-links">
+                <a href="@SiteLinks.Readme("FluentLocalizer.Core")" target="_blank" rel="noopener noreferrer">@T["Ui:CoreGuide"] <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Readme("FluentLocalizer.Store.Json")" target="_blank" rel="noopener noreferrer">@T["Ui:JsonGuide"] <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Readme("FluentLocalizer.Extensions.DependencyInjection")" target="_blank" rel="noopener noreferrer">@T["Ui:InjectionGuide"] <span aria-hidden="true">↗</span></a>
+                <a href="@SiteLinks.Examples" target="_blank" rel="noopener noreferrer">@T["Ui:Examples"] <span aria-hidden="true">↗</span></a>
+            </div>
+        </section>
+    </article>
+</div>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+
+    private (string Id, string Title)[] Sections =>
+    [
+        ("quick-start", T["Ui:QuickStart"]), ("messageformat", T["Ui:MessageFormat"]), ("fluent-api", T["Ui:FluentApiSection"]),
+        ("options", T["Ui:OptionsFallback"]), ("json-stores", T["Ui:JsonStoresSection"]),
+        ("dependency-injection", T["Ui:DependencyInjection"]), ("more-resources", T["Ui:MoreResources"])
+    ];
+
+    private ElementReference _sidebar;
+    private IJSObjectReference? _sectionWatcher;
+
+    // Highlights the sidebar link of the section being read.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _sectionWatcher = await JS.InvokeAsync<IJSObjectReference>("fluentSite.watchSections", _sidebar);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sectionWatcher is null) return;
+        try
+        {
+            await _sectionWatcher.InvokeVoidAsync("dispose");
+            await _sectionWatcher.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+    }
+}
