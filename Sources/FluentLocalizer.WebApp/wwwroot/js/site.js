@@ -1,5 +1,7 @@
 (() => {
     const storageKey = "fluentlocalizer.theme";
+    const languageStorageKey = "fluentlocalizer.language";
+    const languages = ["en", "it", "fr", "de", "es"];
     const themes = ["light", "dark", "system"];
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     let preference = "system";
@@ -31,6 +33,25 @@
     }, true);
 
     window.fluentSite = {
+        getLanguages: () => {
+            const browserLanguages = navigator.languages?.length ? [...navigator.languages] : [navigator.language];
+            try {
+                const saved = window.localStorage.getItem(languageStorageKey);
+                if (languages.includes(saved)) return [saved, ...browserLanguages];
+            } catch { /* Use browser preferences when storage is unavailable. */ }
+            return browserLanguages;
+        },
+        saveLanguage: value => {
+            if (!languages.includes(value)) return;
+            try { window.localStorage.setItem(languageStorageKey, value); } catch { /* Keep this session's choice. */ }
+        },
+        setLanguage: (culture, labels) => {
+            document.documentElement.lang = culture;
+            document.querySelector(".boot")?.setAttribute("aria-label", labels.loading);
+            document.querySelector("#blazor-error-ui .error-message").textContent = labels.error;
+            document.querySelector("#blazor-error-ui .reload").textContent = labels.reload;
+            document.querySelector("#blazor-error-ui .dismiss").setAttribute("aria-label", labels.dismiss);
+        },
         getTheme: () => preference,
         setTheme: value => {
             if (!themes.includes(value)) return;

@@ -9,6 +9,8 @@
 
 Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/). To run the site locally, use `dotnet run --project Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj`. The GitHub Pages workflow publishes the static WebAssembly output from `main`.
 
+The WebApp uses FluentLocalizer with `EmbeddedJsonStore` and embedded catalogs in `Sources/FluentLocalizer.WebApp/Locales`. It selects the first supported language from the browser's preferences (English, Italian, French, German, or Spanish), preserves the regional culture for formatting, and falls back to English for unsupported languages or missing translations. The header's language dropdown updates the site without reloading or clearing playground edits and remembers the choice for subsequent visits.
+
 ICU is the Unicode Consortium's internationalization standard for formatting dates, numbers, plurals, and messages in a culture-aware way. In practice, it defines a common set of rules that let the same message be rendered correctly for different languages and regions, for example by changing plural forms (`one`, `few`, `many`, `other`) or by adapting number and date formatting to the current locale. You can read more at the official documentation: https://unicode-org.github.io/icu/.
 
 Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string builders. FluentLocalizer makes multi-language management, pluralization, gender-aware translations, and missing-key fallback seamless, extensible, and developer-friendly.

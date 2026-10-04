@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject IJSRuntime JS
 
-<button type="button" class="copy-button @Class @(_state == CopyState.Copied ? "is-copied" : null)" @onclick="CopyAsync" aria-label="@AriaLabel">
+<button type="button" class="copy-button @Class @(_state == CopyState.Copied ? "is-copied" : null)" @onclick="CopyAsync" aria-label="@(AriaLabel ?? Label ?? T["Ui:Copy"])">
     <svg class="copy-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
         @if (_state == CopyState.Copied)
         {
@@ -14,14 +14,16 @@
     </svg>
     @if (ShowLabel)
     {
-        <span>@(_state switch { CopyState.Copied => "Copied", CopyState.Failed => "Copy failed", _ => Label })</span>
+        <span>@(_state switch { CopyState.Copied => T["Ui:Copied"], CopyState.Failed => T["Ui:CopyFailed"], _ => Label ?? T["Ui:Copy"] })</span>
     }
 </button>
-<span class="sr-only" role="status">@(_state switch { CopyState.Copied => "Copied to clipboard.", CopyState.Failed => "Clipboard access is unavailable in this browser.", _ => "" })</span>
+<span class="sr-only" role="status">@(_state switch { CopyState.Copied => T["Ui:CopiedStatus"], CopyState.Failed => T["Ui:ClipboardUnavailable"], _ => "" })</span>
 
 @code {
+    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+
     [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
-    [Parameter] public string Label { get; set; } = "Copy";
+    [Parameter] public string? Label { get; set; }
     [Parameter] public bool ShowLabel { get; set; } = true;
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public string? Class { get; set; }

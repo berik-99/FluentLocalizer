@@ -6,6 +6,7 @@ on:
     paths:
       - 'Sources/FluentLocalizer.WebApp/**'
       - 'Sources/FluentLocalizer.Core/**'
+      - 'Sources/FluentLocalizer.Store.Json/**'
       - 'Sources/FluentLocalizer.Shared.Polyfill/**'
       - 'Sources/Directory.Build.props'
       - 'global.json'

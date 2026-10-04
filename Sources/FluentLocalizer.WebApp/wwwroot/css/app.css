@@ -451,8 +451,9 @@ code { font-size: .91em; }
     --shadow-pop: 0 16px 40px rgba(0, 0, 0, .45);
 }
 .theme-choice { width: 116px; }
-.theme-choice .dropdown-trigger { height: 39px; font-weight: 700; }
-.theme-choice .dropdown-menu { left: auto; right: 0; }
+.language-choice { width: 130px; }
+.header-actions .dropdown-trigger { height: 39px; font-weight: 700; }
+.header-actions .dropdown-menu { left: auto; right: 0; }
 
 /* ---------- Not found ---------- */
 
@@ -499,13 +500,19 @@ code { font-size: .91em; }
 
 /* ---------- Responsive ---------- */
 
+@media (max-width: 1000px) {
+    :root { --header-height: 96px; }
+    .header-inner { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 12px 0 6px; }
+    .main-nav { grid-column: 1 / -1; grid-row: 2; justify-content: space-between; margin: 0 -9px; }
+}
+
 @media (max-width: 760px) {
     :root { --header-height: 64px; }
     .shell { width: min(100% - 32px, 1180px); }
     .site-header { position: relative; }
     .header-inner { gap: 16px; }
     .header-github { display: none; }
-    .main-nav { margin-left: auto; gap: 2px; }
+    .main-nav { gap: 2px; }
     .main-nav a { padding: 8px 9px; font-size: 12px; }
     .section-padding { padding: 68px 0; }
 }
@@ -514,7 +521,8 @@ code { font-size: .91em; }
     .header-inner { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 0 6px; }
     .brand { font-size: 17px; }
     .brand .brand-logo { width: 28px; height: 28px; }
-    .main-nav { grid-column: 1 / -1; grid-row: 2; justify-content: space-between; margin: 0 -9px; }
+    .header-actions { grid-column: 1 / -1; grid-row: 2; }
+    .main-nav { grid-row: 3; }
     .theme-choice { width: 104px; }
     .footer-inner { display: block; }
     .footer-links { margin-top: 24px; flex-wrap: wrap; gap: 16px 24px; }

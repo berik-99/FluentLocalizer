@@ -4,19 +4,19 @@
 @using FluentLocalizer
 @inject IJSRuntime JS
 
-<PageTitle>MessageFormat playground · FluentLocalizer</PageTitle>
+<PageTitle>@T["Ui:PlaygroundTitle"]</PageTitle>
 
 <section class="playground-hero">
     <div class="shell">
-        <span class="eyebrow">THE PLAYGROUND / 01</span>
-        <h1>Make a message.<br /><em>See it come alive.</em></h1>
-        <p>Write a template for each language, set its arguments, and see the real FluentLocalizer engine resolve it in your browser.</p>
+        <span class="eyebrow">@T["Ui:PlaygroundEyebrow"]</span>
+        <h1>@T["Ui:MakeMessage"]<br /><em>@T["Ui:Alive"]</em></h1>
+        <p>@T["Ui:PlaygroundDescription"]</p>
     </div>
 </section>
 
 <section class="playground-section shell">
     <div class="playground-topline">
-        <div><span class="eyebrow">START WITH AN EXAMPLE</span><p>Choose a pattern, then make it yours in each language.</p></div>
+        <div><span class="eyebrow">@T["Ui:StartExample"]</span><p>@T["Ui:ExampleHelp"]</p></div>
         <div class="example-buttons">
             @foreach (var (example, label) in Examples)
             {
@@ -28,10 +28,10 @@
     <div class="playground-grid">
         <div class="editor-stack">
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">01</span><h2>Message templates</h2></div><span class="panel-hint">MESSAGEFORMAT</span></div>
+                <div class="panel-heading"><div><span class="panel-index">01</span><h2>@T["Ui:Templates"]</h2></div><span class="panel-hint">MESSAGEFORMAT</span></div>
                 <div class="editor-body">
-                    <p class="editor-intro">Each tab has its own template. Select a language to edit and preview it; your other templates stay in place.</p>
-                    <div class="language-tabs" role="tablist" aria-label="Template language">
+                    <p class="editor-intro">@T["Ui:TabsHelp"]</p>
+                    <div class="language-tabs" role="tablist" aria-label="@T["Ui:TemplateLanguage"]">
                         @for (var i = 0; i < Locales.Length; i++)
                         {
                             var index = i;
@@ -44,37 +44,37 @@
                         }
                     </div>
                     <div id="template-panel" class="field" role="tabpanel" aria-labelledby="locale-@_culture">
-                        <label for="template">@CurrentLocale.Label template</label>
+                        <label for="template">@T.Format("Ui:LocaleTemplate", "language", CurrentLocale.Label)</label>
                         <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Edit" aria-describedby="template-help"></textarea>
-                        <p id="template-help" class="field-help">Use <code>{name}</code>, <code>{quantity, plural, ...}</code>, or <code>{gender, select, ...}</code>.</p>
+                        <p id="template-help" class="field-help">@T["Ui:Use"] <code>{name}</code>, <code>{quantity, plural, ...}</code>@T["Ui:Or"] <code>{gender, select, ...}</code>.</p>
                     </div>
                     @if (_suggestions.Count > 0)
                     {
-                        <div class="inline-tip" role="note"><strong>Tip</strong><ul>@foreach (var suggestion in _suggestions) { <li>@suggestion</li> }</ul></div>
+                        <div class="inline-tip" role="note"><strong>@T["Ui:Tip"]</strong><ul>@foreach (var suggestion in _suggestions) { <li>@suggestion</li> }</ul></div>
                     }
                 </div>
             </div>
 
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">02</span><h2>Arguments</h2></div><span class="panel-hint">INPUT</span></div>
+                <div class="panel-heading"><div><span class="panel-index">02</span><h2>@T["Ui:Arguments"]</h2></div><span class="panel-hint">@T["Ui:Input"]</span></div>
                 <div class="editor-body">
                     <div class="control-grid argument-controls">
-                        <div class="field"><span class="field-label" id="letter-case-label">Text transform</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
-                        <div class="field"><label for="quantity">Quantity <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
-                        <div class="field"><span class="field-label" id="gender-label">Select value <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
+                        <div class="field"><span class="field-label" id="letter-case-label">@T["Ui:Transform"]</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
+                        <div class="field"><label for="quantity">@T["Ui:Quantity"] <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
+                        <div class="field"><span class="field-label" id="gender-label">@T["Ui:SelectValue"] <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
                     </div>
-                    <div class="argument-heading"><div><h3>Custom arguments</h3><p>Names and values passed to <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> Add argument</button></div>
+                    <div class="argument-heading"><div><h3>@T["Ui:CustomArguments"]</h3><p>@T["Ui:ArgumentHelp"] <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> @T["Ui:AddArgument"]</button></div>
                     @if (_arguments.Count == 0)
                     {
-                        <p class="empty-arguments">No custom arguments yet. Add one for a placeholder like <code>{name}</code>.</p>
+                        <p class="empty-arguments">@T["Ui:EmptyArguments"] <code>{name}</code>.</p>
                     }
                     @foreach (var argument in _arguments)
                     {
                         <div class="argument-row" @key="argument.Id">
-                            <div class="field"><label for="name-@argument.Id">Name</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Edit" placeholder="name" /></div>
-                            <div class="field"><label for="value-@argument.Id">Value</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Edit" placeholder="Ada" /></div>
-                            <div class="field argument-type"><span class="field-label" id="type-@(argument.Id)-label">Type</span><Dropdown Id="@($"type-{argument.Id}")" LabelledBy="@($"type-{argument.Id}-label")" Options="ArgumentTypeOptions" @bind-Value="argument.Type" @bind-Value:after="Edit" /></div>
-                            <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="Remove argument @argument.Name">×</button>
+                            <div class="field"><label for="name-@argument.Id">@T["Ui:Name"]</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Edit" placeholder="name" /></div>
+                            <div class="field"><label for="value-@argument.Id">@T["Ui:Value"]</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Edit" placeholder="Ada" /></div>
+                            <div class="field argument-type"><span class="field-label" id="type-@(argument.Id)-label">@T["Ui:Type"]</span><Dropdown Id="@($"type-{argument.Id}")" LabelledBy="@($"type-{argument.Id}-label")" Options="ArgumentTypeOptions" @bind-Value="argument.Type" @bind-Value:after="Edit" /></div>
+                            <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="@T.Format("Ui:RemoveArgument", "name", argument.Name)">×</button>
                         </div>
                     }
                 </div>
@@ -83,59 +83,61 @@
 
         <div class="result-stack">
             <div class="preview-panel">
-                <div class="panel-heading"><div><span class="panel-index">03</span><h2>Live output</h2></div><span class="live-tag"><span class="status-dot"></span> LIVE</span></div>
+                <div class="panel-heading"><div><span class="panel-index">03</span><h2>@T["Ui:LiveOutput"]</h2></div><span class="live-tag"><span class="status-dot"></span> @T["Ui:Live"]</span></div>
                 <div class="preview-body" aria-live="polite" aria-atomic="true">
                     @if (string.IsNullOrWhiteSpace(CurrentTemplate))
                     {
-                        <div class="preview-empty">The @_culture message will appear here as you type.</div>
+                        <div class="preview-empty">@T.Format("Ui:PreviewEmpty", "culture", _culture)</div>
                     }
                     else if (_error is not null)
                     {
-                        <div class="preview-error"><span>Formatting error</span><p>@_error</p></div>
+                        <div class="preview-error"><span>@T["Ui:FormattingError"]</span><p>@_error</p></div>
                     }
                     else
                     {
                         <div class="preview-result" @key="_culture">@_result</div>
                     }
                 </div>
-                <div class="preview-footer"><span>RESOLVED BY FLUENTLOCALIZER</span><span>@_culture</span></div>
+                <div class="preview-footer"><span>@T["Ui:ResolvedBy"]</span><span>@_culture</span></div>
             </div>
 
             <div class="pipeline-panel">
-                <div class="pipeline-heading"><div><span class="eyebrow">UNDER THE HOOD</span><h2>Your fluent pipeline</h2></div><CopyButton Text="@PipelineCode" Label="Copy code" AriaLabel="Copy fluent pipeline" /></div>
+                <div class="pipeline-heading"><div><span class="eyebrow">@T["Ui:UnderHood"]</span><h2>@T["Ui:Pipeline"]</h2></div><CopyButton Text="@PipelineCode" Label="@T["Ui:CopyCode"]" AriaLabel="@T["Ui:CopyPipeline"]" /></div>
                 <pre><code>@PipelineCode</code></pre>
-                <p>Templates are served from an in-memory <code>ITranslationStore</code>. All formatting runs locally in WebAssembly.</p>
+                <p>@T["Ui:MemoryStore"] <code>ITranslationStore</code>@T["Ui:LocalFormatting"]</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="playground-more"><div class="shell"><div><span class="eyebrow">KEEP GOING</span><h2>Bring it into your app.</h2><p>Explore the API, stores, and samples in the documentation.</p></div><NavLink class="button button-primary" href="docs">Read the documentation <span aria-hidden="true">↗</span></NavLink></div></section>
+<section class="playground-more"><div class="shell"><div><span class="eyebrow">@T["Ui:KeepGoing"]</span><h2>@T["Ui:BringApp"]</h2><p>@T["Ui:ExploreDocs"]</p></div><NavLink class="button button-primary" href="docs">@T["Ui:ReadDocumentation"] <span aria-hidden="true">↗</span></NavLink></div></section>
 
 @code {
+    [CascadingParameter] private CultureInfo? SiteCulture { get; set; }
+
     private static readonly Locale[] Locales =
     [
         new("en-US", "English"), new("it-IT", "Italiano"),
         new("fr-FR", "Français"), new("de-DE", "Deutsch"), new("es-ES", "Español")
     ];
 
-    private static readonly (string Key, string Label)[] Examples =
-        [("placeholder", "Placeholder"), ("plural", "Plural"), ("select", "Select")];
+    private (string Key, string Label)[] Examples =>
+        [("placeholder", T["Ui:Placeholder"]), ("plural", T["Ui:Plural"]), ("select", T["Ui:Select"])];
 
-    private static readonly DropdownOption<LetterCase>[] LetterCaseOptions =
+    private DropdownOption<LetterCase>[] LetterCaseOptions =>
     [
-        new(LetterCase.AsIs, "As written"), new(LetterCase.Upper, "UPPERCASE"), new(LetterCase.Lower, "lowercase"),
+        new(LetterCase.AsIs, T["Ui:AsWritten"]), new(LetterCase.Upper, T["Ui:Uppercase"]), new(LetterCase.Lower, T["Ui:Lowercase"]),
         new(LetterCase.CamelCase, "camelCase"), new(LetterCase.PascalCase, "PascalCase"),
         new(LetterCase.SnakeCase, "snake_case"), new(LetterCase.KebabCase, "kebab-case")
     ];
 
-    private static readonly DropdownOption<Gender>[] GenderOptions =
+    private DropdownOption<Gender>[] GenderOptions =>
     [
-        new(Gender.Unspecified, "unspecified"), new(Gender.Female, "female"),
-        new(Gender.Male, "male"), new(Gender.Neuter, "neuter")
+        new(Gender.Unspecified, T["Ui:Unspecified"]), new(Gender.Female, T["Ui:Female"]),
+        new(Gender.Male, T["Ui:Male"]), new(Gender.Neuter, T["Ui:Neuter"])
     ];
 
-    private static readonly DropdownOption<string>[] ArgumentTypeOptions = [new("text", "Text"), new("number", "Number")];
+    private DropdownOption<string>[] ArgumentTypeOptions => [new("text", T["Ui:Text"]), new("number", T["Ui:Number"])];
 
     private readonly PlaygroundStore _store = new();
     private readonly Translator _translator;
@@ -150,6 +152,7 @@
     private string _result = string.Empty;
     private string? _error;
     private string _activeExample = "plural";
+    private CultureInfo? _uiCulture;
 
     public Playground() => _translator = new Translator(_store, new TranslationOptions
     {
@@ -164,7 +167,18 @@
         set => _templates[_culture] = value;
     }
 
-    protected override void OnInitialized() => LoadExample("plural");
+    protected override void OnInitialized()
+    {
+        _culture = Locales.First(locale => locale.Code.StartsWith(T.Culture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase)).Code;
+        LoadExample("plural");
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_uiCulture == SiteCulture) return;
+        _uiCulture = SiteCulture;
+        Evaluate();
+    }
 
     private void LoadExample(string example)
     {
@@ -267,13 +281,13 @@
 
         if (string.IsNullOrWhiteSpace(CurrentTemplate))
         {
-            _suggestions.Add("Write a template for this language to see its output.");
+            _suggestions.Add(T["Ui:WriteTemplate"]);
             return;
         }
 
         if (Regex.IsMatch(CurrentTemplate, @",\s*(plural|select)\s*,", RegexOptions.IgnoreCase) &&
             !Regex.IsMatch(CurrentTemplate, @"\bother\s*\{", RegexOptions.IgnoreCase))
-            _suggestions.Add("Plural and select expressions usually need an other{...} branch.");
+            _suggestions.Add(T["Ui:OtherBranch"]);
 
         try
         {
@@ -291,19 +305,19 @@
                 if (name.Length == 0)
                 {
                     if (argument.Value.Length > 0)
-                        _suggestions.Add("Give each custom argument a name before it can be used.");
+                        _suggestions.Add(T["Ui:NameRequired"]);
                     continue;
                 }
                 if (!names.Add(name))
                 {
-                    _suggestions.Add($"Argument '{name}' is duplicated or reserved for quantity/gender.");
+                    _suggestions.Add(T.Format("Ui:DuplicateArgument", "name", name));
                     continue;
                 }
                 if (argument.Type == "number")
                 {
                     if (!decimal.TryParse(argument.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
                     {
-                        _error = $"Argument '{name}' needs a valid number (use a dot for decimals).";
+                        _error = T.Format("Ui:InvalidNumber", "name", name);
                         return;
                     }
                     request.WithArg(name, number);

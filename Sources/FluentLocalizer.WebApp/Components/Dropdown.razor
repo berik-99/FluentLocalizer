@@ -65,9 +65,9 @@
     {
         _activeIndex = Math.Clamp(activeIndex, 0, Options.Count - 1);
         if (_open) return;
+        _open = true;
         // Open upwards when the menu would not fit below the trigger.
         _dropUp = await JS.InvokeAsync<bool>("fluentSite.shouldDropUp", _element);
-        _open = true;
     }
 
     private void Close() => _open = false;

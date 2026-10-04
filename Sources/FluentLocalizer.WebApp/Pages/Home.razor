@@ -3,37 +3,39 @@
 @using FluentLocalizer
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject ITranslator Translator
+@inject ITranslationStore Store
 
-<PageTitle>FluentLocalizer · Fluent localization for .NET</PageTitle>
+<PageTitle>@T["Ui:HomeTitle"]</PageTitle>
 
 <section class="hero">
     <div class="shell hero-grid">
         <div class="hero-copy">
-            <div class="pill"><span class="status-dot"></span> OPEN SOURCE · BUILT FOR .NET</div>
-            <h1>Localization that <em>reads like</em> your code.</h1>
-            <p class="hero-lede">A fluent way to build culture-aware messages with MessageFormat templates. Keep translation logic expressive, predictable, and close to your application.</p>
+            <div class="pill"><span class="status-dot"></span> @T["Ui:OpenSource"]</div>
+            <h1>@T["Ui:HeroStart"] <em>@T["Ui:HeroEmphasis"]</em> @T["Ui:HeroEnd"]</h1>
+            <p class="hero-lede">@T["Ui:HeroDescription"]</p>
             <div class="hero-actions">
-                <NavLink class="button button-primary" href="playground">Try the playground <span aria-hidden="true">↗</span></NavLink>
-                <NavLink class="button button-ghost" href="docs">Read the docs <span aria-hidden="true">→</span></NavLink>
+                <NavLink class="button button-primary" href="playground">@T["Ui:TryPlayground"] <span aria-hidden="true">↗</span></NavLink>
+                <NavLink class="button button-ghost" href="docs">@T["Ui:ReadDocs"] <span aria-hidden="true">→</span></NavLink>
             </div>
-            <div class="hero-meta"><span>MIT licensed</span><span class="meta-divider"></span><span>MessageFormat powered</span><span class="meta-divider"></span><span>Blazor ready</span></div>
+            <div class="hero-meta"><span>@T["Ui:Licensed"]</span><span class="meta-divider"></span><span>@T["Ui:Powered"]</span><span class="meta-divider"></span><span>@T["Ui:BlazorReady"]</span></div>
         </div>
-        <div class="hero-visual" role="img" aria-label="A fluent C# request that resolves a greeting in English, Italian, French, German, and Spanish.">
+        <div class="hero-visual" role="img" aria-label="@T["Ui:HeroVisual"]">
             <div class="code-window" aria-hidden="true">
                 <div class="window-top"><span class="window-dots"><i></i><i></i><i></i></span><span>Program.cs</span><span class="window-csharp">C#</span></div>
                 <pre><code><span class="code-muted">// Translate with a fluent API</span>
 <span class="code-keyword">var</span> greeting = translator
-    .Get(<span class="code-string">"welcome"</span>)
+    .Get(<span class="code-string">"Demo:Welcome"</span>)
     .WithCulture(<span class="code-string">"<span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span>"</span>)
     .WithArg(<span class="code-string">"name"</span>, <span class="code-string">"Ada"</span>)
     .Resolve();</code></pre>
                 <div class="code-output">
-                    <span class="output-label">OUTPUT <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
+                    <span class="output-label">@T["Ui:Output"] <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
                     <strong class="typed-output @(_typing ? "is-typing" : null)">@_displayText<span class="typing-caret"></span></strong>
                     <span class="output-locale"><span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span></span>
                 </div>
             </div>
-            <span class="visual-caption">01 / WRITE ONCE, SPEAK EVERYWHERE</span>
+            <span class="visual-caption">@T["Ui:WriteOnce"]</span>
         </div>
     </div>
 </section>
@@ -41,8 +43,8 @@
 <section class="features section-padding" id="features">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">WHY FLUENTLOCALIZER</span><h2>Everything your messages need.<br /><span>Nothing they don't.</span></h2></div>
-            <p>From a simple hello to nuanced, culture-aware content, compose translations without wrestling with resource files or string builders.</p>
+            <div><span class="eyebrow">@T["Ui:Why"]</span><h2>@T["Ui:Everything"]<br /><span>@T["Ui:NothingExtra"]</span></h2></div>
+            <p>@T["Ui:FeaturesDescription"]</p>
         </div>
         <div class="feature-grid">
             @foreach (var (feature, index) in Features.Select((feature, index) => (feature, index)))
@@ -61,15 +63,15 @@
 <section class="flow-section section-padding">
     <div class="shell flow-grid">
         <div>
-            <span class="eyebrow">THE WORKFLOW</span>
-            <h2>From template<br />to <span>translation.</span></h2>
-            <p>Write a message once. Supply values and a culture when you need it. FluentLocalizer handles the rest.</p>
-            <NavLink class="text-link" href="playground">Explore in the playground <span aria-hidden="true">↗</span></NavLink>
+            <span class="eyebrow">@T["Ui:Workflow"]</span>
+            <h2>@T["Ui:FromTemplate"]<br />@T["Ui:To"] <span>@T["Ui:Translation"]</span></h2>
+            <p>@T["Ui:WorkflowDescription"]</p>
+            <NavLink class="text-link" href="playground">@T["Ui:ExplorePlayground"] <span aria-hidden="true">↗</span></NavLink>
         </div>
         <ol class="flow-steps">
-            <li class="flow-step"><span>01</span><div><h3>Store a template</h3><p><code>"You have {quantity, plural, one{# item} other{# items}}."</code></p></div></li>
-            <li class="flow-step"><span>02</span><div><h3>Build a request</h3><p><code>.Get("items").WithCulture("en-US").Pluralize(3)</code></p></div></li>
-            <li class="flow-step"><span>03</span><div><h3>Resolve a message</h3><p class="flow-result">You have 3 items.</p></div></li>
+            <li class="flow-step"><span>01</span><div><h3>@T["Ui:StoreTemplate"]</h3><p><code>"@Store.GetTemplate("Demo:Items", T.Culture)"</code></p></div></li>
+            <li class="flow-step"><span>02</span><div><h3>@T["Ui:BuildRequest"]</h3><p><code>.Get("Demo:Items").WithCulture("@T.Culture.Name").Pluralize(3)</code></p></div></li>
+            <li class="flow-step"><span>03</span><div><h3>@T["Ui:ResolveMessage"]</h3><p class="flow-result">@T.Format("Demo:Items", "quantity", 3)</p></div></li>
         </ol>
     </div>
 </section>
@@ -77,8 +79,8 @@
 <section class="packages section-padding" id="packages">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">THE ECOSYSTEM</span><h2>Start small.<br /><span>Add what you need.</span></h2></div>
-            <p>Three focused NuGet packages, designed to fit your application instead of dictating its architecture.</p>
+            <div><span class="eyebrow">@T["Ui:Ecosystem"]</span><h2>@T["Ui:StartSmall"]<br /><span>@T["Ui:AddNeeded"]</span></h2></div>
+            <p>@T["Ui:PackagesDescription"]</p>
         </div>
         <div class="package-list">
             @foreach (var (package, index) in Packages.Select((package, index) => (package, index)))
@@ -89,48 +91,49 @@
                     <div class="package-info">
                         <h3>@package.Id</h3>
                         <p>@package.Description</p>
-                        <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@($"Copy install command for {package.Id}")" /></div>
+                        <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@T.Format("Ui:CopyInstall", "package", package.Id)" /></div>
                     </div>
                     <div class="package-end">
                         <span class="version">v@(SiteLinks.PackageVersion)</span>
-                        <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@($"{package.Id} on NuGet")">↗</a>
+                        <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@T.Format("Ui:OnNuGet", "package", package.Id)">↗</a>
                     </div>
                 </article>
             }
         </div>
-        <p class="package-note">Versions shown reflect the package versions declared in this repository.</p>
+        <p class="package-note">@T["Ui:Versions"]</p>
     </div>
 </section>
 
 <section class="cta-section">
     <div class="shell cta-inner">
-        <div><span class="eyebrow">READY TO EXPLORE?</span><h2>Make every message<br /><em>feel at home.</em></h2><p>Experiment with real FluentLocalizer formatting directly in your browser.</p></div>
-        <NavLink class="button button-dark" href="playground">Open the playground <span aria-hidden="true">↗</span></NavLink>
+        <div><span class="eyebrow">@T["Ui:Ready"]</span><h2>@T["Ui:EveryMessage"]<br /><em>@T["Ui:AtHome"]</em></h2><p>@T["Ui:Experiment"]</p></div>
+        <NavLink class="button button-dark" href="playground">@T["Ui:OpenPlayground"] <span aria-hidden="true">↗</span></NavLink>
     </div>
 </section>
 
 @code {
+    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+
     private static readonly string[] Cultures = ["en-US", "it-IT", "fr-FR", "de-DE", "es-ES"];
 
-    private static readonly Feature[] Features =
+    private Feature[] Features =>
     [
-        new("{ }", "lime", "Fluent by design", "Chain culture, arguments, and formatting in readable C# that stays easy to maintain."),
-        new("#", "peach", "Messages with nuance", "Use placeholders, plural rules, and select expressions through the MessageFormat engine."),
-        new("◎", "blue", "Culture & fallback", "Choose a culture per request and configure fallback behavior for missing translations."),
-        new("↗", "purple", "Built to extend", "Plug in your own translation store or use JSON storage and dependency injection packages.")
+        new("{ }", "lime", T["Ui:FluentDesign"], T["Ui:FluentDescription"]),
+        new("#", "peach", T["Ui:Nuance"], T["Ui:NuanceDescription"]),
+        new("◎", "blue", T["Ui:CultureFallback"], T["Ui:CultureDescription"]),
+        new("↗", "purple", T["Ui:Extend"], T["Ui:ExtendDescription"])
     ];
 
-    private static readonly Package[] Packages =
+    private Package[] Packages =>
     [
-        new("FluentLocalizer", "CORE", "The translator, fluent API, MessageFormat formatting, and store abstractions."),
-        new("FluentLocalizer.Store.Json", "STORAGE", "File, embedded resource, and HTTP JSON stores for translation catalogs."),
-        new("FluentLocalizer.Extensions.DependencyInjection", "INTEGRATION", "Register translation services with Microsoft's dependency injection container.")
+        new("FluentLocalizer", T["Ui:Core"], T["Ui:CoreDescription"]),
+        new("FluentLocalizer.Store.Json", T["Ui:Storage"], T["Ui:StorageDescription"]),
+        new("FluentLocalizer.Extensions.DependencyInjection", T["Ui:Integration"], T["Ui:IntegrationDescription"])
     ];
 
     // Timings of the hero greeting animation, in milliseconds.
     private const int HoldDelay = 2400, EraseDelay = 30, SwapOutDelay = 220, SwapInDelay = 260, TypeDelay = 60;
 
-    private readonly Translator _translator = new(new HeroTranslationStore());
     private readonly CancellationTokenSource _animationCancellation = new();
     private Task? _animationTask;
     private string _displayCulture = "it-IT";
@@ -140,7 +143,11 @@
 
     private string? SwapClass => _swappingOut ? "is-leaving" : null;
 
-    protected override void OnInitialized() => _displayText = ResolveGreeting(_displayCulture);
+    protected override void OnInitialized()
+    {
+        _displayCulture = Cultures.First(culture => culture.StartsWith(T.Culture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase));
+        _displayText = ResolveGreeting(_displayCulture);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -148,7 +155,7 @@
             _animationTask = AnimateGreetingAsync(_animationCancellation.Token);
     }
 
-    private string ResolveGreeting(string culture) => _translator.Get("welcome")
+    private string ResolveGreeting(string culture) => Translator.Get("Demo:Welcome")
         .WithCulture(culture)
         .WithArg("name", "Ada")
         .Resolve();
