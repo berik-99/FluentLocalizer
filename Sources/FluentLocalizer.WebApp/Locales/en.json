@@ -27,7 +27,7 @@
     "BlazorReady": "Blazor ready",
     "HeroVisual": "A C# example that uses the Fluent API to format a greeting in English, Italian, French, German, and Spanish.",
     "Output": "OUTPUT",
-    "WriteOnce": "01 / WRITE ONCE, SPEAK EVERYWHERE",
+    "WriteOnce": "WRITE ONCE, SPEAK EVERYWHERE",
     "Why": "WHY FLUENTLOCALIZER",
     "Everything": "Everything your messages need.",
     "NothingExtra": "Nothing they don't.",
@@ -203,7 +203,8 @@
     "FluentApiSection": "Fluent API",
     "JsonStoresSection": "JSON stores",
     "Loading": "Loading FluentLocalizer",
-    "UnhandledError": "An unhandled error has occurred.",
+    "ErrorTitle": "Something went wrong",
+    "UnhandledError": "An unexpected error stopped the page. Reload it to start again.",
     "Reload": "Reload",
     "Dismiss": "Dismiss",
     "Language": "Site language"

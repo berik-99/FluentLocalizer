@@ -27,7 +27,7 @@
     "BlazorReady": "Pronto per Blazor",
     "HeroVisual": "Un esempio C# che usa l’API Fluent per formattare un saluto in inglese, italiano, francese, tedesco e spagnolo.",
     "Output": "RISULTATO",
-    "WriteOnce": "01 / SCRIVI UNA VOLTA, PARLA OVUNQUE",
+    "WriteOnce": "SCRIVI UNA VOLTA, PARLA OVUNQUE",
     "Why": "PERCHÉ FLUENTLOCALIZER",
     "Everything": "Tutto ciò che serve ai tuoi messaggi.",
     "NothingExtra": "Nulla di superfluo.",
@@ -203,7 +203,8 @@
     "FluentApiSection": "API Fluent",
     "JsonStoresSection": "Store JSON",
     "Loading": "Caricamento di FluentLocalizer",
-    "UnhandledError": "Si è verificato un errore non gestito.",
+    "ErrorTitle": "Qualcosa è andato storto",
+    "UnhandledError": "Un errore imprevisto ha interrotto la pagina. Ricaricala per ripartire.",
     "Reload": "Ricarica",
     "Dismiss": "Chiudi",
     "Language": "Lingua del sito"

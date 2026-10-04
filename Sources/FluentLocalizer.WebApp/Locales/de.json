@@ -27,7 +27,7 @@
     "BlazorReady": "Bereit für Blazor",
     "HeroVisual": "Ein C#-Beispiel, das mit der Fluent API eine Begrüßung auf Englisch, Italienisch, Französisch, Deutsch und Spanisch formatiert.",
     "Output": "AUSGABE",
-    "WriteOnce": "01 / EINMAL SCHREIBEN, ÜBERALL SPRECHEN",
+    "WriteOnce": "EINMAL SCHREIBEN, ÜBERALL SPRECHEN",
     "Why": "WARUM FLUENTLOCALIZER",
     "Everything": "Alles, was deine Nachrichten brauchen.",
     "NothingExtra": "Nichts Überflüssiges.",
@@ -203,7 +203,8 @@
     "FluentApiSection": "Fluent API",
     "JsonStoresSection": "JSON-Speicher",
     "Loading": "FluentLocalizer wird geladen",
-    "UnhandledError": "Ein unbehandelter Fehler ist aufgetreten.",
+    "ErrorTitle": "Etwas ist schiefgelaufen",
+    "UnhandledError": "Ein unerwarteter Fehler hat die Seite angehalten. Laden Sie sie neu, um fortzufahren.",
     "Reload": "Neu laden",
     "Dismiss": "Schließen",
     "Language": "Sprache der Website"

@@ -23,21 +23,34 @@
 </head>
 
 <body>
-    <div id="app">
-        <div class="boot" role="progressbar" aria-label="Loading FluentLocalizer">
-            <svg class="loading-progress" aria-hidden="true">
-                <circle r="40%" cx="50%" cy="50%" />
-                <circle r="40%" cx="50%" cy="50%" />
-            </svg>
-            <img class="boot-logo" src="favicon.svg" alt="" width="44" height="44" />
-            <div class="loading-progress-text"></div>
+    <div class="boot" role="progressbar" aria-label="Loading FluentLocalizer">
+        <div class="boot-mark">
+            <img class="boot-logo" src="favicon.svg" alt="" width="76" height="76" />
         </div>
+        <p class="boot-greeting" aria-hidden="true">
+            <span>Hello</span><span>Ciao</span><span>Bonjour</span><span>Hallo</span><span>Hola</span>
+        </p>
+        <div class="boot-bar" aria-hidden="true"></div>
     </div>
+    <div id="app"></div>
 
     <div id="blazor-error-ui" role="alert">
-        <span class="error-message">An unhandled error has occurred.</span>
-        <a href="." class="reload">Reload</a>
-        <button type="button" class="dismiss" aria-label="Dismiss">×</button>
+        <div class="error-toast">
+            <span class="error-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 8v5m0 3.5v.01" /><path d="M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.7L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+            </span>
+            <div class="error-body">
+                <strong class="error-title">Something went wrong</strong>
+                <p class="error-message">An unexpected error stopped the page. Reload it to start again.</p>
+                <a href="." class="reload">
+                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></svg>
+                    <span class="reload-label">Reload</span>
+                </a>
+            </div>
+            <button type="button" class="dismiss" aria-label="Dismiss">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+        </div>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>

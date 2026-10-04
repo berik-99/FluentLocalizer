@@ -32,6 +32,20 @@
             event.preventDefault();
     }, true);
 
+    // The splash lives outside #app, so it fades out once Blazor renders the first page.
+    document.addEventListener("DOMContentLoaded", () => {
+        const boot = document.querySelector(".boot");
+        const app = document.getElementById("app");
+        if (!boot || !app) return;
+        const observer = new MutationObserver(() => {
+            if (!app.firstElementChild) return;
+            observer.disconnect();
+            boot.classList.add("is-done");
+            setTimeout(() => boot.remove(), 600);
+        });
+        observer.observe(app, { childList: true });
+    });
+
     window.fluentSite = {
         getLanguages: () => {
             const browserLanguages = navigator.languages?.length ? [...navigator.languages] : [navigator.language];
@@ -48,8 +62,9 @@
         setLanguage: (culture, labels) => {
             document.documentElement.lang = culture;
             document.querySelector(".boot")?.setAttribute("aria-label", labels.loading);
+            document.querySelector("#blazor-error-ui .error-title").textContent = labels.errorTitle;
             document.querySelector("#blazor-error-ui .error-message").textContent = labels.error;
-            document.querySelector("#blazor-error-ui .reload").textContent = labels.reload;
+            document.querySelector("#blazor-error-ui .reload-label").textContent = labels.reload;
             document.querySelector("#blazor-error-ui .dismiss").setAttribute("aria-label", labels.dismiss);
         },
         getTheme: () => preference,

@@ -10,6 +10,7 @@ internal sealed class SiteText(ITranslator translator)
     public object BrowserLabels => new
     {
         loading = this["Ui:Loading"],
+        errorTitle = this["Ui:ErrorTitle"],
         error = this["Ui:UnhandledError"],
         reload = this["Ui:Reload"],
         dismiss = this["Ui:Dismiss"]

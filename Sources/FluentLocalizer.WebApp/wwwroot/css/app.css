@@ -99,7 +99,7 @@
 }
 
 /* Content placed on the dark bands uses the ink palette. */
-.site-header, .site-footer, .hero, .playground-hero, .docs-hero, .pipeline-panel {
+.site-header, .site-footer, .hero, .playground-hero, .docs-hero, .pipeline-panel, #blazor-error-ui {
     --focus: #bded72;
     --eyebrow: var(--lime);
 }
@@ -463,40 +463,190 @@ code { font-size: .91em; }
 
 /* ---------- Blazor boot and error UI ---------- */
 
-.boot { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; }
-.boot > * { grid-area: 1 / 1; }
-.loading-progress { width: 96px; height: 96px; }
-.loading-progress circle { fill: none; stroke: var(--border); stroke-width: 5px; }
-.loading-progress circle:last-child {
-    stroke: #87aa6a;
-    stroke-linecap: round;
-    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * .8), 500%;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-    transition: stroke-dasharray .2s;
+/* The splash sits outside #app on the ink band and fades out once the first page renders. */
+.boot {
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 30px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 44%, rgba(150, 200, 120, .15), transparent 52%), var(--ink);
+    color: var(--ink-text);
+    transition: opacity .5s var(--ease-out), visibility .5s;
 }
-.boot-logo { border-radius: 10px; animation: boot-pulse 1.6s ease-in-out infinite; }
-.loading-progress-text { grid-area: 2 / 1; margin-top: 14px; text-align: center; color: var(--text-muted); font-size: 13px; }
-.loading-progress-text::after { content: var(--blazor-load-percentage-text, "Loading"); }
+.boot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(213, 242, 168, .16) 1px, transparent 1.5px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(circle at 50% 46%, #000, transparent 58%);
+    mask-image: radial-gradient(circle at 50% 46%, #000, transparent 58%);
+    pointer-events: none;
+}
+.boot > * { position: relative; animation: boot-enter .8s var(--ease-out) both; }
+.boot > :nth-child(2) { animation-delay: .1s; }
+.boot > :nth-child(3) { animation-delay: .2s; }
+.boot.is-done { opacity: 0; visibility: hidden; }
 
-@keyframes boot-pulse {
-    50% { transform: scale(.92); opacity: .8; }
+/* Rings radiate from the logo like a message going out in every language. */
+.boot-mark { width: 76px; height: 76px; }
+.boot-mark::before, .boot-mark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid var(--lime);
+    border-radius: 22px;
+    opacity: 0;
+    animation: boot-ripple 2.8s cubic-bezier(.2, .7, .3, 1) infinite;
+}
+.boot-mark::after { animation-delay: 1.4s; }
+.boot-logo {
+    position: relative;
+    display: block;
+    width: 76px;
+    height: 76px;
+    filter: drop-shadow(0 12px 32px rgba(213, 242, 168, .22));
+    animation: boot-breathe 2.8s ease-in-out infinite;
 }
 
+.boot-greeting {
+    width: 12ch;
+    height: 1.3em;
+    margin: 0;
+    overflow: hidden;
+    font: 600 28px/1.3 var(--font-display);
+    letter-spacing: -.01em;
+    text-align: center;
+}
+.boot-greeting span {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    animation: boot-word 7.5s var(--ease-out) infinite;
+}
+.boot-greeting span::after { content: "."; color: var(--lime); }
+.boot-greeting span:nth-child(2) { animation-delay: 1.5s; }
+.boot-greeting span:nth-child(3) { animation-delay: 3s; }
+.boot-greeting span:nth-child(4) { animation-delay: 4.5s; }
+.boot-greeting span:nth-child(5) { animation-delay: 6s; }
+
+.boot-bar { width: 132px; height: 3px; border-radius: 3px; background: var(--ink-border); overflow: hidden; }
+.boot-bar::before {
+    content: "";
+    display: block;
+    width: var(--blazor-load-percentage, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #87aa6a, var(--lime));
+    transition: width .3s var(--ease-out);
+}
+
+@keyframes boot-enter {
+    from { opacity: 0; transform: translateY(10px); }
+}
+@keyframes boot-ripple {
+    0% { opacity: .55; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.4); }
+}
+@keyframes boot-breathe {
+    50% { transform: scale(.95); }
+}
+@keyframes boot-word {
+    0% { opacity: 0; transform: translateY(60%); filter: blur(4px); }
+    5%, 17% { opacity: 1; transform: none; filter: none; }
+    22%, 100% { opacity: 0; transform: translateY(-60%); filter: blur(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .boot-mark::before, .boot-mark::after { display: none; }
+    .boot-logo, .boot-greeting span { animation: none; }
+    .boot-greeting span:first-child { opacity: 1; }
+}
+
+/* Blazor toggles display on #blazor-error-ui, so the toast layout lives on the inner card. */
 #blazor-error-ui {
     display: none;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    right: 24px;
+    bottom: 24px;
     z-index: 70;
-    padding: 14px 54px 14px 20px;
-    background: var(--danger-bg);
-    color: var(--danger-text);
-    box-shadow: 0 -3px 15px rgba(0, 0, 0, .13);
+    width: min(420px, 100% - 32px);
+    animation: error-enter .5s var(--ease-out) both;
 }
-#blazor-error-ui .reload { text-decoration: underline; margin-left: 10px; font-weight: 700; }
-#blazor-error-ui .dismiss { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); border: 0; background: transparent; font-size: 22px; line-height: 1; }
+.error-toast {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    padding: 18px 52px 18px 18px;
+    background: var(--ink-raised);
+    color: var(--ink-text);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35), 0 2px 6px rgba(0, 0, 0, .2);
+    overflow: hidden;
+}
+.error-toast::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, #ed8d82, #e8c470);
+}
+.error-toast svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.error-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(237, 141, 130, .14);
+    color: #ed8d82;
+}
+.error-body { min-width: 0; }
+.error-title { display: block; margin-top: 1px; font: 600 16px/1.4 var(--font-display); }
+.error-message { margin: 4px 0 14px; color: var(--ink-muted); font-size: 13px; line-height: 1.6; }
+#blazor-error-ui .reload {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: var(--radius-sm);
+    background: var(--lime);
+    color: var(--on-lime);
+    font-size: 13px;
+    font-weight: 800;
+    transition: background-color .2s, transform .25s var(--ease-out);
+}
+#blazor-error-ui .reload:hover { background: var(--lime-hover); transform: translateY(-1px); }
+#blazor-error-ui .reload svg { transition: transform .5s var(--ease-out); }
+#blazor-error-ui .reload:hover svg { transform: rotate(-200deg); }
+#blazor-error-ui .dismiss {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink-subtle);
+    cursor: pointer;
+    transition: background-color .2s, color .2s;
+}
+#blazor-error-ui .dismiss:hover { background: var(--ink-hover); color: var(--ink-text); }
+
+@keyframes error-enter {
+    from { opacity: 0; transform: translateY(16px) scale(.98); }
+}
 
 /* ---------- Responsive ---------- */
 
@@ -518,6 +668,7 @@ code { font-size: .91em; }
 }
 
 @media (max-width: 560px) {
+    #blazor-error-ui { right: 16px; bottom: 16px; }
     .header-inner { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 0 6px; }
     .brand { font-size: 17px; }
     .brand .brand-logo { width: 28px; height: 28px; }
