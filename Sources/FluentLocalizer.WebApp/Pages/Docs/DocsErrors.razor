@@ -1,0 +1,189 @@
+@page "/docs/errors"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="kinds" Title="@T("KindsTitle")">
+        <p><RichText Text="@T("Kinds1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Problem")</th><th>@T("Causes")</th><th>@T("HandledBy")</th></tr></thead>
+                <tbody>
+                    <tr><td>@T("MissingName")</td><td><RichText Text="@T("MissingCauses")" /></td><td><code>MissingKeyBehavior</code></td></tr>
+                    <tr><td>@T("FormatName")</td><td><RichText Text="@T("FormatCauses")" /></td><td><code>FormattingErrorBehavior</code></td></tr>
+                    <tr><td>@T("StoreName")</td><td><RichText Text="@T("StoreCauses")" /></td><td><RichText Text="@T("StoreHandled")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="defaults" Title="@T("DefaultsTitle")">
+        <p><RichText Text="@T("Defaults1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("DefaultsMissing")" /></li>
+            <li><RichText Text="@T("DefaultsFormat")" /></li>
+        </ul>
+        <p><RichText Text="@T("Defaults2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="options" Title="@T("OptionsTitle")">
+        <p><RichText Text="@T("Options1")" /></p>
+        <CodeBlock Code="@Options" />
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Property")</th><th>@Common("Default")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>MissingKeyBehavior</code></td><td><code>ReturnPlaceholder</code></td><td><RichText Text="@T("OptMissingBehavior")" /></td></tr>
+                    <tr><td><code>MissingKeyFallbackValue</code></td><td><code>"[{key}]"</code></td><td><RichText Text="@T("OptMissingValue")" /></td></tr>
+                    <tr><td><code>MissingKeyExceptionFactory</code></td><td><code>null</code></td><td><RichText Text="@T("OptMissingFactory")" /></td></tr>
+                    <tr><td><code>FormattingErrorBehavior</code></td><td><code>ReturnPlaceholder</code></td><td><RichText Text="@T("OptFormatBehavior")" /></td></tr>
+                    <tr><td><code>FormattingErrorFallbackValue</code></td><td><code>"[Format Error]"</code></td><td><RichText Text="@T("OptFormatValue")" /></td></tr>
+                    <tr><td><code>FormattingErrorExceptionFactory</code></td><td><code>null</code></td><td><RichText Text="@T("OptFormatFactory")" /></td></tr>
+                    <tr><td><code>DefaultArguments</code></td><td><code>null</code></td><td><RichText Text="@T("OptDefaultArguments")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <h3>@T("BehaviorsTitle")</h3>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Value")</th><th>@T("MissingKey")</th><th>@T("FormattingError")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ReturnPlaceholder</code></td><td><RichText Text="@T("PlaceholderMissing")" /></td><td><RichText Text="@T("PlaceholderFormat")" /></td></tr>
+                    <tr><td><code>ReturnConfiguredValue</code></td><td><RichText Text="@T("ConfiguredMissing")" /></td><td><RichText Text="@T("ConfiguredFormat")" /></td></tr>
+                    <tr><td><code>ThrowException</code></td><td><RichText Text="@T("ThrowMissing")" /></td><td><RichText Text="@T("ThrowFormat")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="tokens" Title="@T("TokensTitle")">
+        <p><RichText Text="@T("Tokens1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Token")</th><th>@T("ReplacedWith")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>{key}</code>, <code>{0}</code></td><td><RichText Text="@T("TokenKey")" /></td></tr>
+                    <tr><td><code>{culture}</code>, <code>{1}</code></td><td><RichText Text="@T("TokenCulture")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <CodeBlock Code="@Tokens" />
+        <p><RichText Text="@T("Tokens2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="exceptions" Title="@T("ExceptionsTitle")">
+        <p><RichText Text="@T("Exceptions1")" /></p>
+        <CodeBlock Code="@Catch" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("ExceptionsMissing")" /></li>
+            <li><RichText Text="@T("ExceptionsFormat")" /></li>
+            <li><RichText Text="@T("ExceptionsEmptyKey")" /></li>
+        </ul>
+        <h3>@T("FactoriesTitle")</h3>
+        <p><RichText Text="@T("Factories1")" /></p>
+        <CodeBlock Code="@Factories" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("FactoriesType")" /></li>
+            <li><RichText Text="@T("FactoriesNull")" /></li>
+            <li><RichText Text="@T("FactoriesErrors")" /></li>
+        </ul>
+        <h3>@T("HelpersTitle")</h3>
+        <p><RichText Text="@T("Helpers")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="per-request" Title="@T("PerRequestTitle")">
+        <p><RichText Text="@T("PerRequest1")" /></p>
+        <CodeBlock Code="@PerRequest" />
+        <p><RichText Text="@T("PerRequest2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="recommendations" Title="@T("RecommendationsTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("RecommendDevelopment")" /></li>
+            <li><RichText Text="@T("RecommendTests")" /></li>
+            <li><RichText Text="@T("RecommendProduction")" /></li>
+            <li><RichText Text="@T("RecommendLogging")" /></li>
+        </ul>
+        <CodeBlock Code="@Test" />
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Errors";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("kinds", T("KindsTitle")), ("defaults", T("DefaultsTitle")), ("options", T("OptionsTitle")), ("tokens", T("TokensTitle")),
+        ("exceptions", T("ExceptionsTitle")), ("per-request", T("PerRequestTitle")), ("recommendations", T("RecommendationsTitle"))
+    ];
+
+    private const string Options = """
+        var options = new TranslationOptions
+        {
+            MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
+            MissingKeyFallbackValue = "",                       // show nothing instead of [Key]
+            FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+            DefaultArguments = new Dictionary<string, object?> { ["appName"] = "Contoso" }
+        };
+
+        var translator = new Translator(store, options);
+        """;
+
+    private const string Tokens = """
+        var options = new TranslationOptions
+        {
+            MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
+            MissingKeyFallbackValue = "⚠ {key} ({culture})",
+            FormattingErrorFallbackValue = "⚠ {key} cannot be formatted"
+        };
+        // Missing "Inbox:Unread" in it-IT → ⚠ Inbox:Unread (it-IT)
+        """;
+
+    private const string Catch = """
+        try
+        {
+            var text = translator.Get("Inbox:Unread").Pluralize(3).Resolve();
+        }
+        catch (TranslationException ex)
+        {
+            Console.WriteLine($"{ex.Key} / {ex.Culture?.Name}: {ex.Message}");
+            // Inbox:Unread / it-IT: Unable to resolve translation key 'Inbox:Unread' for culture 'it-IT'. ...
+        }
+        """;
+
+    private const string Factories = """
+        var options = new TranslationOptions
+        {
+            MissingKeyBehavior = MissingTranslationBehavior.ThrowException,
+            MissingKeyExceptionFactory = (key, culture) =>
+                new InvalidOperationException($"'{key}' has no {culture?.Name} translation."),
+
+            FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
+            FormattingErrorExceptionFactory = (key, culture) =>
+                new InvalidOperationException($"The template '{key}' is invalid.")
+        };
+        """;
+
+    private const string PerRequest = """
+        var strict = new TranslationOptions
+        {
+            MissingKeyBehavior = MissingTranslationBehavior.ThrowException,
+            FormattingErrorBehavior = FormattingErrorBehavior.ThrowException
+        };
+
+        // This message must never show a placeholder: fail loudly instead.
+        var legal = translator.Get("Checkout:Terms").WithOptions(strict).Resolve();
+        """;
+
+    private const string Test = """
+        // A test that resolves every key in every language, with strict options:
+        var strict = new Translator(store, new TranslationOptions
+        {
+            MissingKeyBehavior = MissingTranslationBehavior.ThrowException,
+            FormattingErrorBehavior = FormattingErrorBehavior.ThrowException
+        });
+
+        foreach (var culture in new[] { "en", "it", "fr" })
+            foreach (var key in allKeys)
+                strict.Get(key).WithCulture(culture).WithArgs(sampleArguments).Resolve();
+        """;
+}

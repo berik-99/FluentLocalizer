@@ -1,0 +1,151 @@
+@page "/docs/quick-start"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="before" Title="@T("BeforeTitle")">
+        <p><RichText Text="@T("Before")" /></p>
+        <CodeBlock Code="@NewProject" />
+    </DocsSection>
+
+    <DocsSection Id="install" Title="@T("InstallTitle")">
+        <p><RichText Text="@T("Install")" /></p>
+        <CodeBlock Code="@Install" />
+    </DocsSection>
+
+    <DocsSection Id="catalogs" Title="@T("CatalogsTitle")">
+        <p><RichText Text="@T("Catalogs1")" /></p>
+        <div class="docs-files">
+            <CodeBlock Caption="Locales/en.json" Code="@English" />
+            <CodeBlock Caption="Locales/it.json" Code="@Italian" />
+        </div>
+        <p><RichText Text="@T("Catalogs2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="copy" Title="@T("CopyTitle")">
+        <p><RichText Text="@T("Copy1")" /></p>
+        <CodeBlock Caption="HelloLocalizer.csproj" Code="@Project" />
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("Copy2")" />
+    </DocsSection>
+
+    <DocsSection Id="code" Title="@T("CodeTitle")">
+        <p><RichText Text="@T("Code1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@Program" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("Code2")" /></li>
+            <li><RichText Text="@T("Code3")" /></li>
+            <li><RichText Text="@T("Code4")" /></li>
+            <li><RichText Text="@T("Code5")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="run" Title="@T("RunTitle")">
+        <CodeBlock Code="dotnet run" />
+        <p><RichText Text="@T("Run1")" /></p>
+        <p><RichText Text="@T("Run2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="memory" Title="@T("MemoryTitle")">
+        <p><RichText Text="@T("Memory1")" /></p>
+        <CodeBlock Code="@Memory" />
+        <p><RichText Text="@T("Memory2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="next" Title="@T("NextTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("Next1")" /></li>
+            <li><RichText Text="@T("Next2")" /></li>
+            <li><RichText Text="@T("Next3")" /></li>
+            <li><RichText Text="@T("Next4")" /></li>
+        </ul>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "QuickStart";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("before", T("BeforeTitle")), ("install", T("InstallTitle")), ("catalogs", T("CatalogsTitle")), ("copy", T("CopyTitle")),
+        ("code", T("CodeTitle")), ("run", T("RunTitle")), ("memory", T("MemoryTitle")), ("next", T("NextTitle"))
+    ];
+
+    private const string NewProject = """
+        dotnet new console -n HelloLocalizer
+        cd HelloLocalizer
+        """;
+
+    private const string Install = """
+        dotnet add package FluentLocalizer
+        dotnet add package FluentLocalizer.Store.Json
+        """;
+
+    private const string English = """
+        {
+          "Greeting": "Hello, {name}!",
+          "Inbox": {
+            "Unread": "You have {quantity, plural, =0{no unread messages} one{# unread message} other{# unread messages}}."
+          }
+        }
+        """;
+
+    private const string Italian = """
+        {
+          "Greeting": "Ciao, {name}!",
+          "Inbox": {
+            "Unread": "{quantity, plural, =0{Non hai messaggi da leggere} one{Hai # messaggio da leggere} other{Hai # messaggi da leggere}}."
+          }
+        }
+        """;
+
+    private const string Project = """
+        <ItemGroup>
+          <Content Include="Locales\**\*.json"
+                   CopyToOutputDirectory="PreserveNewest"
+                   CopyToPublishDirectory="PreserveNewest" />
+        </ItemGroup>
+        """;
+
+    private const string Program = """
+        using System.Globalization;
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        using var store = new JsonFileStore(new JsonFileStoreOptions
+        {
+            ResourcesPath = "Locales",  // the folder copied next to the program
+            FallbackCulture = "en"      // used when a language or a key is missing
+        });
+        var translator = new Translator(store);
+
+        // The language of the user interface. Real applications set it from the user's preferences.
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
+
+        Console.WriteLine(translator.Get("Greeting").WithArg("name", "Ada").Resolve());
+        // Ciao, Ada!
+
+        Console.WriteLine(translator.Get("Inbox:Unread").Pluralize(3).Resolve());
+        // Hai 3 messaggi da leggere.
+        """;
+
+    private const string Memory = """
+        using System.Globalization;
+        using FluentLocalizer;
+
+        var translator = new Translator(new MemoryStore());
+        Console.WriteLine(translator.Get("Greeting").WithArg("name", "Ada").Resolve()); // Hello, Ada!
+
+        public sealed class MemoryStore : ITranslationStore
+        {
+            private readonly Dictionary<string, string> _templates = new()
+            {
+                ["Greeting"] = "Hello, {name}!"
+            };
+
+            public string? GetTemplate(string key, CultureInfo culture) =>
+                _templates.TryGetValue(key, out var template) ? template : null;
+
+            public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
+                Task.FromResult(GetTemplate(key, culture));
+        }
+        """;
+}

@@ -1,0 +1,90 @@
+@page "/docs/stores"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="role" Title="@T("RoleTitle")">
+        <p><RichText Text="@T("Role1")" /></p>
+        <CodeBlock Code="@Contract" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("RoleRaw")" /></li>
+            <li><RichText Text="@T("RoleFallback")" /></li>
+            <li><RichText Text="@T("RoleMissing")" /></li>
+        </ul>
+        <p><RichText Text="@T("Role2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="available" Title="@T("AvailableTitle")">
+        <p><RichText Text="@T("Available1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead>
+                    <tr><th>@T("Store")</th><th>@T("ReadsFrom")</th><th>Resolve()</th><th>@T("Browser")</th><th>@T("NamespaceFiles")</th><th>@T("Updates")</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="docs/stores/json/file"><code>JsonFileStore</code></a></td>
+                        <td>@T("FileReads")</td><td>@T("Yes")</td><td>@T("No")</td><td>@T("Yes")</td><td><RichText Text="@T("FileUpdates")" /></td>
+                    </tr>
+                    <tr>
+                        <td><a href="docs/stores/json/embedded"><code>EmbeddedJsonStore</code></a></td>
+                        <td>@T("EmbeddedReads")</td><td>@T("Yes")</td><td>@T("Yes")</td><td>@T("No")</td><td><RichText Text="@T("EmbeddedUpdates")" /></td>
+                    </tr>
+                    <tr>
+                        <td><a href="docs/stores/json/http"><code>HttpJsonStore</code></a></td>
+                        <td>@T("HttpReads")</td><td><RichText Text="@T("HttpSync")" /></td><td>@T("Yes")</td><td>@T("Yes")</td><td><RichText Text="@T("HttpUpdates")" /></td>
+                    </tr>
+                    <tr>
+                        <td><a href="docs/stores/custom">@T("CustomName")</a></td>
+                        <td>@T("CustomReads")</td><td>@T("YourChoice")</td><td>@T("YourChoice")</td><td>—</td><td>@T("YourChoice")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Available2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="choosing" Title="@T("ChoosingTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("ChooseFile")" /></li>
+            <li><RichText Text="@T("ChooseEmbedded")" /></li>
+            <li><RichText Text="@T("ChooseHttp")" /></li>
+            <li><RichText Text="@T("ChooseCustom")" /></li>
+        </ul>
+        <p><RichText Text="@T("Choosing2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="families" Title="@T("FamiliesTitle")">
+        <p><RichText Text="@T("Families1")" /></p>
+        <div class="docs-cards">
+            <a class="docs-card" href="docs/stores/json"><strong>@T("JsonFamily") <span aria-hidden="true">→</span></strong><span>@T("JsonFamilyText")</span></a>
+            <a class="docs-card" href="docs/stores/custom"><strong>@T("CustomFamily") <span aria-hidden="true">→</span></strong><span>@T("CustomFamilyText")</span></a>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="lifetime" Title="@T("LifetimeTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("LifetimeOnce")" /></li>
+            <li><RichText Text="@T("LifetimeThreads")" /></li>
+            <li><RichText Text="@T("LifetimeDispose")" /></li>
+        </ul>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Stores";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("role", T("RoleTitle")), ("available", T("AvailableTitle")), ("choosing", T("ChoosingTitle")),
+        ("families", T("FamiliesTitle")), ("lifetime", T("LifetimeTitle"))
+    ];
+
+    private const string Contract = """
+        public interface ITranslationStore
+        {
+            string? GetTemplate(string key, CultureInfo culture);
+
+            Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default);
+        }
+        """;
+}

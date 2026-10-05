@@ -1,0 +1,194 @@
+@page "/docs/templates"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="placeholders" Title="@T("PlaceholdersTitle")">
+        <p><RichText Text="@T("Placeholders1")" /></p>
+        <CodeBlock Code="@Placeholders" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("PlaceholderNames")" /></li>
+            <li><RichText Text="@T("PlaceholderRequired")" /></li>
+            <li><RichText Text="@T("PlaceholderNull")" /></li>
+            <li><RichText Text="@T("PlaceholderValues")" /></li>
+            <li><RichText Text="@T("PlaceholderSpaces")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="plural" Title="@T("PluralTitle")">
+        <p><RichText Text="@T("Plural1")" /></p>
+        <CodeBlock Code="@Plural" />
+        <p><RichText Text="@T("Plural2")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Branch")</th><th>@T("Meaning")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>zero</code>, <code>one</code>, <code>two</code>, <code>few</code>, <code>many</code></td><td><RichText Text="@T("BranchCategories")" /></td></tr>
+                    <tr><td><code>other</code></td><td><RichText Text="@T("BranchOther")" /></td></tr>
+                    <tr><td><code>=0</code>, <code>=1</code>, <code>=42</code>…</td><td><RichText Text="@T("BranchExact")" /></td></tr>
+                    <tr><td><code>#</code></td><td><RichText Text="@T("BranchHash")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Plural3")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Language")</th><th>@T("Categories")</th><th>@T("Examples")</th></tr></thead>
+                <tbody>
+                    <tr><td>@T("English")</td><td><code>one</code>, <code>other</code></td><td><RichText Text="@T("EnglishExample")" /></td></tr>
+                    <tr><td>@T("French")</td><td><code>one</code>, <code>many</code>, <code>other</code></td><td><RichText Text="@T("FrenchExample")" /></td></tr>
+                    <tr><td>@T("Italian")</td><td><code>one</code>, <code>many</code>, <code>other</code></td><td><RichText Text="@T("ItalianExample")" /></td></tr>
+                    <tr><td>@T("Russian")</td><td><code>one</code>, <code>few</code>, <code>many</code>, <code>other</code></td><td><RichText Text="@T("RussianExample")" /></td></tr>
+                    <tr><td>@T("Japanese")</td><td><code>other</code></td><td><RichText Text="@T("JapaneseExample")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("PluralOther")" /></li>
+            <li><RichText Text="@T("PluralQuantity")" /></li>
+            <li><RichText Text="@T("PluralMissing")" /></li>
+            <li><RichText Text="@T("PluralValues")" /></li>
+        </ul>
+        <h3>@T("OffsetTitle")</h3>
+        <p><RichText Text="@T("Offset")" /></p>
+        <CodeBlock Code="@Offset" />
+    </DocsSection>
+
+    <DocsSection Id="select" Title="@T("SelectTitle")">
+        <p><RichText Text="@T("Select1")" /></p>
+        <CodeBlock Code="@Select" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("SelectMatch")" /></li>
+            <li><RichText Text="@T("SelectOther")" /></li>
+            <li><RichText Text="@T("SelectGender")" /></li>
+            <li><RichText Text="@T("SelectEnum")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="ordinal" Title="@T("OrdinalTitle")">
+        <p><RichText Text="@T("Ordinal1")" /></p>
+        <CodeBlock Code="@Ordinal" />
+    </DocsSection>
+
+    <DocsSection Id="formats" Title="@T("FormatsTitle")">
+        <p><RichText Text="@T("Formats1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Template")</th><th>@T("Value")</th><th>en-US</th><th>it-IT</th></tr></thead>
+                <tbody>
+                    <tr><td><code>{n, number}</code></td><td><code>1234.5</code></td><td>1,234.5</td><td>1.234,5</td></tr>
+                    <tr><td><code>{n, number, integer}</code></td><td><code>1234.6</code></td><td>1235</td><td>1235</td></tr>
+                    <tr><td><code>{n, number, percent}</code></td><td><code>0.25</code></td><td>25%</td><td>25%</td></tr>
+                    <tr><td><code>{n, number, currency}</code></td><td><code>1234.5</code></td><td>$1,234.50</td><td>1.234,50 €</td></tr>
+                    <tr><td><code>{d, date}</code>, <code>{d, date, short}</code></td><td><code>DateTime</code></td><td>10/5/2026</td><td>05/10/2026</td></tr>
+                    <tr><td><code>{d, date, full}</code></td><td><code>DateTime</code></td><td>Monday, October 5, 2026</td><td>lunedì 5 ottobre 2026</td></tr>
+                    <tr><td><code>{d, time}</code></td><td><code>DateTime</code></td><td>2:30:00 PM</td><td>14:30:00</td></tr>
+                    <tr><td><code>{d, time, short}</code></td><td><code>DateTime</code></td><td>2:30 PM</td><td>14:30</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("FormatsCurrency")" /></li>
+            <li><RichText Text="@T("FormatsStyles")" /></li>
+            <li><RichText Text="@T("FormatsPlain")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="nesting" Title="@T("NestingTitle")">
+        <p><RichText Text="@T("Nesting1")" /></p>
+        <CodeBlock Code="@Nesting" />
+        <p><RichText Text="@T("Nesting2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="escaping" Title="@T("EscapingTitle")">
+        <p><RichText Text="@T("Escaping1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Template")</th><th>@T("Output")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Use '{name}' as a placeholder</code></td><td>Use {name} as a placeholder</td></tr>
+                    <tr><td><code>It''s ready</code></td><td>It's ready</td></tr>
+                    <tr><td><code>It's ready, l'utente</code></td><td>It's ready, l'utente</td></tr>
+                    <tr><td><code>{n, plural, other{'#' #}}</code></td><td># 3</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Escaping2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="special" Title="@T("SpecialTitle")">
+        <p><RichText Text="@T("Special1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("SpecialBuiltIn")" /></li>
+            <li><RichText Text="@T("SpecialDefaults")" /></li>
+            <li><RichText Text="@T("SpecialLength")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="tips" Title="@T("TipsTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("Tip1")" /></li>
+            <li><RichText Text="@T("Tip2")" /></li>
+            <li><RichText Text="@T("Tip3")" /></li>
+            <li><RichText Text="@T("Tip4")" /></li>
+            <li><RichText Text="@T("Tip5")" /></li>
+        </ul>
+        <p><RichText Text="@T("Reference")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Templates";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("placeholders", T("PlaceholdersTitle")), ("plural", T("PluralTitle")), ("select", T("SelectTitle")), ("ordinal", T("OrdinalTitle")),
+        ("formats", T("FormatsTitle")), ("nesting", T("NestingTitle")), ("escaping", T("EscapingTitle")), ("special", T("SpecialTitle")), ("tips", T("TipsTitle"))
+    ];
+
+    private const string Placeholders = """
+        // Template: "Hello, {name}! Your order {orderId} has shipped."
+        translator.Get("Orders:Shipped")
+            .WithArg("name", "Ada")
+            .WithArg("orderId", 1042)
+            .Resolve();
+        // Hello, Ada! Your order 1042 has shipped.
+        """;
+
+    private const string Plural = """
+        // Template: "You have {quantity, plural, =0{no messages} one{# message} other{# messages}}."
+        translator.Get("Inbox:Count").Pluralize(0).Resolve();  // You have no messages.
+        translator.Get("Inbox:Count").Pluralize(1).Resolve();  // You have 1 message.
+        translator.Get("Inbox:Count").Pluralize(25).Resolve(); // You have 25 messages.
+        """;
+
+    private const string Offset = """
+        // Template: "{quantity, plural, offset:1 =0{Nobody likes this} =1{You like this} one{You and # other person like this} other{You and # other people like this}}"
+        // quantity = 0 → Nobody likes this
+        // quantity = 1 → You like this
+        // quantity = 2 → You and 1 other person like this
+        // quantity = 3 → You and 2 other people like this
+        """;
+
+    private const string Select = """
+        // Template: "{gender, select, female{She replied} male{He replied} other{They replied}}"
+        translator.Get("Thread:Reply").Genderize(Gender.Female).Resolve(); // She replied
+
+        // Template: "{role, select, admin{Full access} editor{Can edit} other{Read only}}"
+        translator.Get("Users:Access").WithArg("role", "editor").Resolve(); // Can edit
+        """;
+
+    private const string Ordinal = """
+        // Template: "You finished {position, selectordinal, one{#st} two{#nd} few{#rd} other{#th}}."
+        translator.Get("Race:Result").WithArg("position", 2).Resolve();  // You finished 2nd.
+        translator.Get("Race:Result").WithArg("position", 11).Resolve(); // You finished 11th.
+        translator.Get("Race:Result").WithArg("position", 23).Resolve(); // You finished 23rd.
+        """;
+
+    private const string Nesting = """
+        {gender, select,
+            female {{quantity, plural, =0{She has no messages} one{She has one message} other{She has # messages}}}
+            male {{quantity, plural, =0{He has no messages} one{He has one message} other{He has # messages}}}
+            other {{quantity, plural, =0{They have no messages} one{They have one message} other{They have # messages}}}
+        }
+        """;
+}

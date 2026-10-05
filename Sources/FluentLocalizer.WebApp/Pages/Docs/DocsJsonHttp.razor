@@ -1,0 +1,253 @@
+@page "/docs/stores/json/http"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="when" Title="@T("WhenTitle")">
+        <p><RichText Text="@T("When1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("WhenSize")" /></li>
+            <li><RichText Text="@T("WhenUpdate")" /></li>
+            <li><RichText Text="@T("WhenClients")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="setup" Title="@T("SetupTitle")">
+        <p><RichText Text="@T("Setup1")" /></p>
+        <CodeBlock Code="@Folder" />
+        <p><RichText Text="@T("Setup2")" /></p>
+        <CodeBlock Code="@Create" />
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("BaseAddress")" />
+        <p><RichText Text="@T("Setup3")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="options" Title="@T("OptionsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Property")</th><th>@Common("Default")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ResourcesPath</code></td><td><code>"locales"</code></td><td><RichText Text="@T("OptPath")" /></td></tr>
+                    <tr><td><code>FallbackCulture</code>, <code>FileMappings</code>, <code>ThrowOnMissingStore</code>, <code>MaxDocumentBytes</code></td><td>—</td><td><RichText Text="@T("OptShared")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="loading" Title="@T("LoadingTitle")">
+        <p><RichText Text="@T("Loading1")" /></p>
+        <h3>@T("LazyTitle")</h3>
+        <p><RichText Text="@T("Lazy")" /></p>
+        <CodeBlock Code="@Lazy" />
+        <h3>@T("PreloadTitle")</h3>
+        <p><RichText Text="@T("Preload1")" /></p>
+        <CodeBlock Code="@Preload" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("PreloadFallback")" /></li>
+            <li><RichText Text="@T("PreloadWhat")" /></li>
+            <li><RichText Text="@T("PreloadSync")" /></li>
+            <li><RichText Text="@T("PreloadSwitch")" /></li>
+        </ul>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("SyncWarning")" />
+    </DocsSection>
+
+    <DocsSection Id="manifest" Title="@T("ManifestTitle")">
+        <p><RichText Text="@T("Manifest1")" /></p>
+        <CodeBlock Caption="wwwroot/locales/manifest.json" Code="@Manifest" />
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th></th><th>@T("WithoutManifest")</th><th>@T("WithManifest")</th></tr></thead>
+                <tbody>
+                    <tr><td>@T("RowRequests")</td><td><RichText Text="@T("RequestsWithout")" /></td><td><RichText Text="@T("RequestsWith")" /></td></tr>
+                    <tr><td>@T("RowPreload")</td><td><RichText Text="@T("PreloadWithout")" /></td><td><RichText Text="@T("PreloadWith")" /></td></tr>
+                    <tr><td>@T("RowRegional")</td><td><RichText Text="@T("RegionalWithout")" /></td><td><RichText Text="@T("RegionalWith")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("ManifestFormat")" /></li>
+            <li><RichText Text="@T("ManifestOnly")" /></li>
+            <li><RichText Text="@T("ManifestOnce")" /></li>
+            <li><RichText Text="@T("ManifestSync")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="requests" Title="@T("RequestsTitle")">
+        <p><RichText Text="@T("Requests1")" /></p>
+        <CodeBlock Code="@Probing" />
+        <p><RichText Text="@T("Requests2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="refresh" Title="@T("RefreshTitle")">
+        <p><RichText Text="@T("Refresh1")" /></p>
+        <CodeBlock Code="@Refresh" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("RefreshConditional")" /></li>
+            <li><RichText Text="@T("RefreshAtomic")" /></li>
+            <li><RichText Text="@T("RefreshManual")" /></li>
+            <li><RichText Text="@T("RefreshRender")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="caching" Title="@T("CachingTitle")">
+        <p><RichText Text="@T("Caching1")" /></p>
+        <p><RichText Text="@T("Caching2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="errors" Title="@T("ErrorsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Exception")</th><th>@T("ThrownWhen")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ArgumentNullException</code></td><td><RichText Text="@T("ErrNull")" /></td></tr>
+                    <tr><td><code>ArgumentException</code></td><td><RichText Text="@T("ErrPath")" /></td></tr>
+                    <tr><td><code>ArgumentOutOfRangeException</code></td><td><RichText Text="@T("ErrRange")" /></td></tr>
+                    <tr><td><code>InvalidOperationException</code></td><td><RichText Text="@T("ErrNotLoaded")" /></td></tr>
+                    <tr><td><code>HttpRequestException</code></td><td><RichText Text="@T("ErrHttp")" /></td></tr>
+                    <tr><td><code>JsonException</code></td><td><RichText Text="@T("ErrJson")" /></td></tr>
+                    <tr><td><code>FileNotFoundException</code></td><td><RichText Text="@T("ErrNotFound")" /></td></tr>
+                    <tr><td><code>CultureNotFoundException</code></td><td><RichText Text="@T("ErrCulture")" /></td></tr>
+                    <tr><td><code>OperationCanceledException</code></td><td><RichText Text="@T("ErrCanceled")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Errors2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="lifetime" Title="@T("LifetimeTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("LifetimeShare")" /></li>
+            <li><RichText Text="@T("LifetimeClient")" /></li>
+            <li><RichText Text="@T("LifetimeThreads")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="example" Title="@T("ExampleTitle")">
+        <p><RichText Text="@T("Example1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@Example" />
+        <CodeBlock Caption="LanguagePicker.razor" Code="@Picker" />
+        <p><RichText Text="@T("Example2")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "JsonHttp";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("when", T("WhenTitle")), ("setup", T("SetupTitle")), ("options", T("OptionsTitle")), ("loading", T("LoadingTitle")),
+        ("manifest", T("ManifestTitle")), ("requests", T("RequestsTitle")), ("refresh", T("RefreshTitle")), ("caching", T("CachingTitle")),
+        ("errors", T("ErrorsTitle")), ("lifetime", T("LifetimeTitle")), ("example", T("ExampleTitle"))
+    ];
+
+    private const string Folder = """
+        MyApp.Client/
+          wwwroot/
+            index.html
+            locales/
+              manifest.json      optional
+              en.json
+              it.json
+              it.checkout.json
+        """;
+
+    private const string Create = """
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        var http = new HttpClient { BaseAddress = new Uri("https://example.com/myapp/") };   // note the final "/"
+        using var store = new HttpJsonStore(http, new HttpJsonStoreOptions
+        {
+            ResourcesPath = "locales",     // https://example.com/myapp/locales/en.json ...
+            FallbackCulture = "en"
+        });
+
+        var translator = new Translator(store);
+        """;
+
+    private const string Lazy = """
+        // Downloads what the key needs the first time, then works from memory.
+        var title = await translator.Get("checkout:Title").ResolveAsync();
+        """;
+
+    private const string Preload = """
+        await store.LoadAsync(CultureInfo.CurrentUICulture);   // one culture, plus the fallback
+        await store.LoadAsync(["en", "it", "fr"]);              // several cultures, plus the fallback
+
+        var title = translator.Get("checkout:Title").Resolve(); // no network access
+        """;
+
+    private const string Manifest = """
+        [
+          "en.json",
+          "en.checkout.json",
+          "it.json",
+          "it.checkout.json",
+          "it-CH/checkout.json"
+        ]
+        """;
+
+    private const string Probing = """
+        GET locales/manifest.json          404: no manifest
+        GET locales/it-CH.checkout.json    404
+        GET locales/checkout.it-CH.json    404
+        GET locales/it-CH/checkout.json    404
+        GET locales/it-CH.json             404
+        GET locales/it-CH/it-CH.json       404
+        GET locales/it.checkout.json       200: contains "Title", stop
+        """;
+
+    private const string Refresh = """
+        // For example from a "Check for updates" button, or every few minutes:
+        await store.RefreshStoreAsync(cancellationToken);
+        StateHasChanged();   // render again to show the new texts
+        """;
+
+    private const string Example = """
+        using System.Globalization;
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+        using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
+        var builder = WebAssemblyHostBuilder.CreateDefault(args);
+        builder.RootComponents.Add<App>("#app");
+
+        var http = new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+        var store = new HttpJsonStore(http, new HttpJsonStoreOptions
+        {
+            ResourcesPath = "locales",   // wwwroot/locales
+            FallbackCulture = "en"
+        });
+        builder.Services.AddSingleton(store);              // lets components call LoadAsync
+        builder.Services.AddFluentLocalizer().WithStore(store);
+
+        var culture = CultureInfo.GetCultureInfo("it");
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+        // Synchronous rendering needs the catalogs in memory before the first render.
+        await store.LoadAsync(culture);
+
+        await builder.Build().RunAsync();
+        """;
+
+    private const string Picker = """
+        @using System.Globalization
+        @using FluentLocalizer.Store.Json
+        @inject HttpJsonStore Store
+
+        <button @onclick='() => SwitchAsync("en")'>English</button>
+        <button @onclick='() => SwitchAsync("it")'>Italiano</button>
+        <p>@Translator.Get("checkout:Title")</p>
+
+        @code {
+            private async Task SwitchAsync(string name)
+            {
+                var culture = CultureInfo.GetCultureInfo(name);
+                await Store.LoadAsync(culture);          // download first, then switch
+                CultureInfo.DefaultThreadCurrentCulture = culture;
+                CultureInfo.DefaultThreadCurrentUICulture = culture;
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
+            }
+        }
+        """;
+}

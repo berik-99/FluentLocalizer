@@ -1,0 +1,109 @@
+@page "/docs/logging"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="interface" Title="@T("InterfaceTitle")">
+        <p><RichText Text="@T("Interface1")" /></p>
+        <CodeBlock Code="@Interface" />
+        <p><RichText Text="@T("Interface2")" /></p>
+        <CodeBlock Code="@ConsoleLogger" />
+    </DocsSection>
+
+    <DocsSection Id="events" Title="@T("EventsTitle")">
+        <p><RichText Text="@T("Events1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Level")</th><th>@T("When")</th><th>@T("Message")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Debug</code></td><td><RichText Text="@T("DebugWhen")" /></td><td><RichText Text="@T("DebugMessages")" /></td></tr>
+                    <tr><td><code>Warning</code></td><td><RichText Text="@T("WarningWhen")" /></td><td><RichText Text="@T("WarningMessages")" /></td></tr>
+                    <tr><td><code>Error</code></td><td><RichText Text="@T("ErrorWhen")" /></td><td><RichText Text="@T("ErrorMessages")" /></td></tr>
+                    <tr><td><code>Trace</code>, <code>Information</code>, <code>Critical</code></td><td><RichText Text="@T("UnusedWhen")" /></td><td>—</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("EventsVolume")" /></li>
+            <li><RichText Text="@T("EventsFormatting")" /></li>
+            <li><RichText Text="@T("EventsTwice")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="ilogger" Title="@T("ILoggerTitle")">
+        <p><RichText Text="@T("ILogger1")" /></p>
+        <CodeBlock Code="@WithLogger" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("ILoggerCategory")" /></li>
+            <li><RichText Text="@T("ILoggerLevels")" /></li>
+            <li><RichText Text="@T("ILoggerRequired")" /></li>
+        </ul>
+        <p><RichText Text="@T("ILogger2")" /></p>
+        <CodeBlock Caption="appsettings.json" Code="@Filter" />
+        <h3>@T("AdapterTitle")</h3>
+        <p><RichText Text="@T("Adapter")" /></p>
+        <CodeBlock Code="@Adapter" />
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Logging";
+
+    protected override (string Id, string Title)[] Sections =>
+        [("interface", T("InterfaceTitle")), ("events", T("EventsTitle")), ("ilogger", T("ILoggerTitle"))];
+
+    private const string Interface = """
+        namespace FluentLocalizer.Logging;
+
+        public interface ITranslationLogger
+        {
+            void Log(TranslationLogLevel level, string message, Exception? exception = null);
+        }
+        """;
+
+    private const string ConsoleLogger = """
+        using FluentLocalizer;
+        using FluentLocalizer.Logging;
+
+        public sealed class ConsoleTranslationLogger : ITranslationLogger
+        {
+            public void Log(TranslationLogLevel level, string message, Exception? exception = null)
+            {
+                if (level < TranslationLogLevel.Warning) return; // skip the per-request Debug entries
+                Console.WriteLine($"[{level}] {message}");
+                if (exception is not null) Console.WriteLine(exception.Message);
+            }
+        }
+
+        var translator = new Translator(store, options: null, logger: new ConsoleTranslationLogger());
+        """;
+
+    private const string WithLogger = """
+        builder.Services.AddFluentLocalizer()
+            .WithStore(_ => new JsonFileStore(new JsonFileStoreOptions { FallbackCulture = "en" }))
+            .WithLogger();   // ITranslationLogger → ILogger<Translator>
+        """;
+
+    private const string Filter = """
+        {
+          "Logging": {
+            "LogLevel": {
+              "Default": "Information",
+              "FluentLocalizer": "Warning"
+            }
+          }
+        }
+        """;
+
+    private const string Adapter = """
+        using FluentLocalizer.Logging;
+        using Microsoft.Extensions.Logging;
+
+        public sealed class TranslationLoggerAdapter(ILogger logger) : ITranslationLogger
+        {
+            public void Log(TranslationLogLevel level, string message, Exception? exception = null) =>
+                logger.Log((LogLevel)level, exception, "{Message}", message);   // the two enums have the same order
+        }
+
+        var translator = new Translator(store, logger: new TranslationLoggerAdapter(loggerFactory.CreateLogger("Translations")));
+        """;
+}

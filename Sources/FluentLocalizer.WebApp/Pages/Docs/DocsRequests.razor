@@ -1,0 +1,155 @@
+@page "/docs/requests"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="anatomy" Title="@T("AnatomyTitle")">
+        <p><RichText Text="@T("Anatomy1")" /></p>
+        <CodeBlock Code="@Anatomy" />
+        <p><RichText Text="@T("Anatomy2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="methods" Title="@T("MethodsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Method")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Get(key)</code></td><td><RichText Text="@T("Get")" /></td></tr>
+                    <tr><td><code>WithArg(name, value)</code></td><td><RichText Text="@T("WithArg")" /></td></tr>
+                    <tr><td><code>WithArgs(dictionary)</code></td><td><RichText Text="@T("WithArgs")" /></td></tr>
+                    <tr><td><code>Pluralize(quantity)</code></td><td><RichText Text="@T("Pluralize")" /></td></tr>
+                    <tr><td><code>Genderize(gender)</code></td><td><RichText Text="@T("Genderize")" /></td></tr>
+                    <tr><td><code>WithCase(letterCase)</code></td><td><RichText Text="@T("WithCase")" /></td></tr>
+                    <tr><td><code>WithCulture(culture)</code></td><td><RichText Text="@T("WithCulture")" /></td></tr>
+                    <tr><td><code>WithOptions(options)</code></td><td><RichText Text="@T("WithOptions")" /></td></tr>
+                    <tr><td><code>Resolve()</code></td><td><RichText Text="@T("Resolve")" /></td></tr>
+                    <tr><td><code>ResolveAsync(cancellationToken)</code></td><td><RichText Text="@T("ResolveAsync")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("MethodsOrder")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="arguments" Title="@T("ArgumentsTitle")">
+        <p><RichText Text="@T("Arguments1")" /></p>
+        <CodeBlock Code="@Arguments" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("ArgumentsReplace")" /></li>
+            <li><RichText Text="@T("ArgumentsDefaults")" /></li>
+            <li><RichText Text="@T("ArgumentsUnused")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="letter-case" Title="@T("CaseTitle")">
+        <p><RichText Text="@T("Case1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th><code>LetterCase</code></th><th>@T("CaseResult")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>AsIs</code></td><td><code>hello WORLD fooBar 42abc</code> · @T("CaseDefault")</td></tr>
+                    <tr><td><code>Upper</code></td><td><code>HELLO WORLD FOOBAR 42ABC</code></td></tr>
+                    <tr><td><code>Lower</code></td><td><code>hello world foobar 42abc</code></td></tr>
+                    <tr><td><code>CamelCase</code></td><td><code>helloWorldFooBar42Abc</code></td></tr>
+                    <tr><td><code>PascalCase</code></td><td><code>HelloWorldFooBar42Abc</code></td></tr>
+                    <tr><td><code>SnakeCase</code></td><td><code>hello_world_foo_bar_42_abc</code></td></tr>
+                    <tr><td><code>KebabCase</code></td><td><code>hello-world-foo-bar-42-abc</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("CaseAfter")" /></li>
+            <li><RichText Text="@T("CaseInvariant")" /></li>
+            <li><RichText Text="@T("CaseWords")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="resolving" Title="@T("ResolvingTitle")">
+        <h3>@T("SyncTitle")</h3>
+        <p><RichText Text="@T("Sync")" /></p>
+        <h3>@T("AsyncTitle")</h3>
+        <p><RichText Text="@T("Async")" /></p>
+        <CodeBlock Code="@Async" />
+        <h3>@T("ImplicitTitle")</h3>
+        <p><RichText Text="@T("Implicit1")" /></p>
+        <CodeBlock Code="@Implicit" />
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("Implicit2")" />
+    </DocsSection>
+
+    <DocsSection Id="lifetime" Title="@T("LifetimeTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("LifetimeTranslator")" /></li>
+            <li><RichText Text="@T("LifetimeBuilder")" /></li>
+            <li><RichText Text="@T("LifetimeRepeat")" /></li>
+            <li><RichText Text="@T("LifetimeOptions")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="without-translator" Title="@T("DirectTitle")">
+        <p><RichText Text="@T("Direct1")" /></p>
+        <CodeBlock Code="@Direct" />
+        <p><RichText Text="@T("Direct2")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Requests";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("anatomy", T("AnatomyTitle")), ("methods", T("MethodsTitle")), ("arguments", T("ArgumentsTitle")), ("letter-case", T("CaseTitle")),
+        ("resolving", T("ResolvingTitle")), ("lifetime", T("LifetimeTitle")), ("without-translator", T("DirectTitle"))
+    ];
+
+    private const string Anatomy = """
+        string text = translator
+            .Get("Orders:Summary")                // 1. start a request for a key
+            .WithArg("customer", "Ada")           // 2. add values...
+            .Pluralize(3)
+            .Genderize(Gender.Female)
+            .WithCase(LetterCase.AsIs)            //    ...and options
+            .Resolve();                           // 3. produce the text
+        """;
+
+    private const string Arguments = """
+        var options = new TranslationOptions
+        {
+            DefaultArguments = new Dictionary<string, object?>
+            {
+                ["appName"] = "Contoso",
+                ["supportEmail"] = "help@contoso.com"
+            }
+        };
+        var translator = new Translator(store, options);
+
+        translator.Get("Footer:Contact")
+            .WithArgs(new Dictionary<string, object?>
+            {
+                ["name"] = "Ada",
+                ["since"] = new DateTime(2024, 3, 1)
+            })
+            .WithArg("appName", "Contoso Cloud")  // replaces the default value
+            .Resolve();
+        """;
+
+    private const string Async = """
+        string text = await translator
+            .Get("Inbox:Unread")
+            .Pluralize(unreadCount)
+            .ResolveAsync(cancellationToken);
+        """;
+
+    private const string Implicit = """
+        string title = translator.Get("Home:Title");           // implicit conversion: calls Resolve()
+        Console.WriteLine($"{translator.Get("Home:Title")}");   // interpolation: calls ToString(), which calls Resolve()
+        """;
+
+    private const string Direct = """
+        var request = new TranslationBuilder(
+            store,                           // required
+            "Home:Title",                    // required
+            options: null,                   // default: new TranslationOptions()
+            culture: null,                   // default: CultureInfo.CurrentUICulture, read now
+            logger: null);                   // default: no logging
+
+        string title = request.Resolve();
+        """;
+}

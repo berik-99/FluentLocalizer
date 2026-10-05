@@ -1,0 +1,143 @@
+@page "/docs/culture"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="basics" Title="@T("BasicsTitle")">
+        <p><RichText Text="@T("Basics1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Name")</th><th>@T("Kind")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>it</code></td><td>@T("Neutral")</td><td><RichText Text="@T("ItNeutral")" /></td></tr>
+                    <tr><td><code>it-IT</code></td><td>@T("Specific")</td><td><RichText Text="@T("ItItaly")" /></td></tr>
+                    <tr><td><code>it-CH</code></td><td>@T("Specific")</td><td><RichText Text="@T("ItSwitzerland")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Basics2")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("UiCulture")" /></li>
+            <li><RichText Text="@T("FormatCulture")" /></li>
+        </ul>
+        <p><RichText Text="@T("Basics3")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="default" Title="@T("DefaultTitle")">
+        <p><RichText Text="@T("Default1")" /></p>
+        <CodeBlock Code="@Default" />
+        <p><RichText Text="@T("Default2")" /></p>
+        <CodeBlock Code="@Capture" />
+        <p><RichText Text="@T("Default3")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="override" Title="@T("OverrideTitle")">
+        <p><RichText Text="@T("Override1")" /></p>
+        <CodeBlock Code="@Override" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("OverrideScope")" /></li>
+            <li><RichText Text="@T("OverrideName")" /></li>
+            <li><RichText Text="@T("OverrideNull")" /></li>
+        </ul>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Tip" Text="@T("OverrideTip")" />
+    </DocsSection>
+
+    <DocsSection Id="applications" Title="@T("AppsTitle")">
+        <h3>@T("ConsoleTitle")</h3>
+        <p><RichText Text="@T("Console")" /></p>
+        <CodeBlock Code="@Startup" />
+        <h3>@T("AspNetTitle")</h3>
+        <p><RichText Text="@T("AspNet1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@AspNet" />
+        <p><RichText Text="@T("AspNet2")" /></p>
+        <h3>@T("BlazorTitle")</h3>
+        <p><RichText Text="@T("Blazor1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@Blazor" />
+        <p><RichText Text="@T("Blazor2")" /></p>
+        <CodeBlock Caption=".csproj" Code="@GlobalizationData" />
+        <h3>@T("AsyncFlowTitle")</h3>
+        <p><RichText Text="@T("AsyncFlow")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="fallback" Title="@T("FallbackTitle")">
+        <p><RichText Text="@T("Fallback1")" /></p>
+        <p><RichText Text="@T("Fallback2")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Culture";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("basics", T("BasicsTitle")), ("default", T("DefaultTitle")), ("override", T("OverrideTitle")),
+        ("applications", T("AppsTitle")), ("fallback", T("FallbackTitle"))
+    ];
+
+    private const string Default = """
+        using System.Globalization;
+
+        var culture = CultureInfo.GetCultureInfo("it-IT");
+        CultureInfo.CurrentUICulture = culture; // translations: catalog and formatting of templates
+        CultureInfo.CurrentCulture = culture;   // the rest of .NET: ToString(), string.Format...
+
+        translator.Get("Greeting").WithArg("name", "Ada").Resolve(); // Ciao, Ada!
+        """;
+
+    private const string Capture = """
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+        var request = translator.Get("Greeting").WithArg("name", "Ada"); // records en-US
+
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
+        request.Resolve();                                                // Hello, Ada!  (still en-US)
+        translator.Get("Greeting").WithArg("name", "Ada").Resolve();     // Ciao, Ada!   (new request)
+        """;
+
+    private const string Override = """
+        // The user interface is in English, but the email goes out in the recipient's language.
+        var subject = translator.Get("Email:OrderShipped:Subject")
+            .WithArg("orderId", order.Id)
+            .WithCulture(recipient.Culture)   // a CultureInfo, or a name such as "it-IT"
+            .Resolve();
+        """;
+
+    private const string Startup = """
+        // At startup, before creating any request:
+        var culture = CultureInfo.GetCultureInfo(settings.Language); // for example "it-IT"
+        CultureInfo.CurrentUICulture = culture;
+        CultureInfo.CurrentCulture = culture;
+
+        // Threads created later, including thread-pool threads, start with these:
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        """;
+
+    private const string AspNet = """
+        var app = builder.Build();
+
+        string[] cultures = ["en", "it", "fr"];
+        app.UseRequestLocalization(new RequestLocalizationOptions()
+            .SetDefaultCulture("en")
+            .AddSupportedCultures(cultures)
+            .AddSupportedUICultures(cultures));
+
+        // From here on, every request runs in the user's language:
+        app.MapGet("/hello", (ITranslator translator) =>
+            translator.Get("Greeting").WithArg("name", "Ada").Resolve());
+        """;
+
+    private const string Blazor = """
+        var host = builder.Build();
+
+        var culture = CultureInfo.GetCultureInfo("it");   // for example, read from the browser or from storage
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+        await host.RunAsync();
+        """;
+
+    private const string GlobalizationData = """
+        <PropertyGroup>
+          <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+        </PropertyGroup>
+        """;
+}

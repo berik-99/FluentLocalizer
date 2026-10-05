@@ -77,6 +77,14 @@
         prefersReducedMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
         copyText: text => navigator.clipboard.writeText(text),
 
+        // The documentation menu stays open beside the content, but would push it down on narrow screens.
+        // Wide screens hide the toggle, so the menu is reopened whenever the window grows past the breakpoint.
+        collapseOnNarrow: details => {
+            const narrow = window.matchMedia("(max-width: 760px)");
+            details.open = !narrow.matches;
+            narrow.addEventListener("change", event => { if (!event.matches) details.open = true; });
+        },
+
         // True when a dropdown menu fits above its trigger but not below it.
         shouldDropUp: dropdown => {
             const trigger = dropdown.getBoundingClientRect();

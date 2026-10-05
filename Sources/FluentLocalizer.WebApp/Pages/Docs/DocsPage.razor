@@ -1,0 +1,108 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>@($"{Translator.Get($"Docs:{PageKey}:Title")} · FluentLocalizer")</PageTitle>
+
+<section class="docs-hero docs-page-hero">
+    <div class="shell">
+        <span class="eyebrow">@Translator.Get($"Docs:Nav:{Group.Key}").WithCase(LetterCase.Upper)</span>
+        <h1>@Translator.Get($"Docs:{PageKey}:Title")</h1>
+        <p><RichText Text="@Translator.Get($"Docs:{PageKey}:Description")" /></p>
+    </div>
+</section>
+
+<div class="shell docs-grid">
+    <aside class="docs-sidebar docs-tree">
+        <details class="docs-menu" open @ref="_menu">
+            <summary>@Translator.Get("Docs:Common:Menu")</summary>
+            <nav aria-label="@Translator.Get("Docs:Common:Navigation")" @ref="_sidebar">
+                @foreach (var group in DocsNav.Groups)
+                {
+                    <span class="docs-tree-group">@Translator.Get($"Docs:Nav:{group.Key}")</span>
+                    @foreach (var entry in group.Pages)
+                    {
+                        var current = entry == Page;
+                        <a href="@entry.Route" class="docs-tree-page level-@entry.Level @(current ? "is-current" : null)" aria-current="@(current ? "page" : null)">@Translator.Get($"Docs:{entry.Key}:Nav")</a>
+                        @if (current && Sections.Length > 0)
+                        {
+                            <div class="docs-tree-sections level-@entry.Level">
+                                @foreach (var (id, title) in Sections)
+                                {
+                                    <a href="@($"{entry.Route}#{id}")">@title</a>
+                                }
+                            </div>
+                        }
+                    }
+                }
+            </nav>
+        </details>
+    </aside>
+
+    <article class="docs-content">
+        @ChildContent
+
+        <nav class="docs-pager" aria-label="@Translator.Get("Docs:Common:Pager")">
+            @if (Previous is not null)
+            {
+                <a class="docs-pager-previous" href="@Previous.Route"><span>@Translator.Get("Docs:Common:Previous")</span><strong><span aria-hidden="true">←</span> @Translator.Get($"Docs:{Previous.Key}:Nav")</strong></a>
+            }
+            @if (Next is not null)
+            {
+                <a class="docs-pager-next" href="@Next.Route"><span>@Translator.Get("Docs:Common:Next")</span><strong>@Translator.Get($"Docs:{Next.Key}:Nav") <span aria-hidden="true">→</span></strong></a>
+            }
+        </nav>
+    </article>
+</div>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
+    /// <summary>The page's key in <see cref="DocsNav"/>.</summary>
+    [Parameter, EditorRequired] public string PageKey { get; set; } = string.Empty;
+
+    /// <summary>The page's sections, listed below it in the sidebar.</summary>
+    [Parameter] public (string Id, string Title)[] Sections { get; set; } = [];
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private DocsPageInfo Page => DocsNav.Find(PageKey);
+    private DocsGroup Group => DocsNav.GroupOf(Page);
+    private DocsPageInfo? Previous => Neighbor(-1);
+    private DocsPageInfo? Next => Neighbor(1);
+
+    private DocsPageInfo? Neighbor(int offset)
+    {
+        var index = Array.IndexOf(DocsNav.Pages, Page) + offset;
+        return index >= 0 && index < DocsNav.Pages.Length ? DocsNav.Pages[index] : null;
+    }
+
+    private ElementReference _menu;
+    private ElementReference _sidebar;
+    private IJSObjectReference? _sectionWatcher;
+    private string? _watchedPage;
+
+    // Highlights the sidebar link of the section being read; on narrow screens the menu starts collapsed.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("fluentSite.collapseOnNarrow", _menu);
+        if (_watchedPage == PageKey) return;
+        _watchedPage = PageKey;
+        await DisposeWatcherAsync();
+        _sectionWatcher = await JS.InvokeAsync<IJSObjectReference>("fluentSite.watchSections", _sidebar);
+    }
+
+    private async Task DisposeWatcherAsync()
+    {
+        if (_sectionWatcher is null) return;
+        try
+        {
+            await _sectionWatcher.InvokeVoidAsync("dispose");
+            await _sectionWatcher.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+        _sectionWatcher = null;
+    }
+
+    public ValueTask DisposeAsync() => new(DisposeWatcherAsync());
+}

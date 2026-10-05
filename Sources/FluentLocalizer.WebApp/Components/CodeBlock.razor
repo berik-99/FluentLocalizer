@@ -1,0 +1,18 @@
+@* A code sample with an optional file name and a copy button. *@
+<figure class="code-block">
+    @if (Caption is not null)
+    {
+        <figcaption>@Caption</figcaption>
+    }
+    <pre><code>@Code</code></pre>
+    <CopyButton Text="@Code" ShowLabel="false" Class="code-block-copy" AriaLabel="@Translator.Get("Ui:CopyCode")" />
+</figure>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+
+    /// <summary>A file name or short label shown above the code.</summary>
+    [Parameter] public string? Caption { get; set; }
+}

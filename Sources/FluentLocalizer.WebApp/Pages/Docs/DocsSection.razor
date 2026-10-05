@@ -1,0 +1,11 @@
+@* A top-level section of a documentation page, reachable from the sidebar by its id. *@
+<section id="@Id" class="docs-section">
+    <h2>@Title</h2>
+    @ChildContent
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,226 @@
+@page "/docs/dependency-injection"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="install" Title="@T("InstallTitle")">
+        <p><RichText Text="@T("Install1")" /></p>
+        <CodeBlock Code="@Install" />
+        <p><RichText Text="@T("Install2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="register" Title="@T("RegisterTitle")">
+        <p><RichText Text="@T("Register1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@Register" />
+        <ol class="docs-list">
+            <li><RichText Text="@T("RegisterStep1")" /></li>
+            <li><RichText Text="@T("RegisterStep2")" /></li>
+            <li><RichText Text="@T("RegisterStep3")" /></li>
+        </ol>
+    </DocsSection>
+
+    <DocsSection Id="registered" Title="@T("RegisteredTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Service")</th><th>@T("Lifetime")</th><th>@T("RegisteredBy")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ITranslator</code></td><td>Singleton</td><td><RichText Text="@T("ServiceTranslator")" /></td></tr>
+                    <tr><td><code>IOptions&lt;TranslationOptions&gt;</code></td><td>Singleton</td><td><RichText Text="@T("ServiceOptions")" /></td></tr>
+                    <tr><td><code>ITranslationStore</code></td><td>Singleton</td><td><RichText Text="@T("ServiceStore")" /></td></tr>
+                    <tr><td><code>ITranslationLogger</code></td><td>Singleton</td><td><RichText Text="@T("ServiceLogger")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("RegisteredLazy")" /></li>
+            <li><RichText Text="@T("RegisteredNoStore")" /></li>
+            <li><RichText Text="@T("RegisteredOwn")" /></li>
+            <li><RichText Text="@T("RegisteredTwice")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="options" Title="@T("OptionsTitle")">
+        <p><RichText Text="@T("Options1")" /></p>
+        <CodeBlock Code="@Options" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("OptionsCallback")" /></li>
+            <li><RichText Text="@T("OptionsInstance")" /></li>
+            <li><RichText Text="@T("OptionsOnce")" /></li>
+        </ul>
+        <p><RichText Text="@T("Options2")" /></p>
+        <CodeBlock Code="@Configuration" />
+    </DocsSection>
+
+    <DocsSection Id="store" Title="@T("StoreTitle")">
+        <p><RichText Text="@T("Store1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Overload")</th><th>@T("Created")</th><th>@T("Disposed")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>WithStore(store)</code></td><td><RichText Text="@T("InstanceCreated")" /></td><td><RichText Text="@T("InstanceDisposed")" /></td></tr>
+                    <tr><td><code>WithStore(serviceProvider =&gt; store)</code></td><td><RichText Text="@T("FactoryCreated")" /></td><td><RichText Text="@T("FactoryDisposed")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Store2")" /></p>
+        <CodeBlock Code="@Factory" />
+    </DocsSection>
+
+    <DocsSection Id="consume" Title="@T("ConsumeTitle")">
+        <p><RichText Text="@T("Consume1")" /></p>
+        <CodeBlock Code="@Service" />
+        <p><RichText Text="@T("Consume2")" /></p>
+        <CodeBlock Caption="_Imports.razor" Code="@Imports" />
+        <CodeBlock Caption="Inbox.razor" Code="@Component" />
+        <p><RichText Text="@T("Consume3")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="examples" Title="@T("ExamplesTitle")">
+        <h3>@T("AspNetTitle")</h3>
+        <CodeBlock Caption="Program.cs" Code="@AspNet" />
+        <h3>@T("WorkerTitle")</h3>
+        <CodeBlock Caption="Program.cs" Code="@Worker" />
+        <h3>@T("BlazorTitle")</h3>
+        <p><RichText Text="@T("Blazor")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Injection";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("install", T("InstallTitle")), ("register", T("RegisterTitle")), ("registered", T("RegisteredTitle")), ("options", T("OptionsTitle")),
+        ("store", T("StoreTitle")), ("consume", T("ConsumeTitle")), ("examples", T("ExamplesTitle"))
+    ];
+
+    private const string Install = """
+        dotnet add package FluentLocalizer.Extensions.DependencyInjection
+        dotnet add package FluentLocalizer.Store.Json
+        """;
+
+    private const string Register = """
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        builder.Services
+            .AddFluentLocalizer(options =>                                 // 1
+            {
+                options.MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue;
+                options.MissingKeyFallbackValue = "";
+            })
+            .WithStore(_ => new JsonFileStore(new JsonFileStoreOptions     // 2
+            {
+                ResourcesPath = "Locales",
+                FallbackCulture = "en"
+            }))
+            .WithLogger();                                                 // 3
+        """;
+
+    private const string Options = """
+        // With a callback (IOptions pattern):
+        services.AddFluentLocalizer(options => options.FormattingErrorBehavior = FormattingErrorBehavior.ThrowException);
+
+        // With a ready-made object:
+        var options = new TranslationOptions { FormattingErrorBehavior = FormattingErrorBehavior.ThrowException };
+        services.AddFluentLocalizer(options);
+        """;
+
+    private const string Configuration = """
+        // appsettings.json: { "Translation": { "MissingKeyBehavior": "ReturnConfiguredValue", "MissingKeyFallbackValue": "" } }
+        builder.Services.AddFluentLocalizer().WithStore(_ => new JsonFileStore());
+        builder.Services.Configure<TranslationOptions>(builder.Configuration.GetSection("Translation"));
+        """;
+
+    private const string Factory = """
+        builder.Services.AddFluentLocalizer().WithStore(services =>
+        {
+            var environment = services.GetRequiredService<IHostEnvironment>();
+            return new JsonFileStore(new JsonFileStoreOptions
+            {
+                FallbackCulture = "en",
+                ReloadOnChange = environment.IsDevelopment()   // pick up edits while developing
+            });
+        });
+        """;
+
+    private const string Service = """
+        public sealed class InvoiceMailer(ITranslator translator, IEmailSender email)
+        {
+            public Task SendAsync(Invoice invoice, Customer customer)
+            {
+                var subject = translator.Get("Email:Invoice:Subject")
+                    .WithArg("number", invoice.Number)
+                    .WithCulture(customer.Culture)    // the customer's language, not the server's
+                    .Resolve();
+                return email.SendAsync(customer.Email, subject);
+            }
+        }
+        """;
+
+    private const string Imports = """
+        @using FluentLocalizer
+        @inject ITranslator Translator
+        """;
+
+    private const string Component = """
+        <h1>@Translator.Get("Inbox:Title")</h1>
+        <p>@Translator.Get("Inbox:Unread").Pluralize(unread)</p>
+        <button @onclick="() => unread++">@Translator.Get("Inbox:Refresh")</button>
+
+        @code {
+            private int unread = 3;
+        }
+        """;
+
+    private const string AspNet = """
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddFluentLocalizer()
+            .WithStore(_ => new JsonFileStore(new JsonFileStoreOptions { FallbackCulture = "en" }))
+            .WithLogger();
+
+        var app = builder.Build();
+
+        string[] cultures = ["en", "it"];
+        app.UseRequestLocalization(new RequestLocalizationOptions()
+            .SetDefaultCulture("en")
+            .AddSupportedCultures(cultures)
+            .AddSupportedUICultures(cultures));
+
+        // GET /hello/Ada with "Accept-Language: it" → Ciao, Ada!
+        app.MapGet("/hello/{name}", (string name, ITranslator translator) =>
+            translator.Get("Greeting").WithArg("name", name).Resolve());
+
+        app.Run();
+        """;
+
+    private const string Worker = """
+        using System.Globalization;
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
+
+        var builder = Host.CreateApplicationBuilder(args);
+        builder.Services.AddFluentLocalizer()
+            .WithStore(_ => new JsonFileStore(new JsonFileStoreOptions { FallbackCulture = "en", ThrowOnMissingStore = true }))
+            .WithLogger();
+        builder.Services.AddHostedService<NotificationWorker>();
+        await builder.Build().RunAsync();
+
+        public sealed class NotificationWorker(ITranslator translator, ILogger<NotificationWorker> logger) : BackgroundService
+        {
+            protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("{Text}", translator.Get("Inbox:Unread").Pluralize(3).Resolve());
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                }
+            }
+        }
+        """;
+}

@@ -1,0 +1,149 @@
+@page "/docs/stores/json/embedded"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="when" Title="@T("WhenTitle")">
+        <p><RichText Text="@T("When1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("WhenLibrary")" /></li>
+            <li><RichText Text="@T("WhenSingleFile")" /></li>
+            <li><RichText Text="@T("WhenBrowser")" /></li>
+        </ul>
+        <p><RichText Text="@T("When2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="setup" Title="@T("SetupTitle")">
+        <p><RichText Text="@T("Setup1")" /></p>
+        <CodeBlock Caption=".csproj" Code="@Project" />
+        <p><RichText Text="@T("Setup2")" /></p>
+        <CodeBlock Code="@Create" />
+        <DocsCallout Kind="DocsCallout.CalloutKind.Tip" Text="@T("SetupAssembly")" />
+    </DocsSection>
+
+    <DocsSection Id="options" Title="@T("OptionsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Property")</th><th>@Common("Default")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ResourceAssembly</code></td><td><code>null</code></td><td><RichText Text="@T("OptAssembly")" /></td></tr>
+                    <tr><td><code>ResourcesPath</code></td><td><code>"Locales"</code></td><td><RichText Text="@T("OptPath")" /></td></tr>
+                    <tr><td><code>FallbackCulture</code>, <code>FileMappings</code>, <code>ThrowOnMissingStore</code>, <code>MaxDocumentBytes</code></td><td>—</td><td><RichText Text="@T("OptShared")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="names" Title="@T("NamesTitle")">
+        <p><RichText Text="@T("Names1")" /></p>
+        <CodeBlock Code="@Names" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("NamesSelect")" /></li>
+            <li><RichText Text="@T("NamesCulture")" /></li>
+            <li><RichText Text="@T("NamesUnique")" /></li>
+            <li><RichText Text="@T("NamesFolders")" /></li>
+        </ul>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("SatelliteWarning")" />
+        <p><RichText Text="@T("Names2")" /></p>
+        <CodeBlock Code="@ListNames" />
+    </DocsSection>
+
+    <DocsSection Id="culture" Title="@T("CultureTitle")">
+        <p><RichText Text="@T("Culture1")" /></p>
+        <ol class="docs-list">
+            <li><RichText Text="@T("CultureStep1")" /></li>
+            <li><RichText Text="@T("CultureStep2")" /></li>
+            <li><RichText Text="@T("CultureStep3")" /></li>
+        </ol>
+        <p><RichText Text="@T("Culture2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="loading" Title="@T("LoadingTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("LoadingStartup")" /></li>
+            <li><RichText Text="@T("LoadingCache")" /></li>
+            <li><RichText Text="@T("LoadingThreads")" /></li>
+            <li><RichText Text="@T("LoadingDispose")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="errors" Title="@T("ErrorsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Exception")</th><th>@T("ThrownWhen")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ArgumentOutOfRangeException</code></td><td><RichText Text="@T("ErrRange")" /></td></tr>
+                    <tr><td><code>FileNotFoundException</code></td><td><RichText Text="@T("ErrNotFound")" /></td></tr>
+                    <tr><td><code>JsonException</code></td><td><RichText Text="@T("ErrJson")" /></td></tr>
+                    <tr><td><code>InvalidDataException</code></td><td><RichText Text="@T("ErrSize")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="example" Title="@T("ExampleTitle")">
+        <p><RichText Text="@T("Example1")" /></p>
+        <CodeBlock Caption="FluentLocalizer.WebApp.csproj" Code="@SiteProject" />
+        <CodeBlock Caption="Program.cs" Code="@SiteProgram" />
+        <p><RichText Text="@T("Example2")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "JsonEmbedded";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("when", T("WhenTitle")), ("setup", T("SetupTitle")), ("options", T("OptionsTitle")), ("names", T("NamesTitle")),
+        ("culture", T("CultureTitle")), ("loading", T("LoadingTitle")), ("errors", T("ErrorsTitle")), ("example", T("ExampleTitle"))
+    ];
+
+    private const string Project = """
+        <ItemGroup>
+          <EmbeddedResource Include="Locales\**\*.json" />
+        </ItemGroup>
+        """;
+
+    private const string Create = """
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
+        {
+            ResourceAssembly = typeof(Program).Assembly,   // the assembly that contains Locales/*.json
+            ResourcesPath = "Locales",
+            FallbackCulture = "en"
+        });
+
+        var translator = new Translator(store);
+        """;
+
+    private const string Names = """
+        Project file                    Resource name in MyCompany.MyApp.dll    Read as
+        Locales/en.json                 MyCompany.MyApp.Locales.en.json         en.json
+        Locales/it-IT.json              MyCompany.MyApp.Locales.it-IT.json      it-IT.json
+        Locales/legacy/fr.json          MyCompany.MyApp.Locales.legacy.fr.json  fr.json
+        Locales/it.common.json          MyCompany.MyApp.Locales.it.common.json  common.json (never used)
+        Locales/common.it-IT.json       (moved to a satellite assembly)         not found
+        """;
+
+    private const string ListNames = """
+        foreach (var name in typeof(Program).Assembly.GetManifestResourceNames())
+            Console.WriteLine(name);
+        """;
+
+    private const string SiteProject = """
+        <ItemGroup>
+          <EmbeddedResource Include="Locales\*.json" />
+        </ItemGroup>
+        """;
+
+    private const string SiteProgram = """
+        builder.Services.AddFluentLocalizer().WithStore(_ => new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
+        {
+            ResourceAssembly = typeof(App).Assembly,
+            ResourcesPath = "Locales",
+            FallbackCulture = "en",
+            ThrowOnMissingStore = true
+        }));
+        """;
+}

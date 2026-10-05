@@ -1,0 +1,22 @@
+@* A highlighted note, tip or warning inside a documentation page. *@
+<aside class="docs-callout docs-callout-@Kind">
+    <strong>@Translator.Get($"Docs:Common:{Kind switch { CalloutKind.Tip => "Tip", CalloutKind.Warning => "Warning", _ => "Note" }}")</strong>
+    @if (Text is not null)
+    {
+        <p><RichText Text="@Text" /></p>
+    }
+    @ChildContent
+</aside>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
+    [Parameter] public CalloutKind Kind { get; set; } = CalloutKind.Note;
+
+    /// <summary>The callout text, with the inline markup supported by <see cref="RichText"/>.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    public enum CalloutKind { Note, Tip, Warning }
+}

@@ -9,7 +9,7 @@
 
 Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/). To run the site locally, use `dotnet run --project Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj`. The GitHub Pages workflow publishes the static WebAssembly output from `main`.
 
-Browse the [complete API reference](#api-reference) below or use the searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api).
+The [documentation](https://berik-99.github.io/FluentLocalizer/docs) explains every feature step by step: templates, requests, culture, errors, logging, dependency injection, and one page per store. Browse the [complete API reference](#api-reference) below or use the searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api).
 
 The WebApp uses FluentLocalizer with `EmbeddedJsonStore` and embedded catalogs in `Sources/FluentLocalizer.WebApp/Locales`. It selects the first supported language from the browser's preferences (English, Italian, French, German, or Spanish), preserves the regional culture for formatting, and falls back to English for unsupported languages or missing translations. The header's language dropdown updates the site without reloading or clearing playground edits and remembers the choice for subsequent visits.
 
@@ -134,12 +134,30 @@ var options = new TranslationOptions
 
 ```
 
-**Key configurations:**
+| Property | Default | Behavior |
+| --- | --- | --- |
+| `MissingKeyBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `[key]`; `ReturnConfiguredValue` returns `MissingKeyFallbackValue`; `ThrowException` throws. |
+| `MissingKeyFallbackValue` | `"[{key}]"` | Used only with `ReturnConfiguredValue`. |
+| `MissingKeyExceptionFactory` | `null` | Creates the exception thrown with `ThrowException`; defaults to `TranslationException`. |
+| `FormattingErrorBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `FormattingErrorFallbackValue`; `ThrowException` throws. |
+| `FormattingErrorFallbackValue` | `"[Format Error]"` | Returned for parse and formatting failures. |
+| `FormattingErrorExceptionFactory` | `null` | Creates the exception thrown with `ThrowException`; a `null` result falls back to the missing-key exception. |
+| `DefaultArguments` | `null` | Values merged into every request; request values win, names are case-insensitive. |
 
-* `MissingKeyBehavior`: Choose whether to return a placeholder, a fallback string, or throw an exception.
-* `MissingKeyFallbackValue`: Custom text when a key isn't found.
-* `FormattingErrorBehavior`: Control whether formatting failures trigger an exception or fall back gracefully.
-* `DefaultArguments`: Fallback values for placeholders not explicitly supplied in `.WithArg()`.
+Fallback values replace `{key}`/`{0}` with the key and `{culture}`/`{1}` with the culture name, case-insensitively and as plain text (not ICU). The translator keeps a reference to the options object, so configure it before creating the translator. `WithOptions(...)` replaces the whole object for a single request.
+
+### Resolution rules worth knowing
+
+- A missing translation is a `null`, empty or whitespace-only template, or a `KeyNotFoundException` thrown by the store. An empty string in a catalog is therefore *missing* and does not fall back to another culture.
+- A formatting error is any parse or format failure: unbalanced braces, a placeholder without a value, a non-numeric `plural` value, no matching branch without `other`, an unsupported format style. Missing arguments are never rendered as empty text.
+- Any other store exception (I/O, HTTP, `FileNotFoundException`, cancellation) propagates unchanged; it is logged at `Error` first when a logger is configured.
+- Every request starts with `quantity = null` and `gender = "unspecified"`; `Pluralize` and `Genderize` overwrite them. Because they are request values, `DefaultArguments` entries for these two names are never used. A `plural` block treats a `null` quantity as `0`.
+- If a template contains `{Length}` and no `Length` argument is supplied, it receives the count of non-null arguments, including the built-in `gender`.
+- `#` is replaced only directly inside a `plural` branch; inside a `select` nested in a `plural` it stays literal. Nest `plural` inside `select` instead.
+- Literal braces are escaped ICU-style with apostrophes (`'{name}'`), and `''` prints one apostrophe; backslashes are not escapes. MessageFormat supports `number` (`integer`, `percent`, `currency`), `date` (`short`, `full`), `time` (`short`), `plural` with `offset:` and `=N`, `select` and `selectordinal`.
+- `WithCase` runs after formatting: `Upper`/`Lower` use invariant casing; `CamelCase`, `PascalCase`, `SnakeCase` and `KebabCase` split words and drop spaces and punctuation, so they suit identifiers rather than sentences.
+- With `ThrowException`, the default `TranslationException` carries `Key` and `Culture`; formatting exceptions include the formatter's message but do not set `InnerException`. An empty or whitespace key throws `ArgumentException` instead.
+- `Translator` is stateless and thread-safe; `TranslationBuilder` is mutable, not thread-safe, and keeps the culture captured by `Get(key)`. `ToString()` and the implicit `string` conversion call `Resolve()`.
 
 ---
 
@@ -185,7 +203,7 @@ Locales/
   it.checkout.json   optional namespace file
 ```
 
-With regional-only names such as `it-IT.json`, `JsonFileStore` and `HttpJsonStore` with a manifest throw `FileNotFoundException` for a sibling region like `it-CH` instead of using it; map it with `FileMappings["it-CH"] = "it-IT.json"`. The [JSON store guide](Sources/FluentLocalizer.Store.Json/Assets/README.md#organizing-json-files) details the lookup order, every supported file name and the differences between stores.
+With regional-only names such as `it-IT.json`, `JsonFileStore` and `HttpJsonStore` with a manifest throw `FileNotFoundException` for a sibling region like `it-CH` instead of using it; map it with `FileMappings["it-CH"] = "it-IT.json"`. The same selection applies to `FallbackCulture`, so the fallback culture (or its neutral culture) needs a file of its own, and the exception is thrown whatever `ThrowOnMissingStore` says. The [JSON store guide](Sources/FluentLocalizer.Store.Json/Assets/README.md#organizing-json-files) details the lookup order, every supported file name and the differences between stores.
 
 `JsonFileStore` reads each file the first time a lookup needs it and keeps the parsed document in memory. It reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
 
@@ -221,17 +239,17 @@ For embedded resources, include the locale files as `EmbeddedResource` and creat
 </ItemGroup>
 ```
 
-The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. It reads one file per culture, so keep namespaces as top-level objects. Set `ResourceAssembly` if the files are embedded in a different assembly.
+The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. It reads one file per culture, so keep namespaces as top-level objects, and never embed names such as `common.it-IT.json`: MSBuild moves them to a satellite assembly that the store does not read. Always set `ResourceAssembly`; the default is the entry assembly, which in tests or plugins is not the one containing the files. `EmbeddedJsonStore` holds no resources and is not `IDisposable`.
 
 ```csharp
-using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
+var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
     ResourceAssembly = typeof(Program).Assembly,
     ResourcesPath = "Locales"
 });
 ```
 
-For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` is the URL path below that base address. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. An optional `manifest.json` lists all culture and namespace files for complete preload and short-to-regional culture selection. `RefreshStoreAsync()` revalidates loaded files with HTTP cache validators when available.
+For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` (default `locales`, lowercase) is the URL path below that base address; end `BaseAddress` with `/`, otherwise its last segment is dropped when relative URLs are resolved. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. An optional `manifest.json` lists all culture and namespace files for complete preload and short-to-regional culture selection. `RefreshStoreAsync()` revalidates loaded files with HTTP cache validators when available.
 
 ```csharp
 using FluentLocalizer.Store.Json;
@@ -243,7 +261,7 @@ await store.LoadAsync(["it-IT", "en-US"]);
 
 The Blazor WebAssembly sample in `Examples/FluentLocalizer.Samples.BlazorWebApp` uses `+` and `−` buttons to change the unread message count. The pluralized message rerenders immediately, and the language selector switches between the preloaded English and Italian files.
 
-All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, and the optional `MaxDocumentBytes` limit. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
+All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, and the optional `MaxDocumentBytes` limit. Catalogs must be strict JSON (no comments or trailing commas); without `ThrowOnMissingStore`, the file and embedded stores skip an invalid file silently. A document larger than `MaxDocumentBytes` always throws. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
 
 When upgrading from the separate HTTP package, replace `FluentLocalizer.Store.Http` with `FluentLocalizer.Store.Json` and update the namespace to `FluentLocalizer.Store.Json`. The mode-based `JsonStore` and `JsonStoreOptions` API is deprecated; use a store-specific type above.
 
@@ -315,6 +333,8 @@ dotnet test FluentLocalizer.slnx --configuration Release
 
 The library projects target `netstandard2.0`, `net8.0`, and `net10.0`; the samples target `net10.0`. The test projects also target `net472`, so run the full test matrix on Windows. On other platforms, run the `.NET 10` tests with `dotnet test FluentLocalizer.slnx --configuration Release --framework net10.0`.
 
+**Website documentation:** the pages live in `Sources/FluentLocalizer.WebApp/Pages/Docs`, their text in the `Docs` object of `Sources/FluentLocalizer.WebApp/Locales/*.json` (one key per paragraph, in all five languages), and the sidebar outline in `DocsNav.cs`. To document a new store, add its page next to the existing store pages and register it in the `Stores` group of `DocsNav`. The WebApp localization test resolves every catalog string in every language with the real formatter.
+
 **Run sample projects:**
 
 See [the examples guide](Examples/README.md) for basic and advanced scenarios in the console, worker, and Blazor apps.
@@ -335,11 +355,13 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 ```text
 ├── FluentLocalizer.slnx
 ├── Assets/                                         # Repository branding assets
+├── Docs/                                           # API catalog (api-reference.json) and its README generator
 ├── Sources/
 │   ├── FluentLocalizer.Core/                        # Core engine and abstractions
 │   ├── FluentLocalizer.Extensions.DependencyInjection/
 │   ├── FluentLocalizer.Shared.Polyfill/             # Shared project (.shproj), not a NuGet package
-│   └── FluentLocalizer.Store.Json/                  # File, embedded-resource, and HTTP JSON stores
+│   ├── FluentLocalizer.Store.Json/                  # File, embedded-resource, and HTTP JSON stores
+│   └── FluentLocalizer.WebApp/                      # Website: documentation, playground, API reference
 ├── Examples/
 │   ├── FluentLocalizer.Samples.ConsoleApp/
 │   ├── FluentLocalizer.Samples.WorkerApp/
@@ -701,7 +723,7 @@ Configure options before creating the store. The store-specific options inherit 
 | `JsonStoreSettings()` | Creates shared settings with the defaults below. |
 | `string FallbackCulture { get; set; }` | Default: en-US. The final fallback culture after the requested culture and its neutral form. Must be a valid .NET culture name. |
 | `bool ThrowOnMissingStore { get; set; }` | Default: false. Missing translation files may throw FileNotFoundException when true. When false, filesystem and embedded stores skip individual I/O or JSON parse errors; HTTP request failures and invalid HTTP JSON still throw. |
-| `long MaxDocumentBytes { get; set; }` | Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents may be skipped by file/embedded stores when ThrowOnMissingStore is false; HTTP always rejects them. |
+| `long MaxDocumentBytes { get; set; }` | Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents always throw, whatever ThrowOnMissingStore says: InvalidDataException in file and embedded stores, HttpRequestException in HttpJsonStore. |
 | `IDictionary<string, string> FileMappings { get; }` | Mutable, initially empty, case-insensitive mapping from culture names to JSON file names. Add entries through the returned dictionary; the property cannot be replaced. File and HTTP paths are validated as relative JSON paths. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Store.Json/JsonStoreSettings.cs)
@@ -782,8 +804,8 @@ Supports combined culture files and namespace files, regional/neutral culture se
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `JsonFileStore(JsonFileStoreOptions? options = null)` | options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw. |
-| `override string? GetTemplate(string key, CultureInfo culture)` | Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. File, path and JSON errors may propagate with ThrowOnMissingStore. |
+| `JsonFileStore(JsonFileStoreOptions? options = null)` | options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw. With ThrowOnMissingStore, every file is parsed during construction, so invalid JSON throws JsonException there. |
+| `override string? GetTemplate(string key, CultureInfo culture)` | Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. I/O and JSON errors are skipped unless ThrowOnMissingStore is true. Always throws InvalidDataException for a file larger than MaxDocumentBytes, SecurityException for symbolic links or paths outside ResourcesPath, and FileNotFoundException when only a sibling regional catalog exists. |
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Wraps synchronous GetTemplate in a completed task; cancellationToken is not inspected. |
 | `void Dispose()` | Disposes the optional filesystem watcher. Use a using statement for stores owned by the application. |
 
@@ -797,11 +819,11 @@ Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `Flu
 
 Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.
 
-Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
+Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. FileMappings values are final file names such as it-IT.json. Files named like common.it-IT.json become MSBuild satellite resources and are not read. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)` | options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. |
+| `EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)` | options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. A resource larger than MaxDocumentBytes always throws InvalidDataException. |
 | `string? GetTemplate(string key, CultureInfo culture)` | Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true. |
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected. |
 

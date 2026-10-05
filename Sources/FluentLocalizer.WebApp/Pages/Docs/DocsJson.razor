@@ -1,0 +1,213 @@
+@page "/docs/stores/json"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="family" Title="@T("FamilyTitle")">
+        <p><RichText Text="@T("Family1")" /></p>
+        <CodeBlock Code="dotnet add package FluentLocalizer.Store.Json" />
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Store")</th><th>@T("Options")</th><th>@T("BestFor")</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="docs/stores/json/file"><code>JsonFileStore</code></a></td><td><code>JsonFileStoreOptions</code></td><td>@T("FileBest")</td></tr>
+                    <tr><td><a href="docs/stores/json/embedded"><code>EmbeddedJsonStore</code></a></td><td><code>EmbeddedJsonStoreOptions</code></td><td>@T("EmbeddedBest")</td></tr>
+                    <tr><td><a href="docs/stores/json/http"><code>HttpJsonStore</code></a></td><td><code>HttpJsonStoreOptions</code></td><td>@T("HttpBest")</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Family2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="format" Title="@T("FormatTitle")">
+        <p><RichText Text="@T("Format1")" /></p>
+        <CodeBlock Caption="en.json" Code="@Catalog" />
+        <p><RichText Text="@T("Format2")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("RuleRoot")" /></li>
+            <li><RichText Text="@T("RuleNest")" /></li>
+            <li><RichText Text="@T("RuleCase")" /></li>
+            <li><RichText Text="@T("RuleSpaces")" /></li>
+            <li><RichText Text="@T("RuleDot")" /></li>
+            <li><RichText Text="@T("RuleStrings")" /></li>
+            <li><RichText Text="@T("RuleEmpty")" /></li>
+            <li><RichText Text="@T("RuleSyntax")" /></li>
+            <li><RichText Text="@T("RuleEncoding")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="namespaces" Title="@T("NamespacesTitle")">
+        <p><RichText Text="@T("Namespaces1")" /></p>
+        <div class="docs-files">
+            <CodeBlock Caption="it.json" Code="@NamespaceInCulture" />
+            <CodeBlock Caption="it.common.json" Code="@NamespaceFile" />
+        </div>
+        <p><RichText Text="@T("Namespaces2")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("FileName")</th><th>@T("Example")</th><th>@T("Contains")</th></tr></thead>
+                <tbody>
+                    <tr><td>@T("CultureFile")</td><td><code>it.json</code>, <code>it/it.json</code></td><td>@T("CultureFileContains")</td></tr>
+                    <tr><td>@T("CultureNamespace")</td><td><code>it.common.json</code></td><td>@T("NamespaceContains")</td></tr>
+                    <tr><td>@T("NamespaceCulture")</td><td><code>common.it.json</code></td><td>@T("NamespaceContains")</td></tr>
+                    <tr><td>@T("CultureFolder")</td><td><code>it/common.json</code></td><td>@T("NamespaceContains")</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="docs-list">
+            <li><RichText Text="@T("NamespacesSupport")" /></li>
+            <li><RichText Text="@T("NamespacesAny")" /></li>
+            <li><RichText Text="@T("NamespacesFolders")" /></li>
+            <li><RichText Text="@T("NamespacesCase")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="culture" Title="@T("CultureTitle")">
+        <p><RichText Text="@T("Culture1")" /></p>
+        <h3>@T("KnowTitle")</h3>
+        <p><RichText Text="@T("Know1")" /></p>
+        <ol class="docs-list">
+            <li><RichText Text="@T("KnowExact")" /></li>
+            <li><RichText Text="@T("KnowNeutral")" /></li>
+            <li><RichText Text="@T("KnowRegional")" /></li>
+            <li><RichText Text="@T("KnowSibling")" /></li>
+            <li><RichText Text="@T("KnowNone")" /></li>
+        </ol>
+        <h3>@T("GuessTitle")</h3>
+        <p><RichText Text="@T("Guess1")" /></p>
+        <h3>@T("CompareTitle")</h3>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Request")</th><th>@T("Files")</th><th><RichText Text="@T("KnowColumn")" /></th><th><RichText Text="@T("GuessColumn")" /></th></tr></thead>
+                <tbody>
+                    <tr><td><code>it-CH</code></td><td><code>it.json</code></td><td><code>it.json</code></td><td><code>it.json</code></td></tr>
+                    <tr><td><code>it</code></td><td><code>it-IT.json</code></td><td><code>it-IT.json</code></td><td>@T("UsesFallback")</td></tr>
+                    <tr><td><code>it-CH</code></td><td><code>it-IT.json</code></td><td><code>FileNotFoundException</code></td><td>@T("UsesFallback")</td></tr>
+                    <tr><td><code>en-GB</code></td><td><RichText Text="@T("OnlyFallbackFile")" /></td><td><code>FileNotFoundException</code></td><td><RichText Text="@T("EnGbGuess")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("SiblingWarning")" />
+        <p><RichText Text="@T("Culture2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="fallback" Title="@T("FallbackTitle")">
+        <p><RichText Text="@T("Fallback1")" /></p>
+        <ol class="docs-list">
+            <li><RichText Text="@T("Fallback2")" /></li>
+            <li><RichText Text="@T("Fallback3")" /></li>
+            <li><RichText Text="@T("Fallback4")" /></li>
+            <li><RichText Text="@T("Fallback5")" /></li>
+        </ol>
+        <p><RichText Text="@T("Fallback6")" /></p>
+        <p><RichText Text="@T("Fallback7")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="layout" Title="@T("LayoutTitle")">
+        <p><RichText Text="@T("Layout1")" /></p>
+        <CodeBlock Code="@Layout" />
+        <p><RichText Text="@T("Layout2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="mappings" Title="@T("MappingsTitle")">
+        <p><RichText Text="@T("Mappings1")" /></p>
+        <CodeBlock Code="@Mappings" />
+        <ul class="docs-list">
+            <li><RichText Text="@T("MappingsKeys")" /></li>
+            <li><RichText Text="@T("MappingsValues")" /></li>
+            <li><RichText Text="@T("MappingsFirst")" /></li>
+            <li><RichText Text="@T("MappingsWhole")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="settings" Title="@T("SettingsTitle")">
+        <p><RichText Text="@T("Settings1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Property")</th><th>@Common("Default")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>FallbackCulture</code></td><td><code>"en-US"</code></td><td><RichText Text="@T("SettingFallback")" /></td></tr>
+                    <tr><td><code>FileMappings</code></td><td>@T("Empty")</td><td><RichText Text="@T("SettingMappings")" /></td></tr>
+                    <tr><td><code>ThrowOnMissingStore</code></td><td><code>false</code></td><td><RichText Text="@T("SettingThrow")" /></td></tr>
+                    <tr><td><code>MaxDocumentBytes</code></td><td><code>0</code></td><td><RichText Text="@T("SettingMax")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <h3>@T("ThrowTitle")</h3>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Situation")</th><th><code>false</code></th><th><code>true</code></th></tr></thead>
+                <tbody>
+                    <tr><td>@T("NoFiles")</td><td><RichText Text="@T("NoFilesFalse")" /></td><td><RichText Text="@T("NoFilesTrue")" /></td></tr>
+                    <tr><td>@T("InvalidJson")</td><td><RichText Text="@T("InvalidFalse")" /></td><td><RichText Text="@T("InvalidTrue")" /></td></tr>
+                    <tr><td>@T("NoCulture")</td><td><RichText Text="@T("NoCultureFalse")" /></td><td><RichText Text="@T("NoCultureTrue")" /></td></tr>
+                    <tr><td>@T("MissingKey")</td><td colspan="2"><RichText Text="@T("MissingKeyBoth")" /></td></tr>
+                    <tr><td>@T("TooLarge")</td><td colspan="2"><RichText Text="@T("TooLargeBoth")" /></td></tr>
+                    <tr><td>@T("Sibling")</td><td colspan="2"><RichText Text="@T("SiblingBoth")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Settings2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="security" Title="@T("SecurityTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("SecurityData")" /></li>
+            <li><RichText Text="@T("SecurityHtml")" /></li>
+            <li><RichText Text="@T("SecuritySize")" /></li>
+            <li><RichText Text="@T("SecurityPaths")" /></li>
+        </ul>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Json";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("family", T("FamilyTitle")), ("format", T("FormatTitle")), ("namespaces", T("NamespacesTitle")), ("culture", T("CultureTitle")),
+        ("fallback", T("FallbackTitle")), ("layout", T("LayoutTitle")), ("mappings", T("MappingsTitle")), ("settings", T("SettingsTitle")),
+        ("security", T("SecurityTitle"))
+    ];
+
+    private const string Catalog = """
+        {
+          "Welcome": "Hello, {name}!",
+          "Checkout": {
+            "Title": "Your cart",
+            "Items": "{quantity, plural, one{# item} other{# items}}",
+            "Buttons": {
+              "Pay": "Pay now"
+            }
+          }
+        }
+        """;
+
+    private const string NamespaceInCulture = """
+        {
+          "common": {
+            "Buttons": { "Save": "Salva" }
+          }
+        }
+        """;
+
+    private const string NamespaceFile = """
+        {
+          "Buttons": { "Save": "Salva" }
+        }
+        """;
+
+    private const string Layout = """
+        Locales/
+          en.json            complete catalog, also the fallback (FallbackCulture = "en")
+          en-GB.json         only the strings that differ in British English
+          it.json            Italian for it-IT, it-CH and every other Italian culture
+          it.checkout.json   optional namespace file (JsonFileStore and HttpJsonStore)
+        """;
+
+    private const string Mappings = """
+        var options = new JsonFileStoreOptions { FallbackCulture = "en" };
+        options.FileMappings["it-CH"] = "it-IT.json";          // reuse a sibling region
+        options.FileMappings["en"] = "legacy/english.json";    // a file with another name
+        options.FileMappings["zh-Hant-TW"] = "zh-Hant.json";   // a culture with a script
+        """;
+}

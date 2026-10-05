@@ -1,0 +1,211 @@
+@page "/docs/stores/custom"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="contract" Title="@T("ContractTitle")">
+        <p><RichText Text="@T("Contract1")" /></p>
+        <CodeBlock Code="@Contract" />
+        <ol class="docs-list">
+            <li><RichText Text="@T("RuleRaw")" /></li>
+            <li><RichText Text="@T("RuleMissing")" /></li>
+            <li><RichText Text="@T("RuleFallback")" /></li>
+            <li><RichText Text="@T("RuleSync")" /></li>
+            <li><RichText Text="@T("RuleThreads")" /></li>
+            <li><RichText Text="@T("RuleErrors")" /></li>
+        </ol>
+    </DocsSection>
+
+    <DocsSection Id="dictionary" Title="@T("DictionaryTitle")">
+        <p><RichText Text="@T("Dictionary1")" /></p>
+        <CodeBlock Code="@Dictionary" />
+        <p><RichText Text="@T("Dictionary2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="database" Title="@T("DatabaseTitle")">
+        <p><RichText Text="@T("Database1")" /></p>
+        <CodeBlock Code="@Database" />
+        <p><RichText Text="@T("Database2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="combining" Title="@T("CombiningTitle")">
+        <p><RichText Text="@T("Combining1")" /></p>
+        <CodeBlock Code="@Combining" />
+        <p><RichText Text="@T("Combining2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="json-base" Title="@T("JsonBaseTitle")">
+        <p><RichText Text="@T("JsonBase1")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@T("Member")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>Options</code></td><td><RichText Text="@T("MemberOptions")" /></td></tr>
+                    <tr><td><code>SetDocument(name, json)</code>, <code>SetDocument(name, element)</code></td><td><RichText Text="@T("MemberSet")" /></td></tr>
+                    <tr><td><code>RemoveDocument(name)</code></td><td><RichText Text="@T("MemberRemove")" /></td></tr>
+                    <tr><td><code>ClearTemplateCache()</code></td><td><RichText Text="@T("MemberClear")" /></td></tr>
+                    <tr><td><code>ResolveCandidates(culture)</code></td><td><RichText Text="@T("MemberCandidates")" /></td></tr>
+                    <tr><td><code>FindTemplate(key, culture)</code></td><td><RichText Text="@T("MemberFind")" /></td></tr>
+                    <tr><td><code>HasCandidate(culture)</code></td><td><RichText Text="@T("MemberHas")" /></td></tr>
+                    <tr><td><code>GetTemplate</code>, <code>GetTemplateAsync</code></td><td><RichText Text="@T("MemberGet")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <CodeBlock Code="@JsonBase" />
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("JsonBaseCache")" />
+    </DocsSection>
+
+    <DocsSection Id="register" Title="@T("RegisterTitle")">
+        <p><RichText Text="@T("Register1")" /></p>
+        <CodeBlock Code="@Register" />
+    </DocsSection>
+
+    <DocsSection Id="checklist" Title="@T("ChecklistTitle")">
+        <ul class="docs-list">
+            <li><RichText Text="@T("Check1")" /></li>
+            <li><RichText Text="@T("Check2")" /></li>
+            <li><RichText Text="@T("Check3")" /></li>
+            <li><RichText Text="@T("Check4")" /></li>
+            <li><RichText Text="@T("Check5")" /></li>
+        </ul>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "CustomStore";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("contract", T("ContractTitle")), ("dictionary", T("DictionaryTitle")), ("database", T("DatabaseTitle")), ("combining", T("CombiningTitle")),
+        ("json-base", T("JsonBaseTitle")), ("register", T("RegisterTitle")), ("checklist", T("ChecklistTitle"))
+    ];
+
+    private const string Contract = """
+        namespace FluentLocalizer;
+
+        public interface ITranslationStore
+        {
+            // Must answer immediately, from data already in memory.
+            string? GetTemplate(string key, CultureInfo culture);
+
+            // May wait for I/O: files, network, database.
+            Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default);
+        }
+        """;
+
+    private const string Dictionary = """
+        using System.Globalization;
+        using FluentLocalizer;
+
+        /// Templates in memory, grouped by culture name, with fallback to the parent culture and then to a default language.
+        public sealed class DictionaryStore(
+            IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> catalogs,
+            string fallbackCulture = "en") : ITranslationStore
+        {
+            public string? GetTemplate(string key, CultureInfo culture)
+            {
+                // it-CH → it → (invariant culture: stop)
+                for (var current = culture; current.Name.Length > 0; current = current.Parent)
+                {
+                    if (catalogs.TryGetValue(current.Name, out var catalog) && catalog.TryGetValue(key, out var template))
+                        return template;
+                }
+
+                return catalogs.TryGetValue(fallbackCulture, out var fallback) && fallback.TryGetValue(key, out var value)
+                    ? value
+                    : null;
+            }
+
+            public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
+                Task.FromResult(GetTemplate(key, culture));
+        }
+
+        var store = new DictionaryStore(new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["en"] = new Dictionary<string, string> { ["Greeting"] = "Hello, {name}!" },
+            ["it"] = new Dictionary<string, string> { ["Greeting"] = "Ciao, {name}!" }
+        });
+        """;
+
+    private const string Database = """
+        using System.Globalization;
+        using FluentLocalizer;
+
+        public sealed record TranslationRow(string Culture, string Key, string Template);
+
+        /// Loads every row once, then answers from memory. LoadAsync can be called again to pick up changes.
+        public sealed class PreloadedStore(Func<CancellationToken, Task<IReadOnlyList<TranslationRow>>> loadRows) : ITranslationStore
+        {
+            private volatile Dictionary<(string Culture, string Key), string> _templates = [];
+
+            public async Task LoadAsync(CancellationToken cancellationToken = default)
+            {
+                var rows = await loadRows(cancellationToken);
+                // Build the new dictionary aside, then swap it in one step: readers never see a half-loaded catalog.
+                _templates = rows.ToDictionary(
+                    row => (CultureInfo.GetCultureInfo(row.Culture).Name, row.Key),
+                    row => row.Template);
+            }
+
+            public string? GetTemplate(string key, CultureInfo culture)
+            {
+                var templates = _templates;
+                return templates.TryGetValue((culture.Name, key), out var template)
+                    || templates.TryGetValue((culture.TwoLetterISOLanguageName, key), out template)
+                    || templates.TryGetValue(("en", key), out template)
+                    ? template
+                    : null;
+            }
+
+            public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
+                Task.FromResult(GetTemplate(key, culture));
+        }
+        """;
+
+    private const string Combining = """
+        using System.Globalization;
+        using FluentLocalizer;
+
+        /// Asks the first store, and the second one only when the first has no template.
+        public sealed class FallbackStore(ITranslationStore primary, ITranslationStore secondary) : ITranslationStore
+        {
+            public string? GetTemplate(string key, CultureInfo culture) =>
+                primary.GetTemplate(key, culture) ?? secondary.GetTemplate(key, culture);
+
+            public async Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
+                await primary.GetTemplateAsync(key, culture, cancellationToken)
+                ?? await secondary.GetTemplateAsync(key, culture, cancellationToken);
+        }
+
+        // Local overrides first, then the catalogs shipped with the application:
+        var store = new FallbackStore(
+            new JsonFileStore(new JsonFileStoreOptions { ResourcesPath = "Overrides" }),
+            new EmbeddedJsonStore(new EmbeddedJsonStoreOptions { ResourceAssembly = typeof(Program).Assembly }));
+        """;
+
+    private const string JsonBase = """"
+        using FluentLocalizer.Store.Json;
+
+        /// JSON catalogs kept in a database column, one document per culture.
+        public sealed class DatabaseJsonStore(JsonStoreSettings settings) : JsonTranslationStoreBase(settings)
+        {
+            public void Update(string culture, string json)
+            {
+                SetDocument(culture + ".json", json);   // the name a culture file would have on disk
+                ClearTemplateCache();                   // forget templates found in the previous version
+            }
+        }
+
+        var store = new DatabaseJsonStore(new JsonStoreSettings { FallbackCulture = "en" });
+        store.Update("en", """{ "Greeting": "Hello, {name}!" }""");
+        store.Update("it", """{ "Greeting": "Ciao, {name}!" }""");
+        """";
+
+    private const string Register = """
+        // An instance:
+        builder.Services.AddFluentLocalizer().WithStore(new DictionaryStore(catalogs));
+
+        // Or a factory that uses other services:
+        builder.Services.AddFluentLocalizer().WithStore(services =>
+            new PreloadedStore(services.GetRequiredService<TranslationRepository>().GetAllAsync));
+        """;
+}

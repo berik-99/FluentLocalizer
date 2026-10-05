@@ -59,9 +59,11 @@ A key is a path through nested JSON objects, with `:` between segments. Each str
 `Welcome`, `Checkout:Title` and `Checkout:Items` resolve to the three strings above; nesting can go as deep as you need. The store returns the raw template, and FluentLocalizer formats it with the culture of the request.
 
 - Always nest objects. The key is split at every `:`, so a property literally named `"Checkout:Title"` is never found.
-- Property names are case-sensitive: `checkout:title` does not match `Checkout:Title`. Spaces around segments are ignored.
+- Property names are case-sensitive: `checkout:title` does not match `Checkout:Title`. Spaces around segments and empty segments are ignored, so `Checkout : Title` and `Checkout::Title` both find `Checkout:Title`.
 - Only string values are templates. A key that reaches a number, boolean, array, `null` or object is treated as missing.
+- An empty or whitespace-only string is returned by the store, but the translator treats it as a missing translation (`[key]`) and does **not** fall back to another culture. Remove the key to let fallback work.
 - `.` has no special meaning: `"Home.Title"` is a single property, reached by the key `Home.Title`.
+- Files must be strict JSON with an object at the root: comments and trailing commas are syntax errors. `JsonFileStore` and `EmbeddedJsonStore` silently skip an invalid file unless `ThrowOnMissingStore` is enabled; `HttpJsonStore` always throws `JsonException`.
 - Save files as UTF-8.
 
 ### Namespaces
@@ -91,7 +93,9 @@ Namespace files split a large catalog by feature or team, and let `HttpJsonStore
 | Namespace, then culture | `common.it-IT.json` | The `common` namespace only |
 | Culture folder | `it-IT/common.json` | The `common` namespace only |
 
-Culture folders are one level deep; files in deeper subfolders are not recognized. `EmbeddedJsonStore` reads only the culture file (`it-IT.json` or `it.json`): keep namespaces as top-level objects when you embed the catalogs.
+Culture folders are one level deep; files in deeper subfolders are not recognized unless `FileMappings` points to them. `EmbeddedJsonStore` reads only the culture file (`it-IT.json` or `it.json`): keep namespaces as top-level objects when you embed the catalogs. A namespace file is tried before the culture file of the same culture, and a key it lacks is still looked for in the culture file.
+
+The stores build file names from the canonical .NET culture name and from the namespace as written in the key. On case-sensitive file systems and web servers, name files `it-IT.json` (not `it-it.json`) and match the namespace's casing.
 
 ### Lookup order and fallback
 
@@ -130,6 +134,10 @@ Regional-only names behave differently from store to store:
 | `it-CH` | `it-IT.json` | Throws `FileNotFoundException`: a sibling region is never used | Skips to `FallbackCulture` |
 | `en-GB` | `en-US.json`, the fallback | Throws `FileNotFoundException` | Embedded uses the fallback; HTTP throws `FileNotFoundException` |
 
+The same selection applies to `FallbackCulture`. With `JsonFileStore`, `FallbackCulture = "en-US"` and only `en-GB.json`, every lookup that reaches the fallback throws `FileNotFoundException`, whatever `ThrowOnMissingStore` says: give the fallback culture, or its neutral culture, a file of its own.
+
+Neutral files use the two-letter language name (`it.json`). Cultures whose parent is a script culture (`zh-TW` → `zh-Hant`) are selected differently by the two strategies above; map them explicitly.
+
 To serve a sibling region from an existing file, map it explicitly. This works in every store:
 
 ```csharp
@@ -138,7 +146,7 @@ options.FileMappings["en-GB"] = "en-US.json";
 options.FileMappings["it-CH"] = "it-IT.json";
 ```
 
-Mapping values are relative `.json` paths inside `ResourcesPath`.
+Mapping values are relative `.json` paths inside `ResourcesPath` for `JsonFileStore` and `HttpJsonStore`; `ArgumentException` is thrown at construction for rooted paths, `.`/`..`/empty segments, `:`, `?`, `#` (and `%` for HTTP). For `EmbeddedJsonStore` the value is the final file name alone, such as `it-IT.json`. A mapped file is read as a culture file and is tried first for its culture. `JsonFileStore` and `HttpJsonStore` with a manifest treat the culture as available only when the mapped file exists.
 
 ## Local files
 
@@ -152,7 +160,7 @@ Configure the consuming application to copy its JSON files to the output and pub
 </ItemGroup>
 ```
 
-Relative `ResourcesPath` values use the application base directory. The store indexes the `*.json` files in that directory and its subfolders, reads each file the first time a lookup needs it and keeps the parsed document in memory. `JsonFileStore` requires filesystem access and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` in the browser.
+Relative `ResourcesPath` values use the application base directory (`AppContext.BaseDirectory`), not the current working directory. The store indexes the `*.json` files in that directory and its subfolders, reads each file the first time a lookup needs it and keeps the parsed document in memory. With `ThrowOnMissingStore = true` it also parses every file during construction, so invalid JSON (`JsonException`), a missing directory or an empty one (`FileNotFoundException`) fail at startup. Unreadable files are otherwise skipped. A file larger than `MaxDocumentBytes` always throws `InvalidDataException`. `JsonFileStore` requires filesystem access and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` in the browser.
 
 ```text
 Locales/
@@ -179,11 +187,11 @@ var translator = new Translator(store);
 var greeting = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Uses CurrentUICulture.
 ```
 
-`ReloadOnChange` watches filesystem files and is disabled by default. A file event invalidates only that document; a watcher error triggers a new scan and full cache invalidation. The store rejects symbolic links and reparse points in the configured resource directory and matching file paths; keep the directory writable only by trusted processes because a concurrent link replacement cannot be ruled out by a path check. Dispose the store when finished to release the watcher.
+`ReloadOnChange` watches filesystem files and is disabled by default. A file event invalidates only that document; a watcher error triggers a new scan and full cache invalidation. The store rejects symbolic links and reparse points in the configured resource directory and matching file paths; keep the directory writable only by trusted processes because a concurrent link replacement cannot be ruled out by a path check. Violations throw `SecurityException`. When `ReloadOnChange` is enabled and the directory does not exist, the store creates it in order to watch it. File-system notifications are not reliable on every network share or container volume. Dispose the store when finished to release the watcher.
 
 ## Embedded resources
 
-Embed the locale files in the application assembly. The default resource folder filter is `Locales`; set `ResourceAssembly` when the files are in another assembly.
+Embed the locale files in the application assembly. The default resource folder filter is `Locales`. Always set `ResourceAssembly`: when it is `null` the store reads `Assembly.GetEntryAssembly()` (the test runner in unit tests, the host in plugins), then the store's own assembly.
 
 ```xml
 <ItemGroup>
@@ -191,10 +199,14 @@ Embed the locale files in the application assembly. The default resource folder 
 </ItemGroup>
 ```
 
-The store loads every `.json` resource whose manifest name contains the `ResourcesPath` folder (default `Locales`) when it is constructed, and identifies each culture file by its final name, such as `en-US.json` or `it.json`. It reads one file per culture: namespace files are not supported, so keep every namespace as a top-level object of the culture file. A neutral request such as `it` does not select `it-IT.json`; name the files after the neutral culture, as in the [recommended layout](#recommended-layout). Resolved templates are kept in a bounded cache of 512 entries.
+The store loads every `.json` resource whose manifest name contains the `ResourcesPath` folder (default `Locales`) when it is constructed, and identifies each culture file by its final name, such as `en-US.json` or `it.json`. It reads one file per culture: namespace files are not supported, so keep every namespace as a top-level object of the culture file. A neutral request such as `it` does not select `it-IT.json`; name the files after the neutral culture, as in the [recommended layout](#recommended-layout). Resolved templates are kept in a bounded cache of 512 entries; misses are not cached.
+
+Resource names are `{RootNamespace}.{folders}.{file}`; the store matches `ResourcesPath` as a dot-separated segment (`/` and `\` become `.`; an empty value selects every `.json` resource) and keys each document by its last two segments, so two files with the same name in different folders overwrite each other and `it.common.json` becomes `common.json`. MSBuild replaces characters such as `-` and spaces in *folder* names with `_`. It also treats a file named `name.<culture>.json`, such as `common.it-IT.json` or `Strings.fr.json`, as culture-specific and moves it to a satellite assembly that the store never reads; culture files such as `it-IT.json` are not affected. List `GetManifestResourceNames()` to check what was embedded.
+
+Everything is read and parsed in the constructor. With `ThrowOnMissingStore`, no matching resource throws `FileNotFoundException` and invalid JSON throws `JsonException`; otherwise invalid resources are skipped. A resource larger than `MaxDocumentBytes` always throws `InvalidDataException`. The store holds no resources and does not implement `IDisposable`.
 
 ```csharp
-using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
+var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
     ResourceAssembly = typeof(Program).Assembly,
     ResourcesPath = "Locales",
@@ -206,7 +218,7 @@ Embedded resources work in browser applications because they are read from the a
 
 ## HTTP
 
-Publish the locale files as static assets on the server, such as under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app. `HttpJsonStore` requests the files described in [Organizing JSON files](#organizing-json-files) from `{ResourcesPath}/` below `HttpClient.BaseAddress`, such as `locales/it-IT.json` or `locales/it-IT.common.json`, and keeps parsed documents in memory. It does not own the supplied `HttpClient`.
+Publish the locale files as static assets on the server, such as under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app. `HttpJsonStore` requests the files described in [Organizing JSON files](#organizing-json-files) from `{ResourcesPath}/` below `HttpClient.BaseAddress`, such as `locales/it-IT.json` or `locales/it-IT.common.json`, and keeps parsed documents in memory. It does not own the supplied `HttpClient`, and `Dispose()` only releases internal locks. `ResourcesPath` defaults to lowercase `locales`; it must be a relative URL path (no leading `/`, `.`/`..` segments, `\`, `:`, `?`, `#` or `%`), and each segment is URL-encoded. End `BaseAddress` with `/`: with `https://example.com/app` the store requests `https://example.com/locales/...`. Construction performs no I/O.
 
 ```csharp
 using FluentLocalizer;
@@ -232,7 +244,9 @@ await store.RefreshStoreAsync();
 ["en-US.json", "en-US.common.json", "checkout.en-US.json", "it-IT/common.json"]
 ```
 
-The manifest is optional for existing servers. Without it, the store probes conventional filenames directly: every candidate name of the lookup order is a separate request, and absent files cost a `404` response each. `LoadAsync()` then preloads culture files only. In that mode a short culture cannot discover an arbitrary regional variant, and namespace-only files must first be loaded by `ResolveAsync()`. With a manifest, `LoadAsync()` preloads every listed file for the requested cultures and their fallback; subsequent synchronous lookups require no network. Manifest paths are validated and cannot escape `ResourcesPath`.
+The manifest is optional for existing servers. Without it, the store probes conventional filenames directly: every candidate name of the lookup order is a separate request, and absent files cost a `404` response each. `LoadAsync()` then preloads culture files only. In that mode a short culture cannot discover an arbitrary regional variant, and namespace-only files must first be loaded by `ResolveAsync()`. With a manifest, `LoadAsync()` preloads every listed file for the requested cultures and their fallback; subsequent synchronous lookups require no network. Manifest paths are validated and cannot escape `ResourcesPath`; a manifest that is not an array of strings throws `JsonException`, an invalid path `ArgumentException`. The manifest is requested once, before the first catalog; a `404` switches to probing mode, and every file that answered `404` is remembered and not requested again.
+
+Synchronous `GetTemplate` never performs I/O: it throws `InvalidOperationException` when the requested culture, or the fallback culture needed for a missing key, has not been loaded by `LoadAsync` or by an earlier `GetTemplateAsync`. Responses other than `200`, `304` and `404` throw `HttpRequestException`, as does a body larger than `MaxDocumentBytes`, whatever `ThrowOnMissingStore` says. Concurrent loads of the same culture share a single download.
 
 `RefreshStoreAsync()` rechecks the manifest and files already loaded, including newly listed files. It sends `Cache-Control: no-cache` and, when supplied by the server, `If-None-Match`/`If-Modified-Since`; a `304 Not Modified` keeps the existing parsed document. The refreshed manifest and all loaded cultures are published together only after every response parses successfully.
 
@@ -247,8 +261,11 @@ All three store options inherit `JsonStoreSettings`:
 - `FallbackCulture` selects the fallback culture; defaults to `en-US`.
 - `FileMappings` maps culture names to custom JSON file names.
 - Mapping values must be relative `.json` paths inside `ResourcesPath`; traversal and absolute paths are rejected. HTTP `ResourcesPath` must be a relative URL path.
-- `ThrowOnMissingStore` makes missing translation files throw. When disabled, file and embedded-resource stores skip individual read or parse errors. The HTTP store always throws for failed requests and invalid JSON; when missing files are allowed, lookups with no value return `null`.
-- `MaxDocumentBytes` limits each JSON file and HTTP response, including `manifest.json`. The default `0` disables the limit; configure a positive value when catalog files are not fully trusted.
+- `ThrowOnMissingStore` makes missing translation files throw `FileNotFoundException`: at construction when the directory or the embedded resources are missing, and on lookup when neither the culture nor the fallback has a catalog. File and embedded stores then also report invalid JSON instead of skipping it. When disabled, file and embedded-resource stores skip individual read or parse errors. The HTTP store always throws for failed requests and invalid JSON; when missing files are allowed, lookups with no value return `null`. A key absent from existing catalogs is always `null`, never an exception.
+- `MaxDocumentBytes` limits each JSON file and HTTP response, including `manifest.json`. The default `0` disables the limit; configure a positive value when catalog files are not fully trusted. Oversized documents always throw (`InvalidDataException` for file and embedded stores, `HttpRequestException` for HTTP), whatever `ThrowOnMissingStore` says; negative values throw `ArgumentOutOfRangeException` at construction.
+- Only-sibling-region situations (see [Recommended layout](#recommended-layout)) throw `FileNotFoundException` regardless of `ThrowOnMissingStore`.
+
+Store exceptions are not converted by the translator: they reach the caller of `Resolve()` or `ResolveAsync()`.
 
 The stores are separate classes so filesystem watching, assembly resource selection, and asynchronous HTTP loading remain explicit. They share the same fallback and JSON key resolution.
 
@@ -256,7 +273,7 @@ Treat translation JSON as deployment data. The stores return text; applications 
 
 ## Migration from the separate HTTP package
 
-Replace the `FluentLocalizer.Store.Http` package reference with `FluentLocalizer.Store.Json`, and change `using FluentLocalizer.Store.Http;` to `using FluentLocalizer.Store.Json;`. The `HttpJsonStore` and `HttpJsonStoreOptions` types keep their names. `JsonStore` and `JsonStoreOptions` are deprecated; migrate to `JsonFileStore` or `EmbeddedJsonStore` and their corresponding options types.
+Replace the `FluentLocalizer.Store.Http` package reference with `FluentLocalizer.Store.Json`, and change `using FluentLocalizer.Store.Http;` to `using FluentLocalizer.Store.Json;`. The `HttpJsonStore` and `HttpJsonStoreOptions` types keep their names. `JsonStore` and `JsonStoreOptions` are deprecated; migrate to `JsonFileStore` or `EmbeddedJsonStore` and their corresponding options types. The wrapper forwards to those stores (so files are now read on first use) and does not pass on `MaxDocumentBytes`.
 
 <!-- api-reference:start -->
 ## API reference
@@ -294,7 +311,7 @@ Configure options before creating the store. The store-specific options inherit 
 | `JsonStoreSettings()` | Creates shared settings with the defaults below. |
 | `string FallbackCulture { get; set; }` | Default: en-US. The final fallback culture after the requested culture and its neutral form. Must be a valid .NET culture name. |
 | `bool ThrowOnMissingStore { get; set; }` | Default: false. Missing translation files may throw FileNotFoundException when true. When false, filesystem and embedded stores skip individual I/O or JSON parse errors; HTTP request failures and invalid HTTP JSON still throw. |
-| `long MaxDocumentBytes { get; set; }` | Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents may be skipped by file/embedded stores when ThrowOnMissingStore is false; HTTP always rejects them. |
+| `long MaxDocumentBytes { get; set; }` | Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents always throw, whatever ThrowOnMissingStore says: InvalidDataException in file and embedded stores, HttpRequestException in HttpJsonStore. |
 | `IDictionary<string, string> FileMappings { get; }` | Mutable, initially empty, case-insensitive mapping from culture names to JSON file names. Add entries through the returned dictionary; the property cannot be replaced. File and HTTP paths are validated as relative JSON paths. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Store.Json/JsonStoreSettings.cs)
@@ -375,8 +392,8 @@ Supports combined culture files and namespace files, regional/neutral culture se
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `JsonFileStore(JsonFileStoreOptions? options = null)` | options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw. |
-| `override string? GetTemplate(string key, CultureInfo culture)` | Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. File, path and JSON errors may propagate with ThrowOnMissingStore. |
+| `JsonFileStore(JsonFileStoreOptions? options = null)` | options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw. With ThrowOnMissingStore, every file is parsed during construction, so invalid JSON throws JsonException there. |
+| `override string? GetTemplate(string key, CultureInfo culture)` | Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. I/O and JSON errors are skipped unless ThrowOnMissingStore is true. Always throws InvalidDataException for a file larger than MaxDocumentBytes, SecurityException for symbolic links or paths outside ResourcesPath, and FileNotFoundException when only a sibling regional catalog exists. |
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Wraps synchronous GetTemplate in a completed task; cancellationToken is not inspected. |
 | `void Dispose()` | Disposes the optional filesystem watcher. Use a using statement for stores owned by the application. |
 
@@ -390,11 +407,11 @@ Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `Flu
 
 Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.
 
-Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
+Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. FileMappings values are final file names such as it-IT.json. Files named like common.it-IT.json become MSBuild satellite resources and are not read. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)` | options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. |
+| `EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)` | options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. A resource larger than MaxDocumentBytes always throws InvalidDataException. |
 | `string? GetTemplate(string key, CultureInfo culture)` | Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true. |
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected. |
 

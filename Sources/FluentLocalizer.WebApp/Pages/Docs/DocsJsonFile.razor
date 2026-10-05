@@ -1,0 +1,172 @@
+@page "/docs/stores/json/file"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="when" Title="@T("WhenTitle")">
+        <p><RichText Text="@T("When1")" /></p>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Warning" Text="@T("Browser")" />
+    </DocsSection>
+
+    <DocsSection Id="setup" Title="@T("SetupTitle")">
+        <p><RichText Text="@T("Setup1")" /></p>
+        <CodeBlock Code="@Folder" />
+        <p><RichText Text="@T("Setup2")" /></p>
+        <CodeBlock Caption=".csproj" Code="@Project" />
+        <p><RichText Text="@T("Setup3")" /></p>
+        <CodeBlock Code="@Create" />
+    </DocsSection>
+
+    <DocsSection Id="options" Title="@T("OptionsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Property")</th><th>@Common("Default")</th><th>@Common("Description")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ResourcesPath</code></td><td><code>"Locales"</code></td><td><RichText Text="@T("OptPath")" /></td></tr>
+                    <tr><td><code>ReloadOnChange</code></td><td><code>false</code></td><td><RichText Text="@T("OptReload")" /></td></tr>
+                    <tr><td><code>FallbackCulture</code>, <code>FileMappings</code>, <code>ThrowOnMissingStore</code>, <code>MaxDocumentBytes</code></td><td>—</td><td><RichText Text="@T("OptShared")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </DocsSection>
+
+    <DocsSection Id="files" Title="@T("FilesTitle")">
+        <p><RichText Text="@T("Files1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("FilesIndex")" /></li>
+            <li><RichText Text="@T("FilesNames")" /></li>
+            <li><RichText Text="@T("FilesLazy")" /></li>
+            <li><RichText Text="@T("FilesStrict")" /></li>
+        </ul>
+        <CodeBlock Code="@Recognized" />
+    </DocsSection>
+
+    <DocsSection Id="reload" Title="@T("ReloadTitle")">
+        <p><RichText Text="@T("Reload1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("ReloadEvents")" /></li>
+            <li><RichText Text="@T("ReloadRendered")" /></li>
+            <li><RichText Text="@T("ReloadFolder")" /></li>
+            <li><RichText Text="@T("ReloadLimits")" /></li>
+            <li><RichText Text="@T("ReloadDispose")" /></li>
+        </ul>
+        <CodeBlock Code="@Reload" />
+    </DocsSection>
+
+    <DocsSection Id="errors" Title="@T("ErrorsTitle")">
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Exception")</th><th>@T("ThrownWhen")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>PlatformNotSupportedException</code></td><td><RichText Text="@T("ErrPlatform")" /></td></tr>
+                    <tr><td><code>ArgumentOutOfRangeException</code></td><td><RichText Text="@T("ErrRange")" /></td></tr>
+                    <tr><td><code>ArgumentException</code></td><td><RichText Text="@T("ErrMapping")" /></td></tr>
+                    <tr><td><code>FileNotFoundException</code></td><td><RichText Text="@T("ErrNotFound")" /></td></tr>
+                    <tr><td><code>JsonException</code></td><td><RichText Text="@T("ErrJson")" /></td></tr>
+                    <tr><td><code>InvalidDataException</code></td><td><RichText Text="@T("ErrSize")" /></td></tr>
+                    <tr><td><code>SecurityException</code></td><td><RichText Text="@T("ErrSecurity")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Errors2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="security" Title="@T("SecurityTitle")">
+        <p><RichText Text="@T("Security1")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="example" Title="@T("ExampleTitle")">
+        <p><RichText Text="@T("Example1")" /></p>
+        <CodeBlock Caption="Program.cs" Code="@Example" />
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "JsonFile";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("when", T("WhenTitle")), ("setup", T("SetupTitle")), ("options", T("OptionsTitle")), ("files", T("FilesTitle")),
+        ("reload", T("ReloadTitle")), ("errors", T("ErrorsTitle")), ("security", T("SecurityTitle")), ("example", T("ExampleTitle"))
+    ];
+
+    private const string Folder = """
+        MyApp/
+          MyApp.csproj
+          Program.cs
+          Locales/
+            en.json
+            it.json
+            it.checkout.json
+        """;
+
+    private const string Project = """
+        <ItemGroup>
+          <Content Include="Locales\**\*.json"
+                   CopyToOutputDirectory="PreserveNewest"
+                   CopyToPublishDirectory="PreserveNewest" />
+        </ItemGroup>
+        """;
+
+    private const string Create = """
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        using var store = new JsonFileStore(new JsonFileStoreOptions
+        {
+            ResourcesPath = "Locales",      // relative to the application folder
+            FallbackCulture = "en",
+            ThrowOnMissingStore = true      // fail at startup if the files were not deployed
+        });
+
+        var translator = new Translator(store);
+        """;
+
+    private const string Recognized = """
+        Locales/
+          en.json                  culture file for "en"
+          it.json                  culture file for "it"
+          it.checkout.json         namespace "checkout" for "it"
+          checkout.it-CH.json      namespace "checkout" for "it-CH"
+          it-CH/
+            it-CH.json             culture file for "it-CH"
+            common.json            namespace "common" for "it-CH"
+          archive/
+            old/it.json            not recognized (two levels deep), unless mapped
+          notes.json               not recognized (no culture in the name), unless mapped
+        """;
+
+    private const string Reload = """
+        builder.Services.AddFluentLocalizer().WithStore(services => new JsonFileStore(new JsonFileStoreOptions
+        {
+            FallbackCulture = "en",
+            ReloadOnChange = services.GetRequiredService<IHostEnvironment>().IsDevelopment()
+        }));
+        """;
+
+    private const string Example = """
+        using System.Globalization;
+        using FluentLocalizer;
+        using FluentLocalizer.Store.Json;
+
+        var options = new JsonFileStoreOptions
+        {
+            ResourcesPath = "Locales",
+            FallbackCulture = "en",
+            ReloadOnChange = true,
+            ThrowOnMissingStore = true,
+            MaxDocumentBytes = 1_000_000
+        };
+        options.FileMappings["it-CH"] = "it.json";   // explicit, although "it" would be found anyway
+
+        using var store = new JsonFileStore(options);
+        var translator = new Translator(store);
+
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-CH");
+
+        while (Console.ReadLine() is { } line && line != "quit")
+        {
+            // Edit Locales/it.json in the output folder while this runs: the next line uses the new text.
+            Console.WriteLine(translator.Get("checkout:Title").Resolve());
+        }
+        """;
+}

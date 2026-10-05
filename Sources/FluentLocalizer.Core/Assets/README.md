@@ -6,7 +6,7 @@ ICU (International Components for Unicode) is the Unicode standard for culture-a
 
 ## Install
 
-For every public type and member in this package, see the [API reference](#api-reference).
+For every public type and member in this package, see the [API reference](#api-reference). The [online documentation](https://berik-99.github.io/FluentLocalizer/docs) covers templates, requests, culture, errors and logging step by step.
 
 ```bash
 dotnet add package FluentLocalizer
@@ -137,7 +137,7 @@ var message = translator
     .Resolve();
 ```
 
-WithArg and WithArgs use case-insensitive argument names; runtime values override configured default arguments with the same name. Resolve() and ResolveAsync() return the formatted message. Their result depends on the configured missing-key and formatting-error policies, which can return placeholders, configured fallback strings, or throw exceptions.
+`WithArg` and `WithArgs` use case-insensitive argument names; runtime values override configured default arguments with the same name. `Resolve()` and `ResolveAsync()` return the formatted message. Their result depends on the configured missing-key and formatting-error policies, which can return placeholders, configured fallback strings, or throw exceptions. Nothing is looked up until `Resolve()`/`ResolveAsync()`; `ToString()` and the implicit `string` conversion call `Resolve()` each time.
 
 ### Available fluent methods
 
@@ -146,9 +146,36 @@ WithArg and WithArgs use case-insensitive argument names; runtime values overrid
 - `Pluralize(...)` sets the `quantity` argument used by plural formatting; it is equivalent to `WithArg("quantity", ...)`.
 - `Genderize(...)` sets the `gender` argument used by gender-aware formatting; it is equivalent to `WithArg("gender", ...)`.
 - `WithCase(...)` applies casing transforms such as upper, lower, camelCase, PascalCase, snake_case, or kebab-case
-- `WithOptions(...)` overrides the current `TranslationOptions` for a single request
+- `WithOptions(...)` replaces the whole `TranslationOptions` object for a single request (`null` restores the defaults)
 - `Resolve()` resolves synchronously
-- `ResolveAsync()` resolves asynchronously
+- `ResolveAsync()` resolves asynchronously, passing the `CancellationToken` to the store
+
+### Template and resolution rules
+
+- Every placeholder needs a value: a missing argument is a formatting error (`[Format Error]` by default), never empty text. `null` values print nothing.
+- Each request starts with `quantity = null` and `gender = "unspecified"`. `Pluralize(int)` and `Genderize(Gender)` overwrite them, so `DefaultArguments` entries for these names are never used. A `plural` block treats a `null` quantity as `0`.
+- If a template contains `{Length}` and no `Length` argument is supplied, it receives the count of non-null arguments, including the built-in `gender`.
+- `select` compares branch names case-sensitively; enums match by name. `plural` and `select` need an `other` branch for unmatched values.
+- `#` is replaced only directly inside a `plural` branch, not inside a `select` nested in it: nest `plural` inside `select`.
+- MessageFormat supports `number` (default, `integer`, `percent`, `currency` — the currency of the culture), `date` (default/`short`, `full`), `time` (default, `short`), `selectordinal`, `offset:` and `=N` branches. Other styles are formatting errors. Literal braces are quoted with apostrophes (`'{name}'`), `''` prints one apostrophe, backslashes are not escapes.
+- `WithCase` runs after formatting. `Upper`/`Lower` use invariant casing; the four identifier casings split words at spaces, punctuation, case and digit boundaries and drop spaces and punctuation.
+- A `null`, empty or whitespace template, or a `KeyNotFoundException` from the store, is a missing translation. Other store exceptions propagate unchanged.
+- `WithCulture(null)` selects `CultureInfo.CurrentCulture`, not the UI culture. Even when the store serves a fallback culture's template, formatting and plural rules use the request culture.
+- `Translator` is stateless and thread-safe; `TranslationBuilder` is mutable and not thread-safe. The translator keeps a reference to its `TranslationOptions`, so later changes to that object affect new requests.
+
+## Translation options
+
+| Property | Default | Behavior |
+| --- | --- | --- |
+| `MissingKeyBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `[key]` (ignoring `MissingKeyFallbackValue`); `ReturnConfiguredValue` returns `MissingKeyFallbackValue`; `ThrowException` throws. |
+| `MissingKeyFallbackValue` | `"[{key}]"` | Used with `ReturnConfiguredValue`. |
+| `MissingKeyExceptionFactory` | `null` | `(key, culture) => Exception` used with `ThrowException`; must not return `null`. |
+| `FormattingErrorBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `FormattingErrorFallbackValue`; `ThrowException` throws. |
+| `FormattingErrorFallbackValue` | `"[Format Error]"` | Returned for parse and formatting failures. |
+| `FormattingErrorExceptionFactory` | `null` | Used with `ThrowException`; a `null` result falls back to the missing-key exception. |
+| `DefaultArguments` | `null` | Merged into every request; request values win. |
+
+Fallback values replace `{key}`/`{0}` and `{culture}`/`{1}` case-insensitively, as plain text. The default exception is a `TranslationException` with `Key` and `Culture`; for formatting errors its message includes the formatter's explanation, but `InnerException` is not set. Custom factory exceptions are thrown as they are. With `ThrowException`, an empty or whitespace key throws `ArgumentException`. `CreateMissingKeyException` and `CreateFormattingException` return the exception without throwing it.
 
 ## Logging with ITranslationLogger
 
@@ -171,6 +198,8 @@ public sealed class ConsoleTranslationLogger : ITranslationLogger
     }
 }
 ```
+
+The translator writes `Debug` entries for every request (start, template retrieved — async only —, formatting, completion), a `Warning` whenever a fallback value is returned, and an `Error` before an exception leaves `Resolve()`/`ResolveAsync()`, including store exceptions. `Trace`, `Information` and `Critical` are not used. Formatting warnings do not include the formatter's message. Stores do not log.
 
 You can pass the logger to the translator when you create it:
 

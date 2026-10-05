@@ -65,25 +65,26 @@ public sealed class WebAppLocalizationTests
                 $"FluentLocalizer.WebApp.Tests.WebLocales.{language}.json");
             Assert.NotNull(stream);
             using var catalog = JsonDocument.Parse(stream);
-            var entries = catalog.RootElement.GetProperty("Ui").EnumerateObject().ToArray();
-            var keys = entries.Select(entry => entry.Name).OrderBy(key => key).ToArray();
+            // The interface strings and every nested documentation page are checked alike.
+            var entries = Leaves("Ui", catalog.RootElement.GetProperty("Ui"))
+                .Concat(Leaves("Docs", catalog.RootElement.GetProperty("Docs"))).ToArray();
+            var keys = entries.Select(entry => entry.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray();
             expectedKeys ??= keys;
             Assert.Equal(expectedKeys, keys);
 
-            foreach (var entry in entries)
+            foreach (var (key, template) in entries)
             {
-                var template = entry.Value.GetString();
-                Assert.False(string.IsNullOrWhiteSpace(template));
-                var request = translator.Get("Ui:" + entry.Name).WithCulture(language);
+                Assert.False(string.IsNullOrWhiteSpace(template), $"{language}.json {key} is empty.");
+                var request = translator.Get(key).WithCulture(language);
                 foreach (var argument in arguments) request.WithArg(argument.Key, argument.Value);
                 // Quoted '{...}' spans are literal MessageFormat text; every other {name} must be a known argument.
-                var expected = Regex.Replace(template!, @"'([{}][^']*)'|\{(\w+)\}", match =>
+                var expected = Regex.Replace(template, @"'([{}][^']*)'|\{(\w+)\}", match =>
                     match.Groups[1].Success ? match.Groups[1].Value : arguments[match.Groups[2].Value]!.ToString()!);
                 Assert.Equal(expected, request.Resolve());
 
                 // Display casing belongs to WithCase, so catalogs never store text in capitals.
-                var letters = template!.Where(char.IsLetter).ToArray();
-                Assert.False(letters.Length > 3 && letters.All(char.IsUpper), $"{language}.json Ui:{entry.Name} is written in capitals.");
+                var letters = template.Where(char.IsLetter).ToArray();
+                Assert.False(letters.Length > 3 && letters.All(char.IsUpper), $"{language}.json {key} is written in capitals.");
             }
 
             var demo = catalog.RootElement.GetProperty("Demo");
@@ -99,5 +100,24 @@ public sealed class WebAppLocalizationTests
         Assert.Equal("POURQUOI FLUENTLOCALIZER", translator.Get("Ui:Why").WithCulture(french).WithCase(LetterCase.Upper).Resolve());
         Assert.Equal("Supprimer l'argument Ada", translator.Get("Ui:RemoveArgument").WithCulture(french).WithArg("name", "Ada").Resolve());
         Assert.Equal("Overview", translator.Get("Ui:Overview").WithCulture("ja-JP").Resolve());
+        Assert.Equal("Introduzione", translator.Get("Docs:Intro:Nav").WithCulture("it-CH").Resolve());
+    }
+
+    // Every string of a catalog object with its colon-separated key, such as Docs:Templates:Title.
+    private static IEnumerable<(string Key, string Value)> Leaves(string path, JsonElement element)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            var key = path + ":" + property.Name;
+            if (property.Value.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var leaf in Leaves(key, property.Value)) yield return leaf;
+            }
+            else
+            {
+                Assert.Equal(JsonValueKind.String, property.Value.ValueKind);
+                yield return (key, property.Value.GetString()!);
+            }
+        }
     }
 }

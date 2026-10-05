@@ -1,0 +1,39 @@
+/* ---------- Code block ---------- */
+
+.code-block { position: relative; margin: 18px 0 22px; min-width: 0; }
+.code-block figcaption { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 7px; }
+.code-block pre {
+    background: #192533;
+    color: #deebdd;
+    border: 1px solid #344454;
+    border-radius: var(--radius);
+    margin: 0;
+    padding: 20px 52px 20px 23px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.75;
+    white-space: pre;
+    tab-size: 4;
+}
+.code-block pre code { font-size: inherit; }
+
+.code-block ::deep .code-block-copy {
+    position: absolute;
+    right: 9px;
+    bottom: 9px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    background: #223142;
+    border-color: #3a4b5d;
+    color: #c6d3cd;
+    opacity: .75;
+    transition: opacity .2s, background-color .2s, color .2s;
+}
+.code-block:hover ::deep .code-block-copy, .code-block ::deep .code-block-copy:focus-visible { opacity: 1; }
+.code-block ::deep .code-block-copy:hover { background: #2c3e51; color: var(--lime); }
+
+@media (max-width: 560px) {
+    .code-block pre { font-size: 11px; padding: 16px 46px 16px 16px; }
+}

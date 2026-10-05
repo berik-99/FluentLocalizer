@@ -4,7 +4,7 @@ FluentLocalizer.Extensions.DependencyInjection provides ASP.NET Core and generic
 
 ## Install
 
-For every public type and member in this package, see the [API reference](#api-reference).
+For every public type and member in this package, see the [API reference](#api-reference). The [online guide](https://berik-99.github.io/FluentLocalizer/docs/dependency-injection) covers ASP.NET Core, worker services and Blazor.
 
 ```bash
 dotnet add package FluentLocalizer.Extensions.DependencyInjection
@@ -20,11 +20,11 @@ dotnet add package FluentLocalizer.Store.Json
 
 ```csharp
 using FluentLocalizer;
-using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
 
 var services = new ServiceCollection();
+services.AddLogging(); // required by WithLogger() outside a host
 
 services.AddFluentLocalizer(options =>
 {
@@ -80,7 +80,6 @@ If you are building a hosted service, worker, or background processor, you can r
 
 ```csharp
 using FluentLocalizer;
-using FluentLocalizer.Core;
 using FluentLocalizer.Store.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -125,6 +124,20 @@ This pattern is useful when the translator is reused across several services and
 - an optional `ITranslationLogger`
 
 This makes the translator available throughout your app via dependency injection.
+
+| Service | Lifetime | Registered by |
+| --- | --- | --- |
+| `ITranslator` | Singleton, created on first resolution | `AddFluentLocalizer` |
+| `IOptions<TranslationOptions>` | Singleton | `AddFluentLocalizer` (`AddOptions` + `Configure`, or `Options.Create` for the instance overload) |
+| `ITranslationStore` | Singleton | `WithStore` |
+| `ITranslationLogger` | Singleton adapter to `ILogger<Translator>` | `WithLogger` (optional) |
+
+- `AddFluentLocalizer` lives in the `Microsoft.Extensions.DependencyInjection` namespace; the returned `FluentLocalizerBuilder` is in `FluentLocalizer.Core`, which you only import to name the type.
+- Resolving `ITranslator` without a registered store throws `InvalidOperationException`. Registering `ITranslationStore` or `ITranslationLogger` yourself is equivalent to `WithStore`/`WithLogger`.
+- Call `AddFluentLocalizer` once per container: a second call adds another `ITranslator` registration and the last one wins.
+- `WithStore(instance)`: the caller owns and disposes the store. `WithStore(factory)`: the container creates it lazily and disposes it (`JsonFileStore`, `HttpJsonStore`) when the provider is disposed.
+- The callback overload combines with other `Configure<TranslationOptions>` calls (including configuration binding of the simple properties). The instance overload registers that exact object; other `Configure` calls are ignored. Either way the options are read once, when the singleton translator is created.
+- `WithLogger()` requires `ILogger<Translator>`: hosts register logging, a bare `ServiceCollection` needs `AddLogging()`. The category is `FluentLocalizer.Translator`; levels map one-to-one to `LogLevel`.
 
 
 ## Using a custom store factory

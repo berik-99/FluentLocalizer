@@ -1,0 +1,88 @@
+@page "/docs"
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="overview" Title="@T("OverviewTitle")">
+        <p><RichText Text="@T("Overview1")" /></p>
+        <p><RichText Text="@T("Overview2")" /></p>
+        <CodeBlock Code="@Example" />
+        <p><RichText Text="@T("Overview3")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="concepts" Title="@T("ConceptsTitle")">
+        <p><RichText Text="@T("ConceptsIntro")" /></p>
+        <dl class="docs-terms">
+            <dt>@T("KeyTerm")</dt><dd><RichText Text="@T("KeyText")" /></dd>
+            <dt>@T("TemplateTerm")</dt><dd><RichText Text="@T("TemplateText")" /></dd>
+            <dt>@T("CultureTerm")</dt><dd><RichText Text="@T("CultureText")" /></dd>
+            <dt>@T("StoreTerm")</dt><dd><RichText Text="@T("StoreText")" /></dd>
+            <dt>@T("TranslatorTerm")</dt><dd><RichText Text="@T("TranslatorText")" /></dd>
+        </dl>
+    </DocsSection>
+
+    <DocsSection Id="flow" Title="@T("FlowTitle")">
+        <p><RichText Text="@T("FlowIntro")" /></p>
+        <ol class="docs-list">
+            <li><RichText Text="@T("Flow1")" /></li>
+            <li><RichText Text="@T("Flow2")" /></li>
+            <li><RichText Text="@T("Flow3")" /></li>
+            <li><RichText Text="@T("Flow4")" /></li>
+            <li><RichText Text="@T("Flow5")" /></li>
+        </ol>
+    </DocsSection>
+
+    <DocsSection Id="packages" Title="@T("PackagesTitle")">
+        <p><RichText Text="@T("PackagesIntro")" /></p>
+        <div class="docs-table-wrap">
+            <table class="docs-table">
+                <thead><tr><th>@Common("Package")</th><th>@Common("Contents")</th><th>@T("WhenNeeded")</th></tr></thead>
+                <tbody>
+                    <tr><td><code>FluentLocalizer</code></td><td><RichText Text="@T("CorePackage")" /></td><td><RichText Text="@T("CoreWhen")" /></td></tr>
+                    <tr><td><code>FluentLocalizer.Store.Json</code></td><td><RichText Text="@T("JsonPackage")" /></td><td><RichText Text="@T("JsonWhen")" /></td></tr>
+                    <tr><td><code>FluentLocalizer.Extensions.DependencyInjection</code></td><td><RichText Text="@T("InjectionPackage")" /></td><td><RichText Text="@T("InjectionWhen")" /></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p><RichText Text="@T("Platforms")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="comparison" Title="@T("ComparisonTitle")">
+        <p><RichText Text="@T("Comparison1")" /></p>
+        <ul class="docs-list">
+            <li><RichText Text="@T("Comparison2")" /></li>
+            <li><RichText Text="@T("Comparison3")" /></li>
+            <li><RichText Text="@T("Comparison4")" /></li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Id="next" Title="@T("NextTitle")">
+        <div class="docs-cards">
+            <a class="docs-card" href="docs/quick-start"><strong>@T("NextQuickStart") <span aria-hidden="true">→</span></strong><span>@T("NextQuickStartText")</span></a>
+            <a class="docs-card" href="docs/templates"><strong>@T("NextTemplates") <span aria-hidden="true">→</span></strong><span>@T("NextTemplatesText")</span></a>
+            <a class="docs-card" href="docs/stores"><strong>@T("NextStores") <span aria-hidden="true">→</span></strong><span>@T("NextStoresText")</span></a>
+            <a class="docs-card" href="playground"><strong>@T("NextPlayground") <span aria-hidden="true">→</span></strong><span>@T("NextPlaygroundText")</span></a>
+            <a class="docs-card" href="@SiteLinks.Examples" target="_blank" rel="noopener noreferrer"><strong>@T("NextSamples") <span aria-hidden="true">↗</span></strong><span>@T("NextSamplesText")</span></a>
+            <a class="docs-card" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer"><strong>@T("NextReadmes") <span aria-hidden="true">↗</span></strong><span>@T("NextReadmesText")</span></a>
+        </div>
+        <p><RichText Text="@T("Credits")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Intro";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("overview", T("OverviewTitle")), ("concepts", T("ConceptsTitle")), ("flow", T("FlowTitle")),
+        ("packages", T("PackagesTitle")), ("comparison", T("ComparisonTitle")), ("next", T("NextTitle"))
+    ];
+
+    private const string Example = """
+        // Locales/en.json: { "Inbox": { "Unread": "You have {quantity, plural, one{# unread message} other{# unread messages}}." } }
+        // Locales/it.json: { "Inbox": { "Unread": "Hai {quantity, plural, one{# messaggio da leggere} other{# messaggi da leggere}}." } }
+
+        var message = translator.Get("Inbox:Unread").Pluralize(3).Resolve();
+        // English UI: "You have 3 unread messages."
+        // Italian UI: "Hai 3 messaggi da leggere."
+        """;
+}
