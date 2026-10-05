@@ -15,7 +15,7 @@ dotnet add package FluentLocalizer
 ## Why use it?
 
 - A fluent builder API for composing translation requests in a readable way
-- Culture-aware resolution per request, with support for fallback cultures; `WithCulture(...)` is only needed when you want to override the default `CurrentUICulture`
+- Culture-aware resolution that follows `CultureInfo.CurrentUICulture` automatically, with fallback cultures handled by the store; `WithCulture(...)` only forces a different culture for a single request
 - Templates in the ICU message syntax, including named placeholders, `plural` and `select`
 - Built-in helpers for pluralization, gender-aware formatting, and case transformation
 - Support for sync and async resolution, plus custom handling for missing keys and formatting errors
@@ -56,24 +56,29 @@ Console.WriteLine(message); // Hello Ada!
 
 ## Culture selection
 
-`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and message formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
-
-To change the culture used by new requests and other .NET components in the same execution context:
+**You normally don't call `WithCulture(...)`.** `translator.Get(key)` uses `CultureInfo.CurrentUICulture`, the culture of your user interface, both to look up the template and to format it, with `Resolve()` and `ResolveAsync()` alike. Set the UI culture where your application decides the user's language, and every request follows it:
 
 ```csharp
 using System.Globalization;
 
 var culture = CultureInfo.GetCultureInfo("it-IT");
-CultureInfo.CurrentUICulture = culture; // Translation and resource lookup.
-CultureInfo.CurrentCulture = culture;   // Standard .NET number/date formatting.
+CultureInfo.CurrentUICulture = culture; // Translation lookup and message formatting.
+CultureInfo.CurrentCulture = culture;   // Standard .NET number/date formatting elsewhere in the app.
 
-var message = translator.Get("Welcome").WithArg("name", "Ada").Resolve();
-var english = translator.Get("Welcome").WithCulture("en-US").WithArg("name", "Ada").Resolve();
+var message = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Italian
 ```
 
-Existing builders retain their captured culture; create a new builder after changing it. Components that use explicit cultures or cache rendered text need their own update or rerender. On modern .NET, the ambient culture flows through task-based asynchronous operations.
+`WithCulture(...)` exists only to **force** a culture that differs from the UI culture for one message, such as an email written in the recipient's language or a page that shows the same text in several languages:
 
-For application-wide thread defaults, set `CultureInfo.DefaultThreadCurrentUICulture` and `CultureInfo.DefaultThreadCurrentCulture` at startup; these do not override explicitly set thread cultures. In ASP.NET Core, configure localization per request/user rather than changing those defaults for each user.
+```csharp
+var subject = translator.Get("Email:Subject").WithCulture(recipientCulture).Resolve();
+```
+
+It affects that request only and never changes `CurrentUICulture` or `CurrentCulture`. If you pass the same culture to every request, set `CurrentUICulture` instead: repeating `WithCulture(...)` hides the real culture of the application and ignores later language changes.
+
+`Get(key)` captures the culture when it creates the builder, so create a new builder after changing it. Components that cache rendered text need their own update or rerender. On modern .NET, the ambient culture flows through task-based asynchronous operations.
+
+For application-wide thread defaults, set `CultureInfo.DefaultThreadCurrentUICulture` and `CultureInfo.DefaultThreadCurrentCulture` at startup; these do not override explicitly set thread cultures. In ASP.NET Core, `app.UseRequestLocalization(...)` sets both cultures for each request, so `Get(key)` already follows the user's language; don't change the process-wide defaults per user.
 
 See Microsoft's [CurrentUICulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentuiculture) and [CurrentCulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentculture) documentation.
 
@@ -103,13 +108,11 @@ var translator = new Translator(store);
 
 var itemSummary = translator
     .Get("items")
-    .WithCulture("en-US")
     .Pluralize(2)
     .Resolve();
 
 var profileMessage = translator
     .Get("profile")
-    .WithCulture("en-US")
     .WithArg("name", "Ada")
     .Genderize(Gender.Female)
     .Resolve();
@@ -122,7 +125,6 @@ You can chain the fluent methods to build expressive translation requests:
 ```csharp
 var message = translator
     .Get("dashboard")
-    .WithCulture("it-IT")
     .WithArg("name", "Ada")
     .WithArgs(new Dictionary<string, object?>
     {
@@ -139,7 +141,7 @@ WithArg and WithArgs use case-insensitive argument names; runtime values overrid
 
 ### Available fluent methods
 
-- `WithCulture(...)` selects the culture for the current request when you want to override `CurrentUICulture`
+- `WithCulture(...)` is optional: it forces a culture other than `CurrentUICulture` for the current request only
 - `WithArg(...)` and `WithArgs(...)` add runtime arguments
 - `Pluralize(...)` sets the `quantity` argument used by plural formatting; it is equivalent to `WithArg("quantity", ...)`.
 - `Genderize(...)` sets the `gender` argument used by gender-aware formatting; it is equivalent to `WithArg("gender", ...)`.

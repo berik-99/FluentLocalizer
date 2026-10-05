@@ -12,19 +12,25 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddFluentLocalizer().WithStore(_ => new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
-    ResourceAssembly = typeof(SiteText).Assembly,
+    ResourceAssembly = typeof(App).Assembly,
     ResourcesPath = "Locales",
     FallbackCulture = "en",
     ThrowOnMissingStore = true
 }));
-builder.Services.AddSingleton<SiteText>();
 builder.Services.AddTransient<PlaygroundSession>();
 
 var host = builder.Build();
 var js = host.Services.GetRequiredService<IJSRuntime>();
-var text = host.Services.GetRequiredService<SiteText>();
-text.Culture = SiteText.SelectCulture(await js.InvokeAsync<string[]>("fluentSite.getLanguages"));
-CultureInfo.DefaultThreadCurrentCulture = text.Culture;
-CultureInfo.DefaultThreadCurrentUICulture = text.Culture;
-await js.InvokeVoidAsync("fluentSite.setLanguage", text.Culture.Name, text.BrowserLabels);
+var culture = BrowserCulture.SelectCulture(await js.InvokeAsync<string[]>("fluentSite.getLanguages"));
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+var translator = host.Services.GetRequiredService<ITranslator>();
+await js.InvokeVoidAsync("fluentSite.setLanguage", culture.Name, new
+{
+    loading = translator.Get("Ui:Loading").Resolve(),
+    errorTitle = translator.Get("Ui:ErrorTitle").Resolve(),
+    error = translator.Get("Ui:UnhandledError").Resolve(),
+    reload = translator.Get("Ui:Reload").Resolve(),
+    dismiss = translator.Get("Ui:Dismiss").Resolve()
+});
 await host.RunAsync();

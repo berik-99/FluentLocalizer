@@ -90,24 +90,29 @@ Console.WriteLine(message); // Output: Hello Ada!
 
 ## Culture selection
 
-`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and message formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
-
-To change the culture used by new requests and other .NET components in the same execution context:
+**You normally don't call `WithCulture(...)`.** `translator.Get(key)` uses `CultureInfo.CurrentUICulture`, the culture of your user interface, both to look up the template and to format it, with `Resolve()` and `ResolveAsync()` alike. Set the UI culture where your application decides the user's language, and every request follows it:
 
 ```csharp
 using System.Globalization;
 
 var culture = CultureInfo.GetCultureInfo("it-IT");
-CultureInfo.CurrentUICulture = culture; // Translation and resource lookup.
-CultureInfo.CurrentCulture = culture;   // Standard .NET number/date formatting.
+CultureInfo.CurrentUICulture = culture; // Translation lookup and message formatting.
+CultureInfo.CurrentCulture = culture;   // Standard .NET number/date formatting elsewhere in the app.
 
-var message = translator.Get("Welcome").WithArg("name", "Ada").Resolve();
-var english = translator.Get("Welcome").WithCulture("en-US").WithArg("name", "Ada").Resolve();
+var message = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Italian
 ```
 
-Existing builders retain their captured culture; create a new builder after changing it. Components that use explicit cultures or cache rendered text need their own update or rerender. On modern .NET, the ambient culture flows through task-based asynchronous operations.
+`WithCulture(...)` exists only to **force** a culture that differs from the UI culture for one message, such as an email written in the recipient's language or a page that shows the same text in several languages:
 
-For application-wide thread defaults, set `CultureInfo.DefaultThreadCurrentUICulture` and `CultureInfo.DefaultThreadCurrentCulture` at startup; these do not override explicitly set thread cultures. In ASP.NET Core, configure localization per request/user rather than changing those defaults for each user.
+```csharp
+var subject = translator.Get("Email:Subject").WithCulture(recipientCulture).Resolve();
+```
+
+It affects that request only and never changes `CurrentUICulture` or `CurrentCulture`. If you pass the same culture to every request, set `CurrentUICulture` instead: repeating `WithCulture(...)` hides the real culture of the application and ignores later language changes.
+
+`Get(key)` captures the culture when it creates the builder, so create a new builder after changing it. Components that cache rendered text need their own update or rerender. On modern .NET, the ambient culture flows through task-based asynchronous operations.
+
+For application-wide thread defaults, set `CultureInfo.DefaultThreadCurrentUICulture` and `CultureInfo.DefaultThreadCurrentCulture` at startup; these do not override explicitly set thread cultures. In ASP.NET Core, `app.UseRequestLocalization(...)` sets both cultures for each request, so `Get(key)` already follows the user's language; don't change the process-wide defaults per user.
 
 See Microsoft's [CurrentUICulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentuiculture) and [CurrentCulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentculture) documentation.
 
@@ -152,19 +157,37 @@ Install the package:
 dotnet add package FluentLocalizer.Store.Json
 ```
 
-Use one file per culture under `Locales`. `JsonFileStore` reads files on demand and keeps a bounded cache of recently used templates. Namespace files can be flat or grouped by culture:
+### Organizing the JSON files
+
+A key is a path through nested objects, with `:` between segments, and each string value is an ICU template. This file defines `Welcome`, `Checkout:Title` and `Checkout:Items`:
+
+```json
+{
+  "Welcome": "Hello {name}!",
+  "Checkout": {
+    "Title": "Your cart",
+    "Items": "{quantity, plural, one {# item} other {# items}}"
+  }
+}
+```
+
+Always nest objects: keys are split at every `:`, so a property named `"Checkout:Title"` is never found. Property names are case-sensitive, and only string values count as templates.
+
+The first segment of a key with two or more segments is its *namespace*. `common:Buttons:Save` can live in the culture file as a top-level object, `{ "common": { "Buttons": { "Save": "Salva" } } }` in `it-IT.json`, or in a namespace file without the namespace object, `{ "Buttons": { "Save": "Salva" } }` in `it-IT.common.json`. The key is the same in both cases. `JsonFileStore` and `HttpJsonStore` accept `it-IT.common.json`, `common.it-IT.json` and `it-IT/common.json`; `EmbeddedJsonStore` reads only the culture file.
+
+Fallback works per key: the store tries the namespace file, the culture file, the neutral culture (`it`) and then `FallbackCulture`, so regional and namespace files only need the strings that differ. Name each language's main catalog after its neutral culture and add regional files only for differences:
 
 ```text
 Locales/
-    en-US.json
-    it-IT.json
-    it-IT.common.json
-    it/common.json
+  en.json            complete catalog, also the fallback (FallbackCulture = "en")
+  en-GB.json         only British differences
+  it.json            Italian for it-IT, it-CH, it...
+  it.checkout.json   optional namespace file
 ```
 
-`JsonFileStore` recognizes a namespaced key such as `common:Home:Welcome`: it checks the culture's `common` file before the combined culture file, then tries the neutral culture (`it`) and configured fallback. In a namespace file, omit the namespace object and keep only the nested section, for example `{ "Home": { "Welcome": "Benvenuto" } }`. The same key continues to work in `it-IT.json` when that file contains a `common` object.
+With regional-only names such as `it-IT.json`, `JsonFileStore` and `HttpJsonStore` with a manifest throw `FileNotFoundException` for a sibling region like `it-CH` instead of using it; map it with `FileMappings["it-CH"] = "it-IT.json"`. The [JSON store guide](Sources/FluentLocalizer.Store.Json/Assets/README.md#organizing-json-files) details the lookup order, every supported file name and the differences between stores.
 
-`JsonFileStore` reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
+`JsonFileStore` reads each file the first time a lookup needs it and keeps the parsed document in memory. It reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
 
 ```xml
 <ItemGroup>
@@ -174,7 +197,7 @@ Locales/
 </ItemGroup>
 ```
 
-The store scans `ResourcesPath` (default `Locales`) recursively for `*.json` files. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
+The store indexes the `*.json` files in `ResourcesPath` (default `Locales`) and its subfolders. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
 
 ```csharp
 using FluentLocalizer;
@@ -183,11 +206,11 @@ using FluentLocalizer.Store.Json;
 using var store = new JsonFileStore(new JsonFileStoreOptions
 {
     ResourcesPath = "Locales",
-    FallbackCulture = "en-US",
+    FallbackCulture = "en",
     ThrowOnMissingStore = true
 });
 var translator = new Translator(store);
-var greeting = translator.Get("Welcome").WithCulture("it-IT").WithArg("name", "Ada").Resolve();
+var greeting = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Uses CurrentUICulture.
 ```
 
 For embedded resources, include the locale files as `EmbeddedResource` and create an `EmbeddedJsonStore`:
@@ -198,7 +221,7 @@ For embedded resources, include the locale files as `EmbeddedResource` and creat
 </ItemGroup>
 ```
 
-The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and converts the final resource name to the culture filename. Set `ResourceAssembly` if the files are embedded in a different assembly.
+The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. It reads one file per culture, so keep namespaces as top-level objects. Set `ResourceAssembly` if the files are embedded in a different assembly.
 
 ```csharp
 using var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
@@ -267,11 +290,10 @@ public sealed class NotificationWorker(ITranslator translator) : BackgroundServi
     {
         var message = translator
             .Get("Notifications:MessageCount")
-            .WithCulture("en-US")
             .Pluralize(3)
             .Resolve();
 
-        Console.WriteLine(message); // Output: You have 3 messages.
+        Console.WriteLine(message); // In CurrentUICulture, for example: You have 3 messages.
         return Task.CompletedTask;
     }
 }
@@ -756,7 +778,7 @@ Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `Flu
 
 Filesystem JSON store implementing ITranslationStore and IDisposable, inheriting JsonTranslationStoreBase.
 
-Supports culture and namespace files, bounded template caching and optional reload. Unsupported in browser applications. Copy catalog files to build and publish output.
+Supports combined culture files and namespace files, regional/neutral culture selection and optional reload. Parsed files are cached per file until a change invalidates them. Unsupported in browser applications. Copy catalog files to build and publish output.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
@@ -775,7 +797,7 @@ Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `Flu
 
 Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.
 
-Loads matching assembly resources during construction. Lookup methods are inherited; no Dispose method is required.
+Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |

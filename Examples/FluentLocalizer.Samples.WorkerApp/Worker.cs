@@ -5,8 +5,9 @@ public class Worker(ILogger<Worker> logger, ITranslator translator) : Background
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Basic file-store lookup: the JSON files are copied beside the application.
-        logger.LogInformation("Basic: {Message}", translator.Get("Service:Ready").WithCulture("it-IT").Resolve());
-        logger.LogInformation("Fallback: {Message}", translator.Get("Service:FallbackOnly").WithCulture("it-IT").Resolve());
+        // No WithCulture: requests use the CurrentUICulture set in Program.cs.
+        logger.LogInformation("Basic: {Message}", translator.Get("Service:Ready").Resolve());
+        logger.LogInformation("Fallback: {Message}", translator.Get("Service:FallbackOnly").Resolve());
 
         var count = 0;
         while (!stoppingToken.IsCancellationRequested)
@@ -18,7 +19,6 @@ public class Worker(ILogger<Worker> logger, ITranslator translator) : Background
                     .WithArg("name", "Anita")
                     .Genderize(Gender.Female)
                     .Pluralize(count++ % 3)
-                    .WithCulture("it-IT")
                     .ResolveAsync(stoppingToken);
                 logger.LogInformation("Advanced: {Message}", message);
             }

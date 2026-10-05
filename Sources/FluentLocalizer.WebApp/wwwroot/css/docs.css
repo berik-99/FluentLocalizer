@@ -37,6 +37,14 @@
 .docs-patterns code { display: block; color: var(--accent-text); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .docs-section .docs-patterns p, .docs-section .docs-store-grid p { font-size: 12px; line-height: 1.6; margin: 12px 0 0; }
 
+.docs-section p.docs-note { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--field-focus); border-radius: var(--radius); padding: 16px 19px; color: var(--text); }
+.docs-section p.docs-note em { font-style: normal; font-weight: 700; color: var(--accent-text); }
+
+.docs-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0 22px; }
+.docs-files figure { margin: 0; min-width: 0; }
+.docs-files figcaption { font-size: 12px; margin-bottom: 7px; }
+.docs-section .docs-files pre { margin: 0; }
+
 .docs-methods { border-top: 1px solid var(--border); margin: 20px 0 26px; }
 .docs-methods > div { display: grid; grid-template-columns: 210px 1fr; gap: 15px; align-items: center; border-bottom: 1px solid var(--border); padding: 11px 0; font-size: 13px; color: var(--text-muted); }
 .docs-methods > div > code { font-weight: 700; color: var(--accent-text); }
@@ -73,6 +81,7 @@
     .docs-sidebar a:hover, .docs-sidebar a.is-active { border-bottom-color: var(--field-focus); }
     .docs-section { scroll-margin-top: 20px; }
     .docs-methods > div { grid-template-columns: 1fr; gap: 5px; }
+    .docs-files { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {

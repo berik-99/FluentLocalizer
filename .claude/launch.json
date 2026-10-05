@@ -18,6 +18,12 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "Sources/FluentLocalizer.WebApp", "--no-launch-profile", "--", "--urls", "http://localhost:5193"],
       "port": 5193
+    },
+    {
+      "name": "blazor-sample",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Examples/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp", "--launch-profile", "http"],
+      "port": 5231
     }
   ]
 }

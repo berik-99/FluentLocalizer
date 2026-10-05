@@ -368,7 +368,7 @@
       "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonFileStore.cs",
       "Summary": "Filesystem JSON store implementing ITranslationStore and IDisposable, inheriting JsonTranslationStoreBase.",
-      "Remarks": "Supports culture and namespace files, bounded template caching and optional reload. Unsupported in browser applications. Copy catalog files to build and publish output.",
+      "Remarks": "Supports combined culture files and namespace files, regional/neutral culture selection and optional reload. Parsed files are cached per file until a change invalidates them. Unsupported in browser applications. Copy catalog files to build and publish output.",
       "Members": [
         {"Signature": "JsonFileStore(JsonFileStoreOptions? options = null)", "Description": "options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw."},
         {"Signature": "override string? GetTemplate(string key, CultureInfo culture)", "Description": "Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. File, path and JSON errors may propagate with ThrowOnMissingStore."},
@@ -385,7 +385,7 @@
       "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/EmbeddedJsonStore.cs",
       "Summary": "Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.",
-      "Remarks": "Loads matching assembly resources during construction. Lookup methods are inherited; no Dispose method is required.",
+      "Remarks": "Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.",
       "Members": [
         {"Signature": "EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)", "Description": "options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false."},
         {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true."},

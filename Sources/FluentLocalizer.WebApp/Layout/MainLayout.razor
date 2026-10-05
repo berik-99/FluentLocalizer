@@ -2,51 +2,53 @@
 
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
-<a class="skip-link" href="@SkipLinkHref">@T["Ui:Skip"]</a>
+<a class="skip-link" href="@SkipLinkHref">@Translator.Get("Ui:Skip")</a>
 <header class="site-header">
     <div class="shell header-inner">
-        <NavLink class="brand" href="" Match="NavLinkMatch.All" aria-label="@T["Ui:HomeLabel"]">
+        <NavLink class="brand" href="" Match="NavLinkMatch.All" aria-label="@Translator.Get("Ui:HomeLabel")">
             <BrandLogo />
             <span>Fluent<span class="brand-accent">Localizer</span></span>
         </NavLink>
-        <nav class="main-nav" aria-label="@T["Ui:Navigation"]">
-            <NavLink href="" Match="NavLinkMatch.All">@T["Ui:Overview"]</NavLink>
-            <NavLink href="playground">@T["Ui:Playground"]</NavLink>
-            <NavLink href="docs" Match="NavLinkMatch.All">@T["Ui:Docs"]</NavLink>
-            <NavLink href="docs/api">@T["Ui:ApiReference"]</NavLink>
+        <nav class="main-nav" aria-label="@Translator.Get("Ui:Navigation")">
+            <NavLink href="" Match="NavLinkMatch.All">@Translator.Get("Ui:Overview")</NavLink>
+            <NavLink href="playground">@Translator.Get("Ui:Playground")</NavLink>
+            <NavLink href="docs" Match="NavLinkMatch.All">@Translator.Get("Ui:Docs")</NavLink>
+            <NavLink href="docs/api">@Translator.Get("Ui:ApiReference")</NavLink>
         </nav>
         <div class="header-actions">
-            <Dropdown TValue="string" Id="language-choice" Class="dropdown-ink language-choice" AriaLabel="@T["Ui:Language"]" Options="LanguageOptions" Value="@T.Culture.TwoLetterISOLanguageName" ValueChanged="ChangeLanguageAsync" />
-            <Dropdown Id="theme-choice" Class="dropdown-ink theme-choice" AriaLabel="@T["Ui:Theme"]" Options="ThemeOptions" @bind-Value="_theme" @bind-Value:after="ChangeThemeAsync" />
-            <a class="header-github" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer" aria-label="@T["Ui:SourceCodeLabel"]">@T["Ui:SourceCode"] <span aria-hidden="true">↗</span></a>
+            <Dropdown TValue="string" Id="language-choice" Class="dropdown-ink language-choice" AriaLabel="@Translator.Get("Ui:Language")" Options="LanguageOptions" Value="@SiteCulture.TwoLetterISOLanguageName" ValueChanged="ChangeLanguageAsync" />
+            <Dropdown Id="theme-choice" Class="dropdown-ink theme-choice" AriaLabel="@Translator.Get("Ui:Theme")" Options="ThemeOptions" @bind-Value="_theme" @bind-Value:after="ChangeThemeAsync" />
+            <a class="header-github" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer" aria-label="@Translator.Get("Ui:SourceCodeLabel")">@Translator.Get("Ui:SourceCode") <span aria-hidden="true">↗</span></a>
         </div>
     </div>
 </header>
 
-<main id="main-content"><CascadingValue Value="T.Culture">@Body</CascadingValue></main>
+<main id="main-content"><CascadingValue Value="SiteCulture">@Body</CascadingValue></main>
 
 <footer class="site-footer">
     <div class="shell footer-inner">
         <div>
             <span class="footer-brand"><BrandLogo /> FluentLocalizer</span>
-            <p>@T["Ui:Tagline"]</p>
+            <p>@Translator.Get("Ui:Tagline")</p>
         </div>
-        <nav class="footer-links" aria-label="@T["Ui:Footer"]">
-            <NavLink href="docs">@T["Ui:Docs"]</NavLink>
+        <nav class="footer-links" aria-label="@Translator.Get("Ui:Footer")">
+            <NavLink href="docs">@Translator.Get("Ui:Docs")</NavLink>
             <a href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="@SiteLinks.NuGet("FluentLocalizer")" target="_blank" rel="noopener noreferrer">NuGet</a>
-            <a href="@SiteLinks.License" target="_blank" rel="noopener noreferrer">@T["Ui:License"]</a>
-            <a href="@SiteLinks.ThirdPartyNotices" target="_blank" rel="noopener noreferrer">@T["Ui:ThirdPartyNotices"]</a>
+            <a href="@SiteLinks.License" target="_blank" rel="noopener noreferrer">@Translator.Get("Ui:License")</a>
+            <a href="@SiteLinks.ThirdPartyNotices" target="_blank" rel="noopener noreferrer">@Translator.Get("Ui:ThirdPartyNotices")</a>
         </nav>
     </div>
 </footer>
 
 @code {
+    private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
     private static readonly DropdownOption<string>[] LanguageOptions =
         [new("en", "English"), new("it", "Italiano"), new("fr", "Français"), new("de", "Deutsch"), new("es", "Español")];
 
     private DropdownOption<string>[] ThemeOptions =>
-        [new("system", T["Ui:System"]), new("light", T["Ui:Light"]), new("dark", T["Ui:Dark"])];
+        [new("system", Translator.Get("Ui:System")), new("light", Translator.Get("Ui:Light")), new("dark", Translator.Get("Ui:Dark"))];
 
     private string _theme = "system";
 
@@ -66,10 +68,17 @@
 
     private async Task ChangeLanguageAsync(string language)
     {
-        T.Culture = SiteText.SelectCulture([language]);
-        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = T.Culture;
-        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = T.Culture;
-        await JS.InvokeVoidAsync("fluentSite.saveLanguage", T.Culture.TwoLetterISOLanguageName);
-        await JS.InvokeVoidAsync("fluentSite.setLanguage", T.Culture.Name, T.BrowserLabels);
+        SiteCulture = BrowserCulture.SelectCulture([language]);
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = SiteCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = SiteCulture;
+        await JS.InvokeVoidAsync("fluentSite.saveLanguage", SiteCulture.TwoLetterISOLanguageName);
+        await JS.InvokeVoidAsync("fluentSite.setLanguage", SiteCulture.Name, new
+        {
+            loading = Translator.Get("Ui:Loading").Resolve(),
+            errorTitle = Translator.Get("Ui:ErrorTitle").Resolve(),
+            error = Translator.Get("Ui:UnhandledError").Resolve(),
+            reload = Translator.Get("Ui:Reload").Resolve(),
+            dismiss = Translator.Get("Ui:Dismiss").Resolve()
+        });
     }
 }

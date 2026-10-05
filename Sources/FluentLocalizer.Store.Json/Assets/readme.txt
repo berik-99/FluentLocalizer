@@ -8,9 +8,9 @@ Choose a store based on where the JSON files live:
 - EmbeddedJsonStore reads JSON resources embedded in an assembly.
 - HttpJsonStore downloads JSON from a server and supports asynchronous loading and refresh.
 
-All stores support culture fallback, nested colon-separated keys, and file mappings. JsonFileStore can watch files when ReloadOnChange is enabled. HttpJsonStore can preload a manifest.json for complete synchronous lookup.
+All stores support culture fallback, nested colon-separated keys (for example "Checkout:Title" for {"Checkout":{"Title":"..."}}), and file mappings. JsonFileStore and HttpJsonStore also read namespace files such as it-IT.common.json; EmbeddedJsonStore reads one file per culture. Name the main catalog after the neutral culture (it.json, en.json) and add regional files (en-GB.json) only for differences. JsonFileStore can watch files when ReloadOnChange is enabled. HttpJsonStore can preload a manifest.json for complete synchronous lookup.
 
-WithCulture(...) is optional. Get(key) captures CultureInfo.CurrentUICulture when the builder is created. WithCulture(...) overrides it for that translation only. Set CurrentUICulture before Get(...) to change the default, and also CurrentCulture to align standard .NET number/date formatting. Existing builders keep their culture; other UI components may need a rerender. See README.md for execution-context and thread-default details.
+You normally do not need WithCulture(...). Get(key) uses CultureInfo.CurrentUICulture, captured when the builder is created. WithCulture(...) only forces a different culture for one translation, such as an email in the recipient's language. Set CurrentUICulture before Get(...) to change the default, and also CurrentCulture to align standard .NET number/date formatting. Existing builders keep their culture; other UI components may need a rerender. See README.md for execution-context and thread-default details.
 
 See README.md in this package for setup examples and store-specific behavior.
 

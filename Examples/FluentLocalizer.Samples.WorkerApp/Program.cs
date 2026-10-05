@@ -1,6 +1,12 @@
 using FluentLocalizer;
 using FluentLocalizer.Samples.WorkerApp;
 using FluentLocalizer.Store.Json;
+using System.Globalization;
+
+// The sample speaks Italian: every translation request follows this UI culture.
+CultureInfo culture = new("it-IT");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 TranslationOptions translationOptions = new()
 {

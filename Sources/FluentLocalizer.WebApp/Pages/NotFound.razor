@@ -1,13 +1,13 @@
-﻿@page "/not-found"
+@page "/not-found"
 @layout MainLayout
 
-<PageTitle>@T["Ui:NotFoundTitle"]</PageTitle>
+<PageTitle>@Translator.Get("Ui:NotFoundTitle")</PageTitle>
 <section class="shell not-found">
-    <h1>@T["Ui:NotFound"]</h1>
-    <p>@T["Ui:NotFoundHelp"]</p>
-    <NavLink class="button button-primary" href="">@T["Ui:BackHome"] <span aria-hidden="true">↗</span></NavLink>
+    <h1>@Translator.Get("Ui:NotFound")</h1>
+    <p>@Translator.Get("Ui:NotFoundHelp")</p>
+    <NavLink class="button button-primary" href="">@Translator.Get("Ui:BackHome") <span aria-hidden="true">↗</span></NavLink>
 </section>
 
 @code {
-    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
 }

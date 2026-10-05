@@ -13,7 +13,7 @@ translator.Get("Welcome").WithArg("name", "Ada").Resolve()
 
 Templates use the ICU message syntax (https://unicode-org.github.io/icu/userguide/format_parse/messages/). They are parsed and formatted by MessageFormat by Jeff Hansen (https://github.com/jeffijoe/messageformat.net), MIT License.
 
-WithCulture(...) is optional. Get(key) captures CultureInfo.CurrentUICulture when the builder is created. WithCulture(...) overrides it for that translation only. Set CurrentUICulture before Get(...) to change the default, and also CurrentCulture to align standard .NET number/date formatting. Existing builders keep their culture; other UI components may need a rerender. See README.md for execution-context and thread-default details.
+You normally do not need WithCulture(...). Get(key) uses CultureInfo.CurrentUICulture, captured when the builder is created. WithCulture(...) only forces a different culture for one translation, such as an email in the recipient's language. Set CurrentUICulture before Get(...) to change the default, and also CurrentCulture to align standard .NET number/date formatting. Existing builders keep their culture; other UI components may need a rerender. See README.md for execution-context and thread-default details.
 
 See README.md in this package for the full guide and examples.
 

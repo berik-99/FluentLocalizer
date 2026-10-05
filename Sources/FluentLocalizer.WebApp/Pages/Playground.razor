@@ -6,18 +6,18 @@
 @inject IJSRuntime JS
 @inherits OwningComponentBase
 
-<PageTitle>@T["Ui:PlaygroundTitle"]</PageTitle>
+<PageTitle>@Translator.Get("Ui:PlaygroundTitle")</PageTitle>
 
 <section class="playground-hero">
     <div class="shell">
-        <h1>@T["Ui:MakeMessage"]<br /><em>@T["Ui:Alive"]</em></h1>
-        <p>@T["Ui:PlaygroundDescription"]</p>
+        <h1>@Translator.Get("Ui:MakeMessage")<br /><em>@Translator.Get("Ui:Alive")</em></h1>
+        <p>@Translator.Get("Ui:PlaygroundDescription")</p>
     </div>
 </section>
 
 <section class="playground-section shell">
     <div class="playground-topline">
-        <div><span class="eyebrow">@T["Ui:StartExample", LetterCase.Upper]</span><p>@T["Ui:ExampleHelp"]</p></div>
+        <div><span class="eyebrow">@Translator.Get("Ui:StartExample").WithCase(LetterCase.Upper)</span><p>@Translator.Get("Ui:ExampleHelp")</p></div>
         <div class="example-buttons">
             @foreach (var (example, label) in Examples)
             {
@@ -29,10 +29,10 @@
     <div class="playground-grid">
         <div class="editor-stack">
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">01</span><h2>@T["Ui:Templates"]</h2></div><span class="panel-hint">@T["Ui:IcuSyntax", LetterCase.Upper]</span></div>
+                <div class="panel-heading"><div><span class="panel-index">01</span><h2>@Translator.Get("Ui:Templates")</h2></div><span class="panel-hint">@Translator.Get("Ui:IcuSyntax").WithCase(LetterCase.Upper)</span></div>
                 <div class="editor-body">
-                    <p class="editor-intro">@T["Ui:TabsHelp"]</p>
-                    <div class="language-tabs" role="tablist" aria-label="@T["Ui:TemplateLanguage"]">
+                    <p class="editor-intro">@Translator.Get("Ui:TabsHelp")</p>
+                    <div class="language-tabs" role="tablist" aria-label="@Translator.Get("Ui:TemplateLanguage")">
                         @for (var i = 0; i < Locales.Length; i++)
                         {
                             var index = i;
@@ -45,37 +45,37 @@
                         }
                     </div>
                     <div id="template-panel" class="field" role="tabpanel" aria-labelledby="locale-@_culture">
-                        <label for="template">@T.Format("Ui:LocaleTemplate", "language", CurrentLocale.Label)</label>
+                        <label for="template">@Translator.Get("Ui:LocaleTemplate").WithArg("language", CurrentLocale.Label)</label>
                         <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Edit" aria-describedby="template-help"></textarea>
-                        <p id="template-help" class="field-help">@T.Rich("Ui:TemplateHelp")</p>
+                        <p id="template-help" class="field-help"><RichText Text="@Translator.Get("Ui:TemplateHelp")" /></p>
                     </div>
                     @if (_suggestions.Count > 0)
                     {
-                        <div class="inline-tip" role="note"><strong>@T["Ui:Tip"]</strong><ul>@foreach (var suggestion in _suggestions) { <li>@suggestion</li> }</ul></div>
+                        <div class="inline-tip" role="note"><strong>@Translator.Get("Ui:Tip")</strong><ul>@foreach (var suggestion in _suggestions) { <li>@suggestion</li> }</ul></div>
                     }
                 </div>
             </div>
 
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">02</span><h2>@T["Ui:Arguments"]</h2></div><span class="panel-hint">@T["Ui:Input", LetterCase.Upper]</span></div>
+                <div class="panel-heading"><div><span class="panel-index">02</span><h2>@Translator.Get("Ui:Arguments")</h2></div><span class="panel-hint">@Translator.Get("Ui:Input").WithCase(LetterCase.Upper)</span></div>
                 <div class="editor-body">
                     <div class="control-grid argument-controls">
-                        <div class="field"><span class="field-label" id="letter-case-label">@T["Ui:Transform"]</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
-                        <div class="field"><label for="quantity">@T["Ui:Quantity"] <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
-                        <div class="field"><span class="field-label" id="gender-label">@T["Ui:SelectValue"] <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
+                        <div class="field"><span class="field-label" id="letter-case-label">@Translator.Get("Ui:Transform")</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
+                        <div class="field"><label for="quantity">@Translator.Get("Ui:Quantity") <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
+                        <div class="field"><span class="field-label" id="gender-label">@Translator.Get("Ui:SelectValue") <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
                     </div>
-                    <div class="argument-heading"><div><h3>@T["Ui:CustomArguments"]</h3><p>@T.Rich("Ui:ArgumentHelp")</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> @T["Ui:AddArgument"]</button></div>
+                    <div class="argument-heading"><div><h3>@Translator.Get("Ui:CustomArguments")</h3><p><RichText Text="@Translator.Get("Ui:ArgumentHelp")" /></p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> @Translator.Get("Ui:AddArgument")</button></div>
                     @if (_arguments.Count == 0)
                     {
-                        <p class="empty-arguments">@T.Rich("Ui:EmptyArguments")</p>
+                        <p class="empty-arguments"><RichText Text="@Translator.Get("Ui:EmptyArguments")" /></p>
                     }
                     @foreach (var argument in _arguments)
                     {
                         <div class="argument-row" @key="argument.Id">
-                            <div class="field"><label for="name-@argument.Id">@T["Ui:Name"]</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Edit" placeholder="name" /></div>
-                            <div class="field"><label for="value-@argument.Id">@T["Ui:Value"]</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Edit" placeholder="Ada" /></div>
-                            <div class="field argument-type"><span class="field-label" id="type-@(argument.Id)-label">@T["Ui:Type"]</span><Dropdown Id="@($"type-{argument.Id}")" LabelledBy="@($"type-{argument.Id}-label")" Options="ArgumentTypeOptions" @bind-Value="argument.Type" @bind-Value:after="Edit" /></div>
-                            <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="@T.Format("Ui:RemoveArgument", "name", argument.Name)">×</button>
+                            <div class="field"><label for="name-@argument.Id">@Translator.Get("Ui:Name")</label><input id="name-@argument.Id" @bind="argument.Name" @bind:event="oninput" @bind:after="Edit" placeholder="name" /></div>
+                            <div class="field"><label for="value-@argument.Id">@Translator.Get("Ui:Value")</label><input id="value-@argument.Id" @bind="argument.Value" @bind:event="oninput" @bind:after="Edit" placeholder="Ada" /></div>
+                            <div class="field argument-type"><span class="field-label" id="type-@(argument.Id)-label">@Translator.Get("Ui:Type")</span><Dropdown Id="@($"type-{argument.Id}")" LabelledBy="@($"type-{argument.Id}-label")" Options="ArgumentTypeOptions" @bind-Value="argument.Type" @bind-Value:after="Edit" /></div>
+                            <button type="button" class="remove-button" @onclick="() => RemoveArgument(argument)" aria-label="@Translator.Get("Ui:RemoveArgument").WithArg("name", argument.Name)">×</button>
                         </div>
                     }
                 </div>
@@ -84,37 +84,37 @@
 
         <div class="result-stack">
             <div class="preview-panel">
-                <div class="panel-heading"><div><span class="panel-index">03</span><h2>@T["Ui:LiveOutput"]</h2></div><span class="live-tag"><span class="status-dot"></span> @T["Ui:Live", LetterCase.Upper]</span></div>
+                <div class="panel-heading"><div><span class="panel-index">03</span><h2>@Translator.Get("Ui:LiveOutput")</h2></div><span class="live-tag"><span class="status-dot"></span> @Translator.Get("Ui:Live").WithCase(LetterCase.Upper)</span></div>
                 <div class="preview-body" aria-live="polite" aria-atomic="true">
                     @if (string.IsNullOrWhiteSpace(CurrentTemplate))
                     {
-                        <div class="preview-empty">@T.Format("Ui:PreviewEmpty", "culture", _culture)</div>
+                        <div class="preview-empty">@Translator.Get("Ui:PreviewEmpty").WithArg("culture", _culture)</div>
                     }
                     else if (_error is not null)
                     {
-                        <div class="preview-error"><span>@T["Ui:FormattingError"]</span><p>@_error</p></div>
+                        <div class="preview-error"><span>@Translator.Get("Ui:FormattingError")</span><p>@_error</p></div>
                     }
                     else
                     {
                         <div class="preview-result" @key="_culture">@_result</div>
                     }
                 </div>
-                <div class="preview-footer"><span>@T["Ui:ResolvedBy", LetterCase.Upper]</span><span>@_culture</span></div>
+                <div class="preview-footer"><span>@Translator.Get("Ui:ResolvedBy").WithCase(LetterCase.Upper)</span><span>@_culture</span></div>
             </div>
 
             <div class="pipeline-panel">
-                <div class="pipeline-heading"><div><span class="eyebrow">@T["Ui:UnderHood", LetterCase.Upper]</span><h2>@T["Ui:Pipeline"]</h2></div><CopyButton Text="@PipelineCode" Label="@T["Ui:CopyCode"]" AriaLabel="@T["Ui:CopyPipeline"]" /></div>
+                <div class="pipeline-heading"><div><span class="eyebrow">@Translator.Get("Ui:UnderHood").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:Pipeline")</h2></div><CopyButton Text="@PipelineCode" Label="@Translator.Get("Ui:CopyCode")" AriaLabel="@Translator.Get("Ui:CopyPipeline")" /></div>
                 <pre><code>@PipelineCode</code></pre>
-                <p>@T.Rich("Ui:MemoryStore")</p>
+                <p><RichText Text="@Translator.Get("Ui:MemoryStore")" /></p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="playground-more"><div class="shell"><div><span class="eyebrow">@T["Ui:KeepGoing", LetterCase.Upper]</span><h2>@T["Ui:BringApp"]</h2><p>@T["Ui:ExploreDocs"]</p></div><NavLink class="button button-primary" href="docs">@T["Ui:ReadDocumentation"] <span aria-hidden="true">↗</span></NavLink></div></section>
+<section class="playground-more"><div class="shell"><div><span class="eyebrow">@Translator.Get("Ui:KeepGoing").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:BringApp")</h2><p>@Translator.Get("Ui:ExploreDocs")</p></div><NavLink class="button button-primary" href="docs">@Translator.Get("Ui:ReadDocumentation") <span aria-hidden="true">↗</span></NavLink></div></section>
 
 @code {
-    [CascadingParameter] private CultureInfo? SiteCulture { get; set; }
+    [CascadingParameter] private CultureInfo SiteCulture { get; set; } = CultureInfo.CurrentUICulture;
 
     private static readonly Locale[] Locales =
     [
@@ -123,22 +123,22 @@
     ];
 
     private (string Key, string Label)[] Examples =>
-        [("placeholder", T["Ui:Placeholder"]), ("plural", T["Ui:Plural"]), ("select", T["Ui:Select"])];
+        [("placeholder", Translator.Get("Ui:Placeholder")), ("plural", Translator.Get("Ui:Plural")), ("select", Translator.Get("Ui:Select"))];
 
     private DropdownOption<LetterCase>[] LetterCaseOptions =>
     [
-        new(LetterCase.AsIs, T["Ui:AsWritten"]), new(LetterCase.Upper, T["Ui:Uppercase", LetterCase.Upper]), new(LetterCase.Lower, T["Ui:Lowercase", LetterCase.Lower]),
+        new(LetterCase.AsIs, Translator.Get("Ui:AsWritten")), new(LetterCase.Upper, Translator.Get("Ui:Uppercase").WithCase(LetterCase.Upper)), new(LetterCase.Lower, Translator.Get("Ui:Lowercase").WithCase(LetterCase.Lower)),
         new(LetterCase.CamelCase, "camelCase"), new(LetterCase.PascalCase, "PascalCase"),
         new(LetterCase.SnakeCase, "snake_case"), new(LetterCase.KebabCase, "kebab-case")
     ];
 
     private DropdownOption<Gender>[] GenderOptions =>
     [
-        new(Gender.Unspecified, T["Ui:Unspecified"]), new(Gender.Female, T["Ui:Female"]),
-        new(Gender.Male, T["Ui:Male"]), new(Gender.Neuter, T["Ui:Neuter"])
+        new(Gender.Unspecified, Translator.Get("Ui:Unspecified")), new(Gender.Female, Translator.Get("Ui:Female")),
+        new(Gender.Male, Translator.Get("Ui:Male")), new(Gender.Neuter, Translator.Get("Ui:Neuter"))
     ];
 
-    private DropdownOption<string>[] ArgumentTypeOptions => [new("text", T["Ui:Text"]), new("number", T["Ui:Number"])];
+    private DropdownOption<string>[] ArgumentTypeOptions => [new("text", Translator.Get("Ui:Text")), new("number", Translator.Get("Ui:Number"))];
 
     private PlaygroundSession? _session;
     private PlaygroundSession Session => _session ??= ScopedServices.GetRequiredService<PlaygroundSession>();
@@ -166,7 +166,7 @@
 
     protected override void OnInitialized()
     {
-        _culture = Locales.First(locale => locale.Code.StartsWith(T.Culture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase)).Code;
+        _culture = Locales.First(locale => locale.Code.StartsWith(SiteCulture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase)).Code;
         LoadExample("plural");
     }
 
@@ -278,13 +278,13 @@
 
         if (string.IsNullOrWhiteSpace(CurrentTemplate))
         {
-            _suggestions.Add(T["Ui:WriteTemplate"]);
+            _suggestions.Add(Translator.Get("Ui:WriteTemplate"));
             return;
         }
 
         if (Regex.IsMatch(CurrentTemplate, @",\s*(plural|select)\s*,", RegexOptions.IgnoreCase) &&
             !Regex.IsMatch(CurrentTemplate, @"\bother\s*\{", RegexOptions.IgnoreCase))
-            _suggestions.Add(T["Ui:OtherBranch"]);
+            _suggestions.Add(Translator.Get("Ui:OtherBranch"));
 
         try
         {
@@ -302,19 +302,19 @@
                 if (name.Length == 0)
                 {
                     if (argument.Value.Length > 0)
-                        _suggestions.Add(T["Ui:NameRequired"]);
+                        _suggestions.Add(Translator.Get("Ui:NameRequired"));
                     continue;
                 }
                 if (!names.Add(name))
                 {
-                    _suggestions.Add(T.Format("Ui:DuplicateArgument", "name", name));
+                    _suggestions.Add(Translator.Get("Ui:DuplicateArgument").WithArg("name", name));
                     continue;
                 }
                 if (argument.Type == "number")
                 {
                     if (!decimal.TryParse(argument.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
                     {
-                        _error = T.Format("Ui:InvalidNumber", "name", name);
+                        _error = Translator.Get("Ui:InvalidNumber").WithArg("name", name);
                         return;
                     }
                     request.WithArg(name, number);
@@ -337,7 +337,7 @@
             var lines = new List<string>
             {
                 "translator.Get(\"playground\")",
-                $"    .WithCulture(\"{_culture}\")",
+                $"    .WithCulture(\"{_culture}\") // Optional: overrides CurrentUICulture",
                 $"    .Pluralize({_quantity})",
                 $"    .Genderize(Gender.{_gender})"
             };

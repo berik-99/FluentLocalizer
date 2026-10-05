@@ -3,24 +3,23 @@
 @using FluentLocalizer
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-@inject ITranslator Translator
 @inject ITranslationStore Store
 
-<PageTitle>@T["Ui:HomeTitle"]</PageTitle>
+<PageTitle>@Translator.Get("Ui:HomeTitle")</PageTitle>
 
 <section class="hero">
     <div class="shell hero-grid">
         <div class="hero-copy">
-            <div class="pill"><span class="status-dot"></span> @T["Ui:OpenSource", LetterCase.Upper]</div>
-            <h1>@T.Rich("Ui:HeroTitle")</h1>
-            <p class="hero-lede">@T["Ui:HeroDescription"]</p>
+            <div class="pill"><span class="status-dot"></span> @Translator.Get("Ui:OpenSource").WithCase(LetterCase.Upper)</div>
+            <h1><RichText Text="@Translator.Get("Ui:HeroTitle")" /></h1>
+            <p class="hero-lede">@Translator.Get("Ui:HeroDescription")</p>
             <div class="hero-actions">
-                <NavLink class="button button-primary" href="playground">@T["Ui:TryPlayground"] <span aria-hidden="true">↗</span></NavLink>
-                <NavLink class="button button-ghost" href="docs">@T["Ui:ReadDocs"] <span aria-hidden="true">→</span></NavLink>
+                <NavLink class="button button-primary" href="playground">@Translator.Get("Ui:TryPlayground") <span aria-hidden="true">↗</span></NavLink>
+                <NavLink class="button button-ghost" href="docs">@Translator.Get("Ui:ReadDocs") <span aria-hidden="true">→</span></NavLink>
             </div>
-            <div class="hero-meta"><span>@T["Ui:Licensed"]</span><span class="meta-divider"></span><span>@T.Rich("Ui:Powered")</span><span class="meta-divider"></span><span>@T["Ui:BlazorReady"]</span></div>
+            <div class="hero-meta"><span>@Translator.Get("Ui:Licensed")</span><span class="meta-divider"></span><span><RichText Text="@Translator.Get("Ui:Powered")" /></span><span class="meta-divider"></span><span>@Translator.Get("Ui:BlazorReady")</span></div>
         </div>
-        <div class="hero-visual" role="img" aria-label="@T["Ui:HeroVisual"]">
+        <div class="hero-visual" role="img" aria-label="@Translator.Get("Ui:HeroVisual")">
             <div class="code-window" aria-hidden="true">
                 <div class="window-top"><span class="window-dots"><i></i><i></i><i></i></span><span>Program.cs</span><span class="window-csharp">C#</span></div>
                 <pre><code><span class="code-muted">// Translate with a fluent API</span>
@@ -30,12 +29,12 @@
     .WithArg(<span class="code-string">"name"</span>, <span class="code-string">"Ada"</span>)
     .Resolve();</code></pre>
                 <div class="code-output">
-                    <span class="output-label">@T["Ui:Output", LetterCase.Upper] <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
+                    <span class="output-label">@Translator.Get("Ui:Output").WithCase(LetterCase.Upper) <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
                     <strong class="typed-output @(_typing ? "is-typing" : null)">@_displayText<span class="typing-caret"></span></strong>
                     <span class="output-locale"><span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span></span>
                 </div>
             </div>
-            <span class="visual-caption">@T["Ui:WriteOnce", LetterCase.Upper]</span>
+            <span class="visual-caption">@Translator.Get("Ui:WriteOnce").WithCase(LetterCase.Upper)</span>
         </div>
     </div>
 </section>
@@ -43,8 +42,8 @@
 <section class="features section-padding" id="features">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">@T["Ui:Why", LetterCase.Upper]</span><h2>@T["Ui:Everything"]<br /><span>@T["Ui:NothingExtra"]</span></h2></div>
-            <p>@T["Ui:FeaturesDescription"]</p>
+            <div><span class="eyebrow">@Translator.Get("Ui:Why").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:Everything")<br /><span>@Translator.Get("Ui:NothingExtra")</span></h2></div>
+            <p>@Translator.Get("Ui:FeaturesDescription")</p>
         </div>
         <div class="feature-grid">
             @foreach (var (feature, index) in Features.Select((feature, index) => (feature, index)))
@@ -63,15 +62,15 @@
 <section class="flow-section section-padding">
     <div class="shell flow-grid">
         <div>
-            <span class="eyebrow">@T["Ui:Workflow", LetterCase.Upper]</span>
-            <h2>@T["Ui:FlowTitle"]<br /><span>@T["Ui:FlowAccent"]</span></h2>
-            <p>@T["Ui:WorkflowDescription"]</p>
-            <NavLink class="text-link" href="playground">@T["Ui:ExplorePlayground"] <span aria-hidden="true">↗</span></NavLink>
+            <span class="eyebrow">@Translator.Get("Ui:Workflow").WithCase(LetterCase.Upper)</span>
+            <h2>@Translator.Get("Ui:FlowTitle")<br /><span>@Translator.Get("Ui:FlowAccent")</span></h2>
+            <p>@Translator.Get("Ui:WorkflowDescription")</p>
+            <NavLink class="text-link" href="playground">@Translator.Get("Ui:ExplorePlayground") <span aria-hidden="true">↗</span></NavLink>
         </div>
         <ol class="flow-steps">
-            <li class="flow-step"><span>01</span><div><h3>@T["Ui:StoreTemplate"]</h3><p><code>"@Store.GetTemplate("Demo:Items", T.Culture)"</code></p></div></li>
-            <li class="flow-step"><span>02</span><div><h3>@T["Ui:BuildRequest"]</h3><p><code>.Get("Demo:Items").WithCulture("@T.Culture.Name").Pluralize(3)</code></p></div></li>
-            <li class="flow-step"><span>03</span><div><h3>@T["Ui:ResolveMessage"]</h3><p class="flow-result">@T.Format("Demo:Items", "quantity", 3)</p></div></li>
+            <li class="flow-step"><span>01</span><div><h3>@Translator.Get("Ui:StoreTemplate")</h3><p><code>"@Store.GetTemplate("Demo:Items", SiteCulture)"</code></p></div></li>
+            <li class="flow-step"><span>02</span><div><h3>@Translator.Get("Ui:BuildRequest")</h3><p><code>.Get("Demo:Items").Pluralize(3)</code></p></div></li>
+            <li class="flow-step"><span>03</span><div><h3>@Translator.Get("Ui:ResolveMessage")</h3><p class="flow-result">@Translator.Get("Demo:Items").Pluralize(3)</p></div></li>
         </ol>
     </div>
 </section>
@@ -79,8 +78,8 @@
 <section class="packages section-padding" id="packages">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">@T["Ui:Ecosystem", LetterCase.Upper]</span><h2>@T["Ui:StartSmall"]<br /><span>@T["Ui:AddNeeded"]</span></h2></div>
-            <p>@T["Ui:PackagesDescription"]</p>
+            <div><span class="eyebrow">@Translator.Get("Ui:Ecosystem").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:StartSmall")<br /><span>@Translator.Get("Ui:AddNeeded")</span></h2></div>
+            <p>@Translator.Get("Ui:PackagesDescription")</p>
         </div>
         <div class="package-list">
             @foreach (var (package, index) in Packages.Select((package, index) => (package, index)))
@@ -91,44 +90,44 @@
                     <div class="package-info">
                         <h3>@package.Id</h3>
                         <p>@package.Description</p>
-                        <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@T.Format("Ui:CopyInstall", "package", package.Id)" /></div>
+                        <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@Translator.Get("Ui:CopyInstall").WithArg("package", package.Id)" /></div>
                     </div>
                     <div class="package-end">
                         <span class="version">v@(SiteLinks.PackageVersion)</span>
-                        <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@T.Format("Ui:OnNuGet", "package", package.Id)">↗</a>
+                        <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@Translator.Get("Ui:OnNuGet").WithArg("package", package.Id)">↗</a>
                     </div>
                 </article>
             }
         </div>
-        <p class="package-note">@T["Ui:Versions"]</p>
+        <p class="package-note">@Translator.Get("Ui:Versions")</p>
     </div>
 </section>
 
 <section class="cta-section">
     <div class="shell cta-inner">
-        <div><span class="eyebrow">@T["Ui:Ready", LetterCase.Upper]</span><h2>@T["Ui:EveryMessage"]<br /><em>@T["Ui:AtHome"]</em></h2><p>@T["Ui:Experiment"]</p></div>
-        <NavLink class="button button-dark" href="playground">@T["Ui:OpenPlayground"] <span aria-hidden="true">↗</span></NavLink>
+        <div><span class="eyebrow">@Translator.Get("Ui:Ready").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:EveryMessage")<br /><em>@Translator.Get("Ui:AtHome")</em></h2><p>@Translator.Get("Ui:Experiment")</p></div>
+        <NavLink class="button button-dark" href="playground">@Translator.Get("Ui:OpenPlayground") <span aria-hidden="true">↗</span></NavLink>
     </div>
 </section>
 
 @code {
-    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
 
     private static readonly string[] Cultures = ["en-US", "it-IT", "fr-FR", "de-DE", "es-ES"];
 
     private Feature[] Features =>
     [
-        new("{ }", "lime", T["Ui:FluentDesign"], T["Ui:FluentDescription"]),
-        new("#", "peach", T["Ui:Nuance"], T["Ui:NuanceDescription"]),
-        new("◎", "blue", T["Ui:CultureFallback"], T["Ui:CultureDescription"]),
-        new("↗", "purple", T["Ui:Extend"], T["Ui:ExtendDescription"])
+        new("{ }", "lime", Translator.Get("Ui:FluentDesign"), Translator.Get("Ui:FluentDescription")),
+        new("#", "peach", Translator.Get("Ui:Nuance"), Translator.Get("Ui:NuanceDescription")),
+        new("◎", "blue", Translator.Get("Ui:CultureFallback"), Translator.Get("Ui:CultureDescription")),
+        new("↗", "purple", Translator.Get("Ui:Extend"), Translator.Get("Ui:ExtendDescription"))
     ];
 
     private Package[] Packages =>
     [
-        new("FluentLocalizer", T["Ui:Core", LetterCase.Upper], T["Ui:CoreDescription"]),
-        new("FluentLocalizer.Store.Json", T["Ui:Storage", LetterCase.Upper], T["Ui:StorageDescription"]),
-        new("FluentLocalizer.Extensions.DependencyInjection", T["Ui:Integration", LetterCase.Upper], T["Ui:IntegrationDescription"])
+        new("FluentLocalizer", Translator.Get("Ui:Core").WithCase(LetterCase.Upper), Translator.Get("Ui:CoreDescription")),
+        new("FluentLocalizer.Store.Json", Translator.Get("Ui:Storage").WithCase(LetterCase.Upper), Translator.Get("Ui:StorageDescription")),
+        new("FluentLocalizer.Extensions.DependencyInjection", Translator.Get("Ui:Integration").WithCase(LetterCase.Upper), Translator.Get("Ui:IntegrationDescription"))
     ];
 
     // Timings of the hero greeting animation, in milliseconds.
@@ -145,7 +144,7 @@
 
     protected override void OnInitialized()
     {
-        _displayCulture = Cultures.First(culture => culture.StartsWith(T.Culture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase));
+        _displayCulture = Cultures.First(culture => culture.StartsWith(SiteCulture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase));
         _displayText = ResolveGreeting(_displayCulture);
     }
 

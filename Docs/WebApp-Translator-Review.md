@@ -2,33 +2,30 @@
 
 ## Dependency injection
 
-La localizzazione del sito passa già da `SiteText(ITranslator translator)`. Ora `Program.cs` registra il traduttore usando il pacchetto `FluentLocalizer.Extensions.DependencyInjection`, tramite `AddFluentLocalizer().WithStore(...)`, anziché registrare direttamente `Translator`. La factory dello store embedded viene risolta dal container. `SiteText` conserva cultura, formattazione dei testi del sito e rendering sicuro dei contenuti rich text.
+`Program.cs` registra il traduttore usando il pacchetto `FluentLocalizer.Extensions.DependencyInjection`, tramite `AddFluentLocalizer().WithStore(...)`. La factory dello store embedded viene risolta dal container. Le pagine e i componenti Razor iniettano direttamente `ITranslator` tramite `_Imports.razor` e compongono le richieste con le API fluent della libreria. Il wrapper `SiteText`, i suoi indexer e il metodo `Format` sono stati rimossi.
 
 Il Playground deve usare uno store modificabile e sollevare gli errori di formattazione, mentre il sito usa cataloghi embedded e le policy predefinite. `AddFluentLocalizer` registra un solo `ITranslator` singleton per container: una seconda chiamata sul container principale farebbe risolvere al sito l'ultima registrazione di traduttore, store e opzioni.
 
 `PlaygroundSession`, registrata come transient e risolta una sola volta nello scope di `OwningComponentBase`, registra quindi i propri servizi tramite lo stesso pacchetto in un container dedicato. Espone `ITranslator` e il proprio `PlaygroundStore`; la rimozione del componente dispone lo scope e il container dedicato. Ogni nuova istanza della pagina riceve template e opzioni indipendenti, senza lasciare servizi disposable transient nel container principale per tutta la durata della WebApp. Il test verifica due sessioni diverse insieme al traduttore principale e le policy di errore.
 
-## Indexer: decisione da confermare
+## Uso diretto delle API fluent
 
-L'indexer attuale appartiene a `SiteText`, non alla libreria:
+Le traduzioni sono risolte nel punto di utilizzo:
 
-```csharp
-public string this[string key] => translator.Get(key).WithCulture(Culture).Resolve();
+```razor
+@Translator.Get("Ui:Overview")
+@Translator.Get("Ui:Why").WithCase(LetterCase.Upper)
+@Translator.Get("Ui:RemoveArgument").WithArg("name", argument.Name)
+@Translator.Get("Demo:Items").Pluralize(3)
 ```
 
-Restituisce subito una stringa, imposta esplicitamente la cultura selezionata sul sito e ha un overload per `LetterCase`. Questi comportamenti non possono essere trasferiti integralmente a un traduttore generico senza prendere ulteriori decisioni sulla sua API.
+`BrowserCulture` seleziona soltanto una cultura supportata dalle preferenze del browser. Avvio e cambio lingua impostano `DefaultThreadCurrentCulture` e `DefaultThreadCurrentUICulture`; `Get()` cattura `CurrentUICulture` alla creazione di ogni richiesta. Il layout conserva la cultura selezionata e la passa al corpo della pagina con `CascadingValue<CultureInfo>`. Pagine e pulsanti copia ricevono il parametro di cascata, così il cambio lingua aggiorna anche i componenti già visibili. Le richieste dell'interfaccia usano la cultura corrente senza ripetere `WithCulture`. La demo animata e le traduzioni del playground mantengono la cultura esplicita perché possono mostrare una lingua diversa dall'interfaccia.
 
-| Scelta | Utilità | Implicazioni |
-| --- | --- | --- |
-| Mantenere l'indexer in `SiteText` | Sintassi breve nelle pagine Razor; cultura del sito sempre esplicita | Nessuna modifica al contratto pubblico. È la proposta per questa modifica. |
-| Aggiungere `TranslationBuilder this[string key]` | Alias di `Get(key)`; permette `translator["Welcome"].WithCulture("it").WithArg("name", "Ada").Resolve()` | Conserva cultura, argomenti, casing e risoluzione async nella pipeline. Restituirebbe un builder mutabile nuovo a ogni accesso. |
-| Aggiungere `string this[string key]` | Risultato immediato per traduzioni semplici | Lookup e formattazione sincroni a ogni accesso; nessuna possibilità di configurare quel risultato con la pipeline. Gli store HTTP devono essere già caricati. |
+Razor rende il builder tramite `ToString()`, mentre i parametri di tipo `string` usano la conversione implicita: entrambi risolvono la richiesta. Non serve quindi ripetere `Resolve()` nel markup. Le etichette inviate a JavaScript restano risolte esplicitamente perché la serializzazione JSON di un builder non usa `ToString()`. Le richieste vengono ricreate durante il rendering, senza conservare builder costruiti prima del cambio lingua.
 
-Un indexer su `Translator` soltanto non sarebbe disponibile dove iniettiamo `ITranslator`. Aggiungerlo anche all'interfaccia richiederebbe di aggiornare tutte le implementazioni esterne, inclusi mock e fake. Non possiamo contare su un'implementazione predefinita dell'interfaccia per mantenere la compatibilità con tutti i runtime supportati: i pacchetti includono `netstandard2.0` e vengono testati anche su .NET Framework. Dopo la `1.0.0` sarebbe una modifica incompatibile da gestire nel versionamento, non un semplice miglioramento della WebApp.
+`RichText` è un componente di presentazione che riceve una stringa già risolta: non conosce chiavi, culture o traduttori. Mantiene il rendering dei segmenti `code`, enfasi e link con `AddContent`, senza trattare il resto del testo come HTML. Anche le etichette inviate a JavaScript vengono risolte direttamente tramite `ITranslator`.
 
-Anche l'alias che restituisce un builder manterrebbe le conversioni implicite e `ToString()` già presenti: il rendering di un builder come testo può quindi attivare una risoluzione sincrona. L'uso esplicito di `ResolveAsync()` resta necessario quando si vuole caricare uno store HTTP in modo asincrono. L'alias non sostituirebbe `SiteText`, che continua ad applicare la cultura selezionata e le funzioni specifiche del sito.
-
-Proposta: mantenere l'indexer locale per ora. Se desideriamo una sintassi pubblica alternativa a `Get`, preferire il ritorno `TranslationBuilder`, con una decisione separata sulla compatibilità dell'interfaccia e sulla release. Nessun indexer è stato aggiunto alla libreria; serve la conferma dell'utente prima di implementarlo.
+Le API attuali del core coprono queste esigenze senza modifiche al contratto pubblico. `Resolve()` è appropriato per i cataloghi embedded del sito; gli esempi con store HTTP continuano a usare `ResolveAsync()`.
 
 ## Storico API verificato
 

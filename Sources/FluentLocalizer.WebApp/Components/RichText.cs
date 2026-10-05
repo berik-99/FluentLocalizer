@@ -1,15 +1,20 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 
-namespace FluentLocalizer.WebApp;
+namespace FluentLocalizer.WebApp.Components;
 
-// Kept apart from SiteText.cs, which the catalog tests also compile for .NET Framework.
-internal sealed partial class SiteText
+/// <summary>Renders inline markup in text already resolved by the caller.</summary>
+public sealed partial class RichText : ComponentBase
 {
+    /// <summary>The text to render, with inline code, emphasis and links.</summary>
+    [Parameter, EditorRequired] public string Text { get; set; } = string.Empty;
+
     // Lets translators keep whole sentences: `code`, *emphasis* and [label](href) become markup, the rest stays text.
-    public RenderFragment Rich(string key) => builder =>
+    /// <inheritdoc />
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
-        var text = this[key];
+        var text = Text;
         var position = 0;
         foreach (Match match in RichSpans().Matches(text))
         {
@@ -43,7 +48,7 @@ internal sealed partial class SiteText
             position = match.Index + match.Length;
         }
         builder.AddContent(10, text[position..]);
-    };
+    }
 
     [GeneratedRegex(@"`(?<code>[^`]+)`|\*(?<em>[^*]+)\*|\[(?<label>[^\]]+)\]\((?<href>[^)\s]+)\)")]
     private static partial Regex RichSpans();

@@ -7,11 +7,12 @@
 
 <PageTitle>FluentLocalizer Blazor WebAssembly sample</PageTitle>
 
-<h1>@localizer.Get("Home:Title").WithCulture(_culture)</h1>
+@* No WithCulture: every request follows the UI culture set by the language selector. *@
+<h1>@localizer.Get("Home:Title")</h1>
 
 <h2>Basic: preloaded HTTP translations</h2>
-<p>@localizer.Get("Home:Welcome").WithArg("name", "Ada").WithCulture(_culture)</p>
-<p aria-live="polite">@localizer.Get("Home:Unread").Pluralize(_quantity).WithCulture(_culture)</p>
+<p>@localizer.Get("Home:Welcome").WithArg("name", "Ada")</p>
+<p aria-live="polite">@localizer.Get("Home:Unread").Pluralize(_quantity)</p>
 
 <p>Unread message count: @_quantity</p>
 <p>
@@ -20,13 +21,13 @@
 </p>
 
 <label for="culture">Language</label>
-<select id="culture" @bind="_culture" @bind:after="ClearLazyResult">
+<select id="culture" @bind="_culture" @bind:after="ChangeCulture">
     <option value="en-US">English</option>
     <option value="it-IT">Italiano</option>
 </select>
 
 <h2>Advanced: fallback, lazy bundle, and refresh</h2>
-<p>@localizer.Get("Home:FallbackOnly").WithCulture(_culture)</p>
+<p>@localizer.Get("Home:FallbackOnly")</p>
 <p>
     <button type="button" @onclick="LoadNamespaceAsync">Load namespace asynchronously</button>
 </p>
@@ -101,7 +102,6 @@
         {
             _lazyResult = await localizer.Get("common:Status")
                 .WithArg("name", "Ada")
-                .WithCulture(_culture)
                 .ResolveAsync();
         }
         catch (Exception ex)
@@ -110,7 +110,21 @@
         }
     }
 
-    private void ClearLazyResult() => _lazyResult = string.Empty;
+    protected override void OnInitialized() => ApplyCulture(_culture);
+
+    private void ChangeCulture()
+    {
+        ApplyCulture(_culture);
+        _lazyResult = string.Empty;
+    }
+
+    // Changing the UI culture is enough: the next render creates new requests that capture it.
+    private static void ApplyCulture(string name)
+    {
+        var culture = CultureInfo.GetCultureInfo(name);
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+    }
 
     private void DecreaseCount() => _quantity = Math.Max(0, _quantity - 1);
 

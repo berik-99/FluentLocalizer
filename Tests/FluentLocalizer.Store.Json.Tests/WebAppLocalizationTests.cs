@@ -23,15 +23,15 @@ public sealed class WebAppLocalizationTests
     [InlineData("", "en")]
     [InlineData("not a locale!", "en")]
     public void Selects_supported_browser_cultures_or_english(string language, string expected) =>
-        Assert.Equal(expected, SiteText.SelectCulture([language]).Name);
+        Assert.Equal(expected, BrowserCulture.SelectCulture([language]).Name);
 
     [Fact]
     public void Uses_browser_preference_order_and_handles_missing_languages()
     {
-        Assert.Equal("fr-CA", SiteText.SelectCulture(["ja-JP", "fr-CA", "it-IT"]).Name);
-        Assert.Equal("en-US", SiteText.SelectCulture(["en-US", "it-IT"]).Name);
-        Assert.Equal("en", SiteText.SelectCulture(null).Name);
-        Assert.Equal("en", SiteText.SelectCulture([]).Name);
+        Assert.Equal("fr-CA", BrowserCulture.SelectCulture(["ja-JP", "fr-CA", "it-IT"]).Name);
+        Assert.Equal("en-US", BrowserCulture.SelectCulture(["en-US", "it-IT"]).Name);
+        Assert.Equal("en", BrowserCulture.SelectCulture(null).Name);
+        Assert.Equal("en", BrowserCulture.SelectCulture([]).Name);
     }
 
     [Fact]
@@ -88,16 +88,16 @@ public sealed class WebAppLocalizationTests
 
             var demo = catalog.RootElement.GetProperty("Demo");
             Assert.Equal(new[] { "Items", "Welcome" }, demo.EnumerateObject().Select(entry => entry.Name).OrderBy(key => key));
-            var textForCulture = new SiteText(translator) { Culture = CultureInfo.GetCultureInfo(language) };
-            Assert.Equal(demo.GetProperty("Welcome").GetString()!.Replace("{name}", "Ada"), textForCulture.Format("Demo:Welcome", "name", "Ada"));
-            Assert.Equal(itemResults[index++], textForCulture.Format("Demo:Items", "quantity", 3));
+            var culture = CultureInfo.GetCultureInfo(language);
+            Assert.Equal(demo.GetProperty("Welcome").GetString()!.Replace("{name}", "Ada"),
+                translator.Get("Demo:Welcome").WithCulture(culture).WithArg("name", "Ada").Resolve());
+            Assert.Equal(itemResults[index++], translator.Get("Demo:Items").WithCulture(culture).Pluralize(3).Resolve());
         }
 
-        var text = new SiteText(translator) { Culture = CultureInfo.GetCultureInfo("fr-CA") };
-        Assert.Equal("Présentation", text["Ui:Overview"]);
-        Assert.Equal("POURQUOI FLUENTLOCALIZER", text["Ui:Why", LetterCase.Upper]);
-        Assert.Equal("Supprimer l'argument Ada", text.Format("Ui:RemoveArgument", "name", "Ada"));
-        text.Culture = CultureInfo.GetCultureInfo("ja-JP");
-        Assert.Equal("Overview", text["Ui:Overview"]);
+        var french = CultureInfo.GetCultureInfo("fr-CA");
+        Assert.Equal("Présentation", translator.Get("Ui:Overview").WithCulture(french).Resolve());
+        Assert.Equal("POURQUOI FLUENTLOCALIZER", translator.Get("Ui:Why").WithCulture(french).WithCase(LetterCase.Upper).Resolve());
+        Assert.Equal("Supprimer l'argument Ada", translator.Get("Ui:RemoveArgument").WithCulture(french).WithArg("name", "Ada").Resolve());
+        Assert.Equal("Overview", translator.Get("Ui:Overview").WithCulture("ja-JP").Resolve());
     }
 }
