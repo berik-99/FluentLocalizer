@@ -44,7 +44,7 @@
 }
 
 .hero h1 { font-size: clamp(44px, 5.1vw, 78px); line-height: 1.06; margin: 28px 0 24px; max-width: 700px; }
-.hero h1 em, .cta-inner h2 em { color: var(--lime); font-style: normal; }
+.hero h1 ::deep em, .cta-inner h2 em { color: var(--lime); font-style: normal; }
 .hero-lede { color: #c5d0d8; line-height: 1.76; font-size: 16px; max-width: 510px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
 .hero-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 13px; margin-top: 48px; font-size: 11px; color: var(--ink-subtle); font-weight: 700; }

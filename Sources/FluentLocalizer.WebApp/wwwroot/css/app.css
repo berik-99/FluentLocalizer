@@ -1,6 +1,6 @@
 /* =========================================================================
    FluentLocalizer site — tokens, base styles, layout and shared components.
-   Page styles live in home.css, playground.css and docs.css.
+   Page styles live beside their Razor pages in scoped CSS files.
    ========================================================================= */
 
 /* ---------- Tokens ---------- */
@@ -154,6 +154,38 @@ code { font-size: .91em; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 .shell { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
+
+/* Shared documentation layout used by both Docs and API pages. */
+.docs-hero { background: var(--ink); color: #f8faf7; padding: 78px 0 86px; }
+.docs-hero h1 { font-size: clamp(45px, 5vw, 69px); line-height: 1.08; margin: 19px 0; }
+.docs-hero h1 em { font-style: normal; color: var(--lime); }
+.docs-hero p { max-width: 610px; color: #c4ced5; line-height: 1.7; font-size: 15px; margin: 0; }
+.docs-grid { display: grid; grid-template-columns: 215px minmax(0, 1fr); gap: 76px; align-items: start; padding-top: 65px; padding-bottom: 115px; }
+.docs-sidebar { position: sticky; top: calc(var(--header-height) + 28px); min-width: 0; }
+.docs-sidebar a {
+    display: block;
+    padding: 9px 12px;
+    border-left: 2px solid var(--border-strong);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    transition: border-color .25s, background-color .25s, color .25s;
+}
+.docs-sidebar a:hover { border-left-color: var(--field-focus); background: var(--surface-hover); color: var(--text); }
+.docs-sidebar a.is-active { border-left-color: var(--field-focus); color: var(--accent-text); }
+.docs-content { min-width: 0; }
+
+@media (max-width: 1000px) {
+    .docs-grid { gap: 38px; }
+}
+
+@media (max-width: 760px) {
+    .docs-hero { padding: 60px 0; }
+    .docs-grid { grid-template-columns: minmax(0, 1fr); gap: 38px; padding-block: 45px 75px; }
+    .docs-sidebar { position: static; }
+    .docs-sidebar a { border-left: 0; border-bottom: 2px solid var(--border-strong); white-space: nowrap; }
+    .docs-sidebar a:hover, .docs-sidebar a.is-active { border-bottom-color: var(--field-focus); }
+}
 
 .sr-only {
     position: absolute;
