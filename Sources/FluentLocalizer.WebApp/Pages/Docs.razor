@@ -6,7 +6,6 @@
 
 <section class="docs-hero">
     <div class="shell">
-        <span class="eyebrow">@T["Ui:DocsEyebrow"]</span>
         <h1>@T["Ui:BuildMessages"]<br /><em>@T["Ui:Travel"]</em></h1>
         <p>@T["Ui:DocsDescription"]</p>
     </div>
@@ -14,7 +13,7 @@
 
 <div class="shell docs-grid">
     <aside class="docs-sidebar" aria-label="@T["Ui:DocsSections"]">
-        <span class="eyebrow">@T["Ui:OnPage"]</span>
+        <span class="eyebrow">@T["Ui:OnPage", LetterCase.Upper]</span>
         <nav @ref="_sidebar">
             @foreach (var (id, title) in Sections)
             {
@@ -25,11 +24,11 @@
 
     <article class="docs-content">
         <section id="quick-start" class="docs-section">
-            <span class="eyebrow">@T["Ui:FirstSteps"]</span>
+            <span class="eyebrow">@T["Ui:FirstSteps", LetterCase.Upper]</span>
             <h2>@T["Ui:QuickStart"]</h2>
-            <p>@T["Ui:InstallCore"] <code>Translator</code> @T["Ui:An"] <code>ITranslationStore</code>@T["Ui:StoreExplained"]</p>
+            <p>@T.Rich("Ui:QuickStartIntro")</p>
             <pre><code>dotnet add package FluentLocalizer</code></pre>
-            <p>@T["Ui:SmallStore"]</p>
+            <p>@T.Rich("Ui:SmallStore")</p>
             <pre><code>using FluentLocalizer;
 using System.Globalization;
 
@@ -49,30 +48,30 @@ var translator = new Translator(new InMemoryStore());</code></pre>
             <pre><code>var message = translator.Get("welcome")
     .WithArg("name", "Ada")
     .Resolve();</code></pre>
-            <p>@T["Ui:DefaultCulture"]</p>
-            <p>@T["Ui:Use"] <code>ResolveAsync()</code> @T["Ui:AsyncStore"]</p>
+            <p>@T.Rich("Ui:DefaultCulture")</p>
+            <p>@T.Rich("Ui:AsyncResolve")</p>
         </section>
 
         <section id="messageformat" class="docs-section">
-            <span class="eyebrow">@T["Ui:TemplatesEyebrow"]</span>
+            <span class="eyebrow">@T["Ui:TemplatesEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:Patterns"]</h2>
             <p>@T["Ui:PatternsDescription"]</p>
-            <div class="docs-patterns"><div><strong>@T["Ui:Placeholder"]</strong><code>Hello, {name}!</code><p>@T["Ui:InsertArgument"]</p></div><div><strong>@T["Ui:Plural"]</strong><code>{quantity, plural, one{# item} other{# items}}</code><p>@T["Ui:PluralBranch"]</p></div><div><strong>@T["Ui:Select"]</strong><code>{gender, select, female{She} male{He} other{They}}</code><p>@T["Ui:SelectBranch"]</p></div></div>
-            <p>@T["Ui:Use"] <code>other</code> @T["Ui:PatternFallback"] <NavLink href="playground">@T["Ui:PlaygroundInline"]</NavLink> @T["Ui:PatternCheck"]</p>
+            <div class="docs-patterns"><div><strong>@T["Ui:Placeholder"]</strong><code>Hello, {name}!</code><p>@T.Rich("Ui:InsertArgument")</p></div><div><strong>@T["Ui:Plural"]</strong><code>{quantity, plural, one{# item} other{# items}}</code><p>@T.Rich("Ui:PluralBranch")</p></div><div><strong>@T["Ui:Select"]</strong><code>{gender, select, female{She} male{He} other{They}}</code><p>@T.Rich("Ui:SelectBranch")</p></div></div>
+            <p>@T.Rich("Ui:PatternOther")</p>
         </section>
 
         <section id="fluent-api" class="docs-section">
-            <span class="eyebrow">@T["Ui:RequestsEyebrow"]</span>
+            <span class="eyebrow">@T["Ui:RequestsEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:FluentApi"]</h2>
-            <p>@T["Ui:RequestsDescription"]</p>
-            <div class="docs-methods"><div><code>.Get(key)</code><span>@T["Ui:ChooseKey"]</span></div><div><code>.WithCulture(culture)</code><span>@T["Ui:ChooseCulture"]</span></div><div><code>.WithArg(name, value)</code><span>@T["Ui:SupplyArgument"]</span></div><div><code>.Pluralize(number)</code><span>@T["Ui:SetArgument"] <code>quantity</code>@T["Ui:ArgumentSuffix"]</span></div><div><code>.Genderize(gender)</code><span>@T["Ui:SetArgument"] <code>gender</code>@T["Ui:ArgumentSuffix"]</span></div><div><code>.WithCase(letterCase)</code><span>@T["Ui:TransformResolved"]</span></div><div><code>.Resolve()</code><span>@T["Ui:ReturnSync"]</span></div><div><code>.ResolveAsync()</code><span>@T["Ui:ResolveAsync"]</span></div></div>
+            <p>@T.Rich("Ui:RequestsDescription")</p>
+            <div class="docs-methods"><div><code>.Get(key)</code><span>@T["Ui:ChooseKey"]</span></div><div><code>.WithCulture(culture)</code><span>@T["Ui:ChooseCulture"]</span></div><div><code>.WithArg(name, value)</code><span>@T["Ui:SupplyArgument"]</span></div><div><code>.Pluralize(number)</code><span>@T.Rich("Ui:PluralizeArgument")</span></div><div><code>.Genderize(gender)</code><span>@T.Rich("Ui:GenderizeArgument")</span></div><div><code>.WithCase(letterCase)</code><span>@T.Rich("Ui:TransformResolved")</span></div><div><code>.Resolve()</code><span>@T["Ui:ReturnSync"]</span></div><div><code>.ResolveAsync()</code><span>@T["Ui:ResolveAsync"]</span></div></div>
             <pre><code>var summary = translator.Get("items")
     .WithCulture("en-US")
     .Pluralize(3)
-    .WithCase(LetterCase.AsIs)
+    .WithCase(LetterCase.Upper)
     .Resolve();</code></pre>
             <h3>@T["Ui:CultureSettings"]</h3>
-            <p>@T["Ui:ChangeCulture"]</p>
+            <p>@T.Rich("Ui:ChangeCulture")</p>
             <pre><code>var culture = CultureInfo.GetCultureInfo("it-IT");
 CultureInfo.CurrentUICulture = culture;
 CultureInfo.CurrentCulture = culture;
@@ -80,14 +79,14 @@ CultureInfo.CurrentCulture = culture;
 var message = translator.Get("welcome")
     .WithArg("name", "Ada")
     .Resolve();</code></pre>
-            <p>@T["Ui:CultureScope"]</p>
-            <p>@T["Ui:CultureDefaults"]</p>
+            <p>@T.Rich("Ui:CultureScope")</p>
+            <p>@T.Rich("Ui:CultureDefaults")</p>
         </section>
 
         <section id="options" class="docs-section">
-            <span class="eyebrow">@T["Ui:BehaviorEyebrow"]</span>
+            <span class="eyebrow">@T["Ui:BehaviorEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:OptionsFallback"]</h2>
-            <p><code>TranslationOptions</code> @T["Ui:OptionsDescription"]</p>
+            <p>@T.Rich("Ui:OptionsDescription")</p>
             <pre><code>var options = new TranslationOptions
 {
     MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
@@ -100,21 +99,21 @@ var message = translator.Get("welcome")
 };
 
 var translator = new Translator(store, options);</code></pre>
-            <p>@T["Ui:JsonFallback"] <code>it-IT</code> @T["Ui:CanUse"] <code>it</code> @T["Ui:ThenFallback"] <code>en-US</code>.</p>
+            <p>@T.Rich("Ui:JsonFallback")</p>
         </section>
 
         <section id="json-stores" class="docs-section">
-            <span class="eyebrow">@T["Ui:StorageEyebrow"]</span>
+            <span class="eyebrow">@T["Ui:StorageEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:JsonStores"]</h2>
-            <p>@T["Ui:Install"] <code>FluentLocalizer.Store.Json</code> @T["Ui:JsonKeys"] <code>Home:Welcome</code>.</p>
+            <p>@T.Rich("Ui:JsonIntro")</p>
             <pre><code>dotnet add package FluentLocalizer.Store.Json</code></pre>
             <pre><code>{
   "Home": {
     "Welcome": "Hello, {name}!"
   }
 }</code></pre>
-            <div class="docs-store-grid"><div><h3>JsonFileStore</h3><p>@T["Ui:FileStore"]</p></div><div><h3>EmbeddedJsonStore</h3><p>@T["Ui:EmbeddedStore"]</p></div><div><h3>HttpJsonStore</h3><p>@T["Ui:HttpStore"]</p></div></div>
-            <p>@T["Ui:For"] <code>HttpJsonStore</code>@T["Ui:PublishLocales"] <code>wwwroot</code> @T["Ui:UseClient"] <code>HttpClient</code> @T["Ui:BaseAddress"]</p>
+            <div class="docs-store-grid"><div><h3>JsonFileStore</h3><p>@T.Rich("Ui:FileStore")</p></div><div><h3>EmbeddedJsonStore</h3><p>@T.Rich("Ui:EmbeddedStore")</p></div><div><h3>HttpJsonStore</h3><p>@T.Rich("Ui:HttpStore")</p></div></div>
+            <p>@T.Rich("Ui:HttpUsage")</p>
             <pre><code>using var store = new HttpJsonStore(httpClient,
     new HttpJsonStoreOptions { ResourcesPath = "locales" });
 
@@ -126,9 +125,9 @@ var message = await translator.Get("Home:Welcome")
         </section>
 
         <section id="dependency-injection" class="docs-section">
-            <span class="eyebrow">@T["Ui:IntegrationEyebrow"]</span>
+            <span class="eyebrow">@T["Ui:IntegrationEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:DependencyInjection"]</h2>
-            <p>@T["Ui:Registers"] <code>ITranslator</code> @T["Ui:InjectionDescription"]</p>
+            <p>@T.Rich("Ui:InjectionDescription")</p>
             <pre><code>dotnet add package FluentLocalizer.Extensions.DependencyInjection</code></pre>
             <pre><code>services.AddFluentLocalizer(options =&gt;
 {
@@ -144,14 +143,14 @@ var message = await translator.Get("Home:Welcome")
         </section>
 
         <section id="api-reference" class="docs-section">
-            <span class="eyebrow">API</span>
+            <span class="eyebrow">@T["Ui:ReferenceEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:ApiReference"]</h2>
             <p>@T["Ui:ApiDescription"]</p>
             <p><NavLink href="docs/api">@T["Ui:OpenApiReference"]</NavLink></p>
         </section>
 
         <section id="more-resources" class="docs-section">
-            <span class="eyebrow">@T["Ui:NextSteps"]</span>
+            <span class="eyebrow">@T["Ui:NextSteps", LetterCase.Upper]</span>
             <h2>@T["Ui:MoreResources"]</h2>
             <p>@T["Ui:ResourcesDescription"]</p>
             <div class="docs-links">

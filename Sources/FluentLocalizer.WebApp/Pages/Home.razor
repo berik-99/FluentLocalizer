@@ -11,8 +11,8 @@
 <section class="hero">
     <div class="shell hero-grid">
         <div class="hero-copy">
-            <div class="pill"><span class="status-dot"></span> @T["Ui:OpenSource"]</div>
-            <h1>@T["Ui:HeroStart"] <em>@T["Ui:HeroEmphasis"]</em> @T["Ui:HeroEnd"]</h1>
+            <div class="pill"><span class="status-dot"></span> @T["Ui:OpenSource", LetterCase.Upper]</div>
+            <h1>@T.Rich("Ui:HeroTitle")</h1>
             <p class="hero-lede">@T["Ui:HeroDescription"]</p>
             <div class="hero-actions">
                 <NavLink class="button button-primary" href="playground">@T["Ui:TryPlayground"] <span aria-hidden="true">↗</span></NavLink>
@@ -30,12 +30,12 @@
     .WithArg(<span class="code-string">"name"</span>, <span class="code-string">"Ada"</span>)
     .Resolve();</code></pre>
                 <div class="code-output">
-                    <span class="output-label">@T["Ui:Output"] <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
+                    <span class="output-label">@T["Ui:Output", LetterCase.Upper] <span class="output-led @(_typing ? "is-busy" : null)"></span></span>
                     <strong class="typed-output @(_typing ? "is-typing" : null)">@_displayText<span class="typing-caret"></span></strong>
                     <span class="output-locale"><span class="culture-swap @SwapClass" @key="_displayCulture">@_displayCulture</span></span>
                 </div>
             </div>
-            <span class="visual-caption">@T["Ui:WriteOnce"]</span>
+            <span class="visual-caption">@T["Ui:WriteOnce", LetterCase.Upper]</span>
         </div>
     </div>
 </section>
@@ -43,7 +43,7 @@
 <section class="features section-padding" id="features">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">@T["Ui:Why"]</span><h2>@T["Ui:Everything"]<br /><span>@T["Ui:NothingExtra"]</span></h2></div>
+            <div><span class="eyebrow">@T["Ui:Why", LetterCase.Upper]</span><h2>@T["Ui:Everything"]<br /><span>@T["Ui:NothingExtra"]</span></h2></div>
             <p>@T["Ui:FeaturesDescription"]</p>
         </div>
         <div class="feature-grid">
@@ -63,8 +63,8 @@
 <section class="flow-section section-padding">
     <div class="shell flow-grid">
         <div>
-            <span class="eyebrow">@T["Ui:Workflow"]</span>
-            <h2>@T["Ui:FromTemplate"]<br />@T["Ui:To"] <span>@T["Ui:Translation"]</span></h2>
+            <span class="eyebrow">@T["Ui:Workflow", LetterCase.Upper]</span>
+            <h2>@T["Ui:FlowTitle"]<br /><span>@T["Ui:FlowAccent"]</span></h2>
             <p>@T["Ui:WorkflowDescription"]</p>
             <NavLink class="text-link" href="playground">@T["Ui:ExplorePlayground"] <span aria-hidden="true">↗</span></NavLink>
         </div>
@@ -79,7 +79,7 @@
 <section class="packages section-padding" id="packages">
     <div class="shell">
         <div class="section-intro">
-            <div><span class="eyebrow">@T["Ui:Ecosystem"]</span><h2>@T["Ui:StartSmall"]<br /><span>@T["Ui:AddNeeded"]</span></h2></div>
+            <div><span class="eyebrow">@T["Ui:Ecosystem", LetterCase.Upper]</span><h2>@T["Ui:StartSmall"]<br /><span>@T["Ui:AddNeeded"]</span></h2></div>
             <p>@T["Ui:PackagesDescription"]</p>
         </div>
         <div class="package-list">
@@ -106,7 +106,7 @@
 
 <section class="cta-section">
     <div class="shell cta-inner">
-        <div><span class="eyebrow">@T["Ui:Ready"]</span><h2>@T["Ui:EveryMessage"]<br /><em>@T["Ui:AtHome"]</em></h2><p>@T["Ui:Experiment"]</p></div>
+        <div><span class="eyebrow">@T["Ui:Ready", LetterCase.Upper]</span><h2>@T["Ui:EveryMessage"]<br /><em>@T["Ui:AtHome"]</em></h2><p>@T["Ui:Experiment"]</p></div>
         <NavLink class="button button-dark" href="playground">@T["Ui:OpenPlayground"] <span aria-hidden="true">↗</span></NavLink>
     </div>
 </section>
@@ -126,9 +126,9 @@
 
     private Package[] Packages =>
     [
-        new("FluentLocalizer", T["Ui:Core"], T["Ui:CoreDescription"]),
-        new("FluentLocalizer.Store.Json", T["Ui:Storage"], T["Ui:StorageDescription"]),
-        new("FluentLocalizer.Extensions.DependencyInjection", T["Ui:Integration"], T["Ui:IntegrationDescription"])
+        new("FluentLocalizer", T["Ui:Core", LetterCase.Upper], T["Ui:CoreDescription"]),
+        new("FluentLocalizer.Store.Json", T["Ui:Storage", LetterCase.Upper], T["Ui:StorageDescription"]),
+        new("FluentLocalizer.Extensions.DependencyInjection", T["Ui:Integration", LetterCase.Upper], T["Ui:IntegrationDescription"])
     ];
 
     // Timings of the hero greeting animation, in milliseconds.

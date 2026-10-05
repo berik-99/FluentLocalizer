@@ -3,7 +3,7 @@ using System.Globalization;
 namespace FluentLocalizer.WebApp;
 
 // The site's catalog uses the same translator as library consumers.
-internal sealed class SiteText(ITranslator translator)
+internal sealed partial class SiteText(ITranslator translator)
 {
     public CultureInfo Culture { get; set; } = CultureInfo.GetCultureInfo("en");
 
@@ -16,10 +16,14 @@ internal sealed class SiteText(ITranslator translator)
         dismiss = this["Ui:Dismiss"]
     };
 
-    public string this[string key] => translator.Get(key).WithCulture(Culture).Resolve();
+    public string this[string key] => Request(key).Resolve();
 
-    public string Format(string key, string name, object? value) =>
-        translator.Get(key).WithCulture(Culture).WithArg(name, value).Resolve();
+    // Catalogs stay in sentence case; display casing such as eyebrows comes from the library's own transform.
+    public string this[string key, LetterCase letterCase] => Request(key).WithCase(letterCase).Resolve();
+
+    public string Format(string key, string name, object? value) => Request(key).WithArg(name, value).Resolve();
+
+    private TranslationBuilder Request(string key) => translator.Get(key).WithCulture(Culture);
 
     public static CultureInfo SelectCulture(IEnumerable<string>? languages)
     {

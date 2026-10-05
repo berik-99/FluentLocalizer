@@ -14,6 +14,10 @@
       "path": "Sources\\Directory.Build.props"
     },
     {
+      "name": "pages.yml",
+      "path": ".github\\workflows\\pages.yml"
+    },
+    {
       "name": "README.md",
       "path": "README.md"
     },

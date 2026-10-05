@@ -6,6 +6,18 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "Sources/FluentLocalizer.WebApp", "--launch-profile", "http"],
       "port": 5075
+    },
+    {
+      "name": "webapp-preview",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Sources/FluentLocalizer.WebApp", "--no-launch-profile", "--", "--urls", "http://localhost:5187"],
+      "port": 5187
+    },
+    {
+      "name": "webapp-copy",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Sources/FluentLocalizer.WebApp", "--no-launch-profile", "--", "--urls", "http://localhost:5193"],
+      "port": 5193
     }
   ]
 }

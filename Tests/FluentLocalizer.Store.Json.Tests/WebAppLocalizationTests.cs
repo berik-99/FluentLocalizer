@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FluentLocalizer.Store.Json;
 using FluentLocalizer.WebApp;
 
@@ -75,10 +76,14 @@ public sealed class WebAppLocalizationTests
                 Assert.False(string.IsNullOrWhiteSpace(template));
                 var request = translator.Get("Ui:" + entry.Name).WithCulture(language);
                 foreach (var argument in arguments) request.WithArg(argument.Key, argument.Value);
-                var expected = template!;
-                foreach (var argument in arguments)
-                    expected = expected.Replace("{" + argument.Key + "}", argument.Value!.ToString());
+                // Quoted '{...}' spans are literal MessageFormat text; every other {name} must be a known argument.
+                var expected = Regex.Replace(template!, @"'([{}][^']*)'|\{(\w+)\}", match =>
+                    match.Groups[1].Success ? match.Groups[1].Value : arguments[match.Groups[2].Value]!.ToString()!);
                 Assert.Equal(expected, request.Resolve());
+
+                // Display casing belongs to WithCase, so catalogs never store text in capitals.
+                var letters = template!.Where(char.IsLetter).ToArray();
+                Assert.False(letters.Length > 3 && letters.All(char.IsUpper), $"{language}.json Ui:{entry.Name} is written in capitals.");
             }
 
             var demo = catalog.RootElement.GetProperty("Demo");
@@ -90,6 +95,7 @@ public sealed class WebAppLocalizationTests
 
         var text = new SiteText(translator) { Culture = CultureInfo.GetCultureInfo("fr-CA") };
         Assert.Equal("Présentation", text["Ui:Overview"]);
+        Assert.Equal("POURQUOI FLUENTLOCALIZER", text["Ui:Why", LetterCase.Upper]);
         Assert.Equal("Supprimer l'argument Ada", text.Format("Ui:RemoveArgument", "name", "Ada"));
         text.Culture = CultureInfo.GetCultureInfo("ja-JP");
         Assert.Equal("Overview", text["Ui:Overview"]);

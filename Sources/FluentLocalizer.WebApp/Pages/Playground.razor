@@ -8,7 +8,6 @@
 
 <section class="playground-hero">
     <div class="shell">
-        <span class="eyebrow">@T["Ui:PlaygroundEyebrow"]</span>
         <h1>@T["Ui:MakeMessage"]<br /><em>@T["Ui:Alive"]</em></h1>
         <p>@T["Ui:PlaygroundDescription"]</p>
     </div>
@@ -16,7 +15,7 @@
 
 <section class="playground-section shell">
     <div class="playground-topline">
-        <div><span class="eyebrow">@T["Ui:StartExample"]</span><p>@T["Ui:ExampleHelp"]</p></div>
+        <div><span class="eyebrow">@T["Ui:StartExample", LetterCase.Upper]</span><p>@T["Ui:ExampleHelp"]</p></div>
         <div class="example-buttons">
             @foreach (var (example, label) in Examples)
             {
@@ -28,7 +27,7 @@
     <div class="playground-grid">
         <div class="editor-stack">
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">01</span><h2>@T["Ui:Templates"]</h2></div><span class="panel-hint">MESSAGEFORMAT</span></div>
+                <div class="panel-heading"><div><span class="panel-index">01</span><h2>@T["Ui:Templates"]</h2></div><span class="panel-hint">@T["Ui:MessageFormat", LetterCase.Upper]</span></div>
                 <div class="editor-body">
                     <p class="editor-intro">@T["Ui:TabsHelp"]</p>
                     <div class="language-tabs" role="tablist" aria-label="@T["Ui:TemplateLanguage"]">
@@ -46,7 +45,7 @@
                     <div id="template-panel" class="field" role="tabpanel" aria-labelledby="locale-@_culture">
                         <label for="template">@T.Format("Ui:LocaleTemplate", "language", CurrentLocale.Label)</label>
                         <textarea id="template" spellcheck="false" @bind="CurrentTemplate" @bind:event="oninput" @bind:after="Edit" aria-describedby="template-help"></textarea>
-                        <p id="template-help" class="field-help">@T["Ui:Use"] <code>{name}</code>, <code>{quantity, plural, ...}</code>@T["Ui:Or"] <code>{gender, select, ...}</code>.</p>
+                        <p id="template-help" class="field-help">@T.Rich("Ui:TemplateHelp")</p>
                     </div>
                     @if (_suggestions.Count > 0)
                     {
@@ -56,17 +55,17 @@
             </div>
 
             <div class="editor-panel">
-                <div class="panel-heading"><div><span class="panel-index">02</span><h2>@T["Ui:Arguments"]</h2></div><span class="panel-hint">@T["Ui:Input"]</span></div>
+                <div class="panel-heading"><div><span class="panel-index">02</span><h2>@T["Ui:Arguments"]</h2></div><span class="panel-hint">@T["Ui:Input", LetterCase.Upper]</span></div>
                 <div class="editor-body">
                     <div class="control-grid argument-controls">
                         <div class="field"><span class="field-label" id="letter-case-label">@T["Ui:Transform"]</span><Dropdown Id="letter-case" LabelledBy="letter-case-label" Options="LetterCaseOptions" @bind-Value="_letterCase" @bind-Value:after="Edit" /></div>
                         <div class="field"><label for="quantity">@T["Ui:Quantity"] <span class="label-code">quantity</span></label><input id="quantity" type="number" step="1" @bind="_quantity" @bind:event="oninput" @bind:after="Edit" /></div>
                         <div class="field"><span class="field-label" id="gender-label">@T["Ui:SelectValue"] <span class="label-code">gender</span></span><Dropdown Id="gender" LabelledBy="gender-label" Options="GenderOptions" @bind-Value="_gender" @bind-Value:after="Edit" /></div>
                     </div>
-                    <div class="argument-heading"><div><h3>@T["Ui:CustomArguments"]</h3><p>@T["Ui:ArgumentHelp"] <code>WithArg</code>.</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> @T["Ui:AddArgument"]</button></div>
+                    <div class="argument-heading"><div><h3>@T["Ui:CustomArguments"]</h3><p>@T.Rich("Ui:ArgumentHelp")</p></div><button class="small-button" type="button" @onclick="AddArgument"><span aria-hidden="true">+</span> @T["Ui:AddArgument"]</button></div>
                     @if (_arguments.Count == 0)
                     {
-                        <p class="empty-arguments">@T["Ui:EmptyArguments"] <code>{name}</code>.</p>
+                        <p class="empty-arguments">@T.Rich("Ui:EmptyArguments")</p>
                     }
                     @foreach (var argument in _arguments)
                     {
@@ -83,7 +82,7 @@
 
         <div class="result-stack">
             <div class="preview-panel">
-                <div class="panel-heading"><div><span class="panel-index">03</span><h2>@T["Ui:LiveOutput"]</h2></div><span class="live-tag"><span class="status-dot"></span> @T["Ui:Live"]</span></div>
+                <div class="panel-heading"><div><span class="panel-index">03</span><h2>@T["Ui:LiveOutput"]</h2></div><span class="live-tag"><span class="status-dot"></span> @T["Ui:Live", LetterCase.Upper]</span></div>
                 <div class="preview-body" aria-live="polite" aria-atomic="true">
                     @if (string.IsNullOrWhiteSpace(CurrentTemplate))
                     {
@@ -98,19 +97,19 @@
                         <div class="preview-result" @key="_culture">@_result</div>
                     }
                 </div>
-                <div class="preview-footer"><span>@T["Ui:ResolvedBy"]</span><span>@_culture</span></div>
+                <div class="preview-footer"><span>@T["Ui:ResolvedBy", LetterCase.Upper]</span><span>@_culture</span></div>
             </div>
 
             <div class="pipeline-panel">
-                <div class="pipeline-heading"><div><span class="eyebrow">@T["Ui:UnderHood"]</span><h2>@T["Ui:Pipeline"]</h2></div><CopyButton Text="@PipelineCode" Label="@T["Ui:CopyCode"]" AriaLabel="@T["Ui:CopyPipeline"]" /></div>
+                <div class="pipeline-heading"><div><span class="eyebrow">@T["Ui:UnderHood", LetterCase.Upper]</span><h2>@T["Ui:Pipeline"]</h2></div><CopyButton Text="@PipelineCode" Label="@T["Ui:CopyCode"]" AriaLabel="@T["Ui:CopyPipeline"]" /></div>
                 <pre><code>@PipelineCode</code></pre>
-                <p>@T["Ui:MemoryStore"] <code>ITranslationStore</code>@T["Ui:LocalFormatting"]</p>
+                <p>@T.Rich("Ui:MemoryStore")</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="playground-more"><div class="shell"><div><span class="eyebrow">@T["Ui:KeepGoing"]</span><h2>@T["Ui:BringApp"]</h2><p>@T["Ui:ExploreDocs"]</p></div><NavLink class="button button-primary" href="docs">@T["Ui:ReadDocumentation"] <span aria-hidden="true">↗</span></NavLink></div></section>
+<section class="playground-more"><div class="shell"><div><span class="eyebrow">@T["Ui:KeepGoing", LetterCase.Upper]</span><h2>@T["Ui:BringApp"]</h2><p>@T["Ui:ExploreDocs"]</p></div><NavLink class="button button-primary" href="docs">@T["Ui:ReadDocumentation"] <span aria-hidden="true">↗</span></NavLink></div></section>
 
 @code {
     [CascadingParameter] private CultureInfo? SiteCulture { get; set; }
@@ -126,7 +125,7 @@
 
     private DropdownOption<LetterCase>[] LetterCaseOptions =>
     [
-        new(LetterCase.AsIs, T["Ui:AsWritten"]), new(LetterCase.Upper, T["Ui:Uppercase"]), new(LetterCase.Lower, T["Ui:Lowercase"]),
+        new(LetterCase.AsIs, T["Ui:AsWritten"]), new(LetterCase.Upper, T["Ui:Uppercase", LetterCase.Upper]), new(LetterCase.Lower, T["Ui:Lowercase", LetterCase.Lower]),
         new(LetterCase.CamelCase, "camelCase"), new(LetterCase.PascalCase, "PascalCase"),
         new(LetterCase.SnakeCase, "snake_case"), new(LetterCase.KebabCase, "kebab-case")
     ];
