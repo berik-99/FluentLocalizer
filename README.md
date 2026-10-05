@@ -361,7 +361,9 @@ Distributed under the **MIT License**.
 
 Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
 
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog.
+Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions, changes and deprecations are marked on each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog and can show any earlier version.
+
+Documented version: `1.0.0`
 
 - [ITranslator](#api-itranslator)
 - [Translator](#api-translator)
@@ -393,7 +395,7 @@ Signatures use C# notation; parameter names, defaults, return values and relevan
 
 ### ITranslator
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Contract for creating translation requests by key.
 
@@ -409,7 +411,7 @@ Implemented by Translator. Each Get call creates a separate mutable builder.
 
 ### Translator
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `ITranslator` · Since: `1.0.0`
 
 Default ITranslator implementation, combining a store, translation policies and optional logging.
 
@@ -426,7 +428,7 @@ The translator can be reused after a culture change. Create a new builder for ea
 
 ### TranslationBuilder
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Mutable fluent request that resolves a template, applies arguments and formats the result.
 
@@ -454,7 +456,7 @@ All With*, Pluralize and Genderize methods return the same builder. Culture is c
 
 ### TranslationOptions
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `sealed class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Policies for missing translations, formatting failures and default arguments.
 
@@ -480,7 +482,7 @@ Fallback strings replace {key} and {0} with the key, and {culture} and {1} with 
 
 ### ITranslationStore
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Storage contract returning raw templates before formatting.
 
@@ -497,7 +499,7 @@ Implementations own their fallback rules. A null result or KeyNotFoundException 
 
 ### TranslationException
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `Exception` · Since: `1.0.0`
 
 Exception carrying the translation key and requested culture. Inherits System.Exception.
 
@@ -515,16 +517,16 @@ Standard Exception members, including Message and InnerException, are inherited 
 
 ### Gender
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum values accepted by Genderize.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `Unspecified = 0` | No explicit gender; supplies unspecified to the template. The default builder value. |
-| `Male = 1` | Supplies male to a select expression. |
-| `Female = 2` | Supplies female to a select expression. |
-| `Neuter = 3` | Supplies neuter to a select expression. |
+| `Unspecified` | No explicit gender; supplies unspecified to the template. The default builder value. |
+| `Male` | Supplies male to a select expression. |
+| `Female` | Supplies female to a select expression. |
+| `Neuter` | Supplies neuter to a select expression. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/Gender.cs)
 
@@ -532,19 +534,19 @@ Enum values accepted by Genderize.
 
 ### LetterCase
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum transformations applied after MessageFormat formatting.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `AsIs = 0` | Preserves the formatted text; default transformation. |
-| `Upper = 1` | Converts text with ToUpperInvariant. |
-| `Lower = 2` | Converts text with ToLowerInvariant. |
-| `CamelCase = 3` | Joins words in camelCase. |
-| `PascalCase = 4` | Joins words in PascalCase. |
-| `SnakeCase = 5` | Joins lowercase words with underscores. |
-| `KebabCase = 6` | Joins lowercase words with hyphens. |
+| `AsIs` | Preserves the formatted text; default transformation. |
+| `Upper` | Converts text with ToUpperInvariant. |
+| `Lower` | Converts text with ToLowerInvariant. |
+| `CamelCase` | Joins words in camelCase. |
+| `PascalCase` | Joins words in PascalCase. |
+| `SnakeCase` | Joins lowercase words with underscores. |
+| `KebabCase` | Joins lowercase words with hyphens. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/LetterCase.cs)
 
@@ -552,15 +554,15 @@ Enum transformations applied after MessageFormat formatting.
 
 ### MissingTranslationBehavior
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum controlling missing-key resolution.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `ReturnPlaceholder = 0` | Returns [key]; default behavior. |
-| `ThrowException = 1` | Throws the configured missing-key exception or TranslationException. |
-| `ReturnConfiguredValue = 2` | Returns MissingKeyFallbackValue after token replacement. |
+| `ReturnPlaceholder` | Returns [key]; default behavior. |
+| `ThrowException` | Throws the configured missing-key exception or TranslationException. |
+| `ReturnConfiguredValue` | Returns MissingKeyFallbackValue after token replacement. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs)
 
@@ -568,14 +570,14 @@ Enum controlling missing-key resolution.
 
 ### FormattingErrorBehavior
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum controlling MessageFormat failures.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `ReturnPlaceholder = 0` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
-| `ThrowException = 1` | Throws the configured formatting exception or TranslationException. |
+| `ReturnPlaceholder` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
+| `ThrowException` | Throws the configured formatting exception or TranslationException. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs)
 
@@ -583,7 +585,7 @@ Enum controlling MessageFormat failures.
 
 ### ITranslationLogger
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
 
 Optional contract for translation diagnostics.
 
@@ -597,18 +599,18 @@ Optional contract for translation diagnostics.
 
 ### TranslationLogLevel
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
 
 Enum severity levels passed to ITranslationLogger.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `Trace = 0` | Most verbose tracing. |
-| `Debug = 1` | Detailed resolution diagnostics. |
-| `Information = 2` | Informational events. |
-| `Warning = 3` | Recoverable issues, including fallback results. |
-| `Error = 4` | Failures that stop normal resolution. |
-| `Critical = 5` | Unrecoverable failures. |
+| `Trace` | Most verbose tracing. |
+| `Debug` | Detailed resolution diagnostics. |
+| `Information` | Informational events. |
+| `Warning` | Recoverable issues, including fallback results. |
+| `Error` | Failures that stop normal resolution. |
+| `Critical` | Unrecoverable failures. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs)
 
@@ -616,7 +618,7 @@ Enum severity levels passed to ITranslationLogger.
 
 ### JsonStoreSettings
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Since: `1.0.0`
 
 Common options inherited by every JSON store options type.
 
@@ -636,7 +638,7 @@ Configure options before creating the store. The store-specific options inherit 
 
 ### JsonFileStoreOptions
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `1.0.0`
 
 Filesystem options, inheriting FallbackCulture, ThrowOnMissingStore, MaxDocumentBytes and FileMappings from JsonStoreSettings.
 
@@ -652,7 +654,7 @@ Filesystem options, inheriting FallbackCulture, ThrowOnMissingStore, MaxDocument
 
 ### EmbeddedJsonStoreOptions
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `1.0.0`
 
 Embedded-resource options, inheriting all JsonStoreSettings properties.
 
@@ -668,7 +670,7 @@ Embedded-resource options, inheriting all JsonStoreSettings properties.
 
 ### HttpJsonStoreOptions
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `1.0.0`
 
 HTTP options, inheriting all JsonStoreSettings properties.
 
@@ -683,7 +685,7 @@ HTTP options, inheriting all JsonStoreSettings properties.
 
 ### JsonTranslationStoreBase
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `abstract class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore` · Since: `1.0.0`
 
 Abstract ITranslationStore implementation with cached JSON lookup, nested keys and culture fallback.
 
@@ -700,7 +702,7 @@ Inherited by JsonFileStore and EmbeddedJsonStore. Its constructor JsonTranslatio
 
 ### JsonFileStore
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonTranslationStoreBase`, `IDisposable` · Since: `1.0.0`
 
 Filesystem JSON store implementing ITranslationStore and IDisposable, inheriting JsonTranslationStoreBase.
 
@@ -719,7 +721,7 @@ Supports culture and namespace files, bounded template caching and optional relo
 
 ### EmbeddedJsonStore
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonTranslationStoreBase` · Since: `1.0.0`
 
 Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.
 
@@ -737,7 +739,7 @@ Loads matching assembly resources during construction. Lookup methods are inheri
 
 ### HttpJsonStore
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore`, `IDisposable` · Since: `1.0.0`
 
 HTTP JSON store implementing ITranslationStore and IDisposable, with preload, lazy loading and refresh.
 
@@ -759,11 +761,13 @@ Supports an optional manifest.json for culture/namespace discovery. The caller o
 
 ### JsonStore
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore`, `IDisposable` · Since: `1.0.0`
+
+> **Deprecated in 1.0.0. Use `JsonFileStore` or `EmbeddedJsonStore` instead.**
 
 Deprecated compatibility wrapper for the original mode-based store.
 
-Obsolete: use JsonFileStore or EmbeddedJsonStore with their dedicated options. The wrapper forwards to the selected store. It copies fallback, mappings, resource and reload settings, but currently does not copy MaxDocumentBytes.
+The wrapper forwards to the selected store. It copies fallback, mappings, resource and reload settings, but currently does not copy MaxDocumentBytes.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
@@ -778,11 +782,13 @@ Obsolete: use JsonFileStore or EmbeddedJsonStore with their dedicated options. T
 
 ### JsonStoreOptions
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `1.0.0`
+
+> **Deprecated in 1.0.0. Use `JsonFileStoreOptions` or `EmbeddedJsonStoreOptions` or `HttpJsonStoreOptions` instead.**
 
 Deprecated options for JsonStore, inheriting all JsonStoreSettings properties.
 
-Obsolete: use JsonFileStoreOptions, EmbeddedJsonStoreOptions or HttpJsonStoreOptions. JsonStore currently ignores inherited MaxDocumentBytes.
+JsonStore currently ignores inherited MaxDocumentBytes.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
@@ -798,14 +804,14 @@ Obsolete: use JsonFileStoreOptions, EmbeddedJsonStoreOptions or HttpJsonStoreOpt
 
 ### JsonStoreLocation
 
-Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json`
+Kind: `enum` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Since: `1.0.0`
 
 Compatibility enum used by deprecated JsonStoreOptions.SearchMode.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `FileSystem = 0` | Filesystem backend; default. Unsupported in browser applications. |
-| `EmbeddedResources = 1` | Embedded-resource backend. |
+| `FileSystem` | Filesystem backend; default. Unsupported in browser applications. |
+| `EmbeddedResources` | Embedded-resource backend. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs)
 
@@ -813,7 +819,7 @@ Compatibility enum used by deprecated JsonStoreOptions.SearchMode.
 
 ### FluentLocalizerServiceCollectionExtensions
 
-Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection`
+Kind: `static class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection` · Since: `1.0.0`
 
 Static extension methods registering FluentLocalizer in IServiceCollection.
 
@@ -830,7 +836,7 @@ Registers ITranslator as a singleton. Register ITranslationStore before resolvin
 
 ### FluentLocalizerBuilder
 
-Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core`
+Kind: `sealed class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core` · Since: `1.0.0`
 
 Mutable registration builder returned by AddFluentLocalizer.
 

@@ -261,7 +261,9 @@ FluentLocalizer is intentionally small and extensible. It focuses on the transla
 
 Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
 
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog.
+Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions, changes and deprecations are marked on each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog and can show any earlier version.
+
+Documented version: `1.0.0`
 
 - [ITranslator](#api-itranslator)
 - [Translator](#api-translator)
@@ -280,7 +282,7 @@ Signatures use C# notation; parameter names, defaults, return values and relevan
 
 ### ITranslator
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Contract for creating translation requests by key.
 
@@ -296,7 +298,7 @@ Implemented by Translator. Each Get call creates a separate mutable builder.
 
 ### Translator
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `ITranslator` · Since: `1.0.0`
 
 Default ITranslator implementation, combining a store, translation policies and optional logging.
 
@@ -313,7 +315,7 @@ The translator can be reused after a culture change. Create a new builder for ea
 
 ### TranslationBuilder
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Mutable fluent request that resolves a template, applies arguments and formats the result.
 
@@ -341,7 +343,7 @@ All With*, Pluralize and Genderize methods return the same builder. Culture is c
 
 ### TranslationOptions
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `sealed class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Policies for missing translations, formatting failures and default arguments.
 
@@ -367,7 +369,7 @@ Fallback strings replace {key} and {0} with the key, and {culture} and {1} with 
 
 ### ITranslationStore
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Storage contract returning raw templates before formatting.
 
@@ -384,7 +386,7 @@ Implementations own their fallback rules. A null result or KeyNotFoundException 
 
 ### TranslationException
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `Exception` · Since: `1.0.0`
 
 Exception carrying the translation key and requested culture. Inherits System.Exception.
 
@@ -402,16 +404,16 @@ Standard Exception members, including Message and InnerException, are inherited 
 
 ### Gender
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum values accepted by Genderize.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `Unspecified = 0` | No explicit gender; supplies unspecified to the template. The default builder value. |
-| `Male = 1` | Supplies male to a select expression. |
-| `Female = 2` | Supplies female to a select expression. |
-| `Neuter = 3` | Supplies neuter to a select expression. |
+| `Unspecified` | No explicit gender; supplies unspecified to the template. The default builder value. |
+| `Male` | Supplies male to a select expression. |
+| `Female` | Supplies female to a select expression. |
+| `Neuter` | Supplies neuter to a select expression. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/Gender.cs)
 
@@ -419,19 +421,19 @@ Enum values accepted by Genderize.
 
 ### LetterCase
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum transformations applied after MessageFormat formatting.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `AsIs = 0` | Preserves the formatted text; default transformation. |
-| `Upper = 1` | Converts text with ToUpperInvariant. |
-| `Lower = 2` | Converts text with ToLowerInvariant. |
-| `CamelCase = 3` | Joins words in camelCase. |
-| `PascalCase = 4` | Joins words in PascalCase. |
-| `SnakeCase = 5` | Joins lowercase words with underscores. |
-| `KebabCase = 6` | Joins lowercase words with hyphens. |
+| `AsIs` | Preserves the formatted text; default transformation. |
+| `Upper` | Converts text with ToUpperInvariant. |
+| `Lower` | Converts text with ToLowerInvariant. |
+| `CamelCase` | Joins words in camelCase. |
+| `PascalCase` | Joins words in PascalCase. |
+| `SnakeCase` | Joins lowercase words with underscores. |
+| `KebabCase` | Joins lowercase words with hyphens. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/LetterCase.cs)
 
@@ -439,15 +441,15 @@ Enum transformations applied after MessageFormat formatting.
 
 ### MissingTranslationBehavior
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum controlling missing-key resolution.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `ReturnPlaceholder = 0` | Returns [key]; default behavior. |
-| `ThrowException = 1` | Throws the configured missing-key exception or TranslationException. |
-| `ReturnConfiguredValue = 2` | Returns MissingKeyFallbackValue after token replacement. |
+| `ReturnPlaceholder` | Returns [key]; default behavior. |
+| `ThrowException` | Throws the configured missing-key exception or TranslationException. |
+| `ReturnConfiguredValue` | Returns MissingKeyFallbackValue after token replacement. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs)
 
@@ -455,14 +457,14 @@ Enum controlling missing-key resolution.
 
 ### FormattingErrorBehavior
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
 
 Enum controlling MessageFormat failures.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `ReturnPlaceholder = 0` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
-| `ThrowException = 1` | Throws the configured formatting exception or TranslationException. |
+| `ReturnPlaceholder` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
+| `ThrowException` | Throws the configured formatting exception or TranslationException. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs)
 
@@ -470,7 +472,7 @@ Enum controlling MessageFormat failures.
 
 ### ITranslationLogger
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
 
 Optional contract for translation diagnostics.
 
@@ -484,18 +486,18 @@ Optional contract for translation diagnostics.
 
 ### TranslationLogLevel
 
-Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
 
 Enum severity levels passed to ITranslationLogger.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `Trace = 0` | Most verbose tracing. |
-| `Debug = 1` | Detailed resolution diagnostics. |
-| `Information = 2` | Informational events. |
-| `Warning = 3` | Recoverable issues, including fallback results. |
-| `Error = 4` | Failures that stop normal resolution. |
-| `Critical = 5` | Unrecoverable failures. |
+| `Trace` | Most verbose tracing. |
+| `Debug` | Detailed resolution diagnostics. |
+| `Information` | Informational events. |
+| `Warning` | Recoverable issues, including fallback results. |
+| `Error` | Failures that stop normal resolution. |
+| `Critical` | Unrecoverable failures. |
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs)
 

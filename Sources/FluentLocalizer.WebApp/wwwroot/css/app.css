@@ -63,6 +63,17 @@
     --cta-bg: var(--lime);
     --cta-text: #4b6145;
     --cta-accent: #537443;
+    --kind-class-bg: #e3f0da;
+    --kind-class-text: #2b5e37;
+    --kind-interface-bg: #e1eaf8;
+    --kind-interface-text: #2c4f86;
+    --kind-enum-bg: #f7ebd6;
+    --kind-enum-text: #7a4f12;
+    --code-keyword: #3953a8;
+    --code-type: #2b6e4a;
+    --code-member: #182333;
+    --code-literal: #9a5a12;
+    --code-punct: #66776d;
 }
 
 :root[data-theme="dark"] {
@@ -96,6 +107,17 @@
     --cta-bg: #2c482e;
     --cta-text: #d1e3d0;
     --cta-accent: var(--lime);
+    --kind-class-bg: #2a4233;
+    --kind-class-text: #c5eaaa;
+    --kind-interface-bg: #24334d;
+    --kind-interface-text: #bcd0f7;
+    --kind-enum-bg: #45371f;
+    --kind-enum-text: #f3d39d;
+    --code-keyword: #a4bcff;
+    --code-type: #b7e39b;
+    --code-member: #ffffff;
+    --code-literal: #f0c48a;
+    --code-punct: #a9bbb0;
 }
 
 /* Content placed on the dark bands uses the ink palette. */

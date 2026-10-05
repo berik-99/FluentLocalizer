@@ -84,6 +84,9 @@
             return window.innerHeight - trigger.bottom < menu && trigger.top > menu;
         },
 
+        // Content rendered after load misses the browser's own jump to the URL fragment.
+        scrollToHash: () => document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ behavior: "instant" }),
+
         // Marks the link of the topmost section crossing the upper part of the viewport.
         watchSections: nav => {
             const links = [...nav.querySelectorAll('a[href*="#"]')];

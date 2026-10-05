@@ -1,70 +1,301 @@
 @page "/docs/api"
+@inject IJSRuntime JS
 
 <PageTitle>@T["Ui:ApiTitle"]</PageTitle>
 
 <section class="docs-hero">
     <div class="shell">
-        <span class="eyebrow">@T["Ui:DocsEyebrow"]</span>
+        <span class="eyebrow">@T["Ui:ApiEyebrow"]</span>
         <h1>@T["Ui:ApiReference"]</h1>
         <p>@T["Ui:ApiDescription"]</p>
+        <dl class="api-stats">
+            <div><dt>@T["Ui:ApiPackages"]</dt><dd>@Packages.Length</dd></div>
+            <div><dt>@T["Ui:ApiTypesStat"]</dt><dd>@AvailableTypes.Length</dd></div>
+            <div><dt>@T["Ui:ApiMembersStat"]</dt><dd>@AvailableTypes.Sum(type => MembersOf(type).Count())</dd></div>
+            <div><dt>@T["Ui:ApiVersion"]</dt><dd>@_version</dd></div>
+        </dl>
     </div>
 </section>
 
 <div class="shell docs-grid api-grid">
     <aside class="docs-sidebar api-sidebar">
-        <NavLink href="docs">@T["Ui:BackToDocs"]</NavLink>
         <nav class="api-index" aria-label="@T["Ui:ApiTypes"]">
-            @foreach (var type in FilteredTypes)
+            @foreach (var package in FilteredTypes.GroupBy(type => type.Package))
             {
-                <a href="@($"docs/api#{type.Id}")">@WrapIdentifier(type.Name)</a>
+                <span class="api-index-package">@WrapIdentifier(package.Key)</span>
+                @foreach (var type in package)
+                {
+                    <a href="@($"docs/api#{type.Id}")" class="@(type.IsDeprecatedIn(_version) ? "is-deprecated" : null)">
+                        <span class="api-glyph api-kind-@type.KindStyle" title="@type.Kind" aria-hidden="true">@char.ToUpperInvariant(type.KindStyle[0])</span>
+                        <span>@WrapIdentifier(type.Name)</span>
+                    </a>
+                }
             }
         </nav>
     </aside>
 
     <article class="docs-content">
-        <div class="api-search">
-            <label for="api-search">@T["Ui:ApiSearch"]</label>
-            <input id="api-search" type="search" @bind="_query" @bind:event="oninput" />
-            <p aria-live="polite">@T.Format("Ui:ApiResults", "quantity", FilteredTypes.Length)</p>
+        <div class="api-toolbar">
+            <label class="sr-only" for="api-search">@T["Ui:ApiSearch"]</label>
+            <input id="api-search" type="search" placeholder="@T["Ui:ApiSearch"]" @bind="_query" @bind:event="oninput" />
+            <div class="api-toolbar-row">
+                <div class="api-version">
+                    <span class="api-version-label" id="api-version-label">@T["Ui:ApiVersion"]</span>
+                    <Dropdown TValue="string" Id="api-version" LabelledBy="api-version-label" Options="VersionOptions" @bind-Value="_version" />
+                </div>
+                <div class="api-filters" role="group" aria-label="@T["Ui:ApiFilterPackages"]">
+                    <button type="button" aria-pressed="@(_package is null ? "true" : "false")" @onclick="() => _package = null">@T["Ui:ApiAllPackages"]</button>
+                    @foreach (var package in Packages)
+                    {
+                        <button type="button" aria-pressed="@(_package == package ? "true" : "false")" @onclick="() => _package = package">@ShortPackage(package)</button>
+                    }
+                </div>
+                <p aria-live="polite">@T.Format("Ui:ApiResults", "quantity", FilteredTypes.Length)</p>
+            </div>
         </div>
+
+        <section class="api-overview" aria-labelledby="api-overview-title">
+            <header>
+                <h2 id="api-overview-title">@T.Format("Ui:ApiOverviewTitle", "version", _version)</h2>
+                <span class="api-release-date">@(Release.Date is { } date ? T.Format("Ui:ApiReleasedOn", "date", date) : T["Ui:ApiNotReleased"])</span>
+            </header>
+            @if (Release.Summary is not null)
+            {
+                <p lang="en">@Release.Summary</p>
+            }
+            @if (_version == ApiReference.FirstVersion)
+            {
+                <p>@T["Ui:ApiInitialRelease"]</p>
+            }
+            @{ var events = ApiReference.EventsIn(_version).ToArray(); }
+            @foreach (var group in events.GroupBy(change => change.Kind).OrderBy(group => group.Key))
+            {
+                <h3><span class="api-event api-event-@group.Key.ToString().ToLowerInvariant()">@T[$"Ui:Api{group.Key}"]</span> <span class="api-count">@group.Count()</span></h3>
+                <ul>
+                    @foreach (var change in group)
+                    {
+                        <li>
+                            @if (change.Type.IsAvailableIn(_version))
+                            {
+                                <a href="@($"docs/api#{change.Type.Id}")"><code>@EventTarget(change)</code></a>
+                            }
+                            else
+                            {
+                                <code>@EventTarget(change)</code>
+                            }
+                            @if (change.Description is not null)
+                            {
+                                <span lang="en"> — @change.Description</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            @if (events.Length == 0 && _version != ApiReference.FirstVersion)
+            {
+                <p>@T["Ui:ApiNoChanges"]</p>
+            }
+        </section>
+
         <p class="api-language">@T["Ui:ApiLanguage"]</p>
 
         @foreach (var package in FilteredTypes.GroupBy(type => type.Package))
         {
-            <section class="docs-section">
-                <h2 class="api-package">@WrapIdentifier(package.Key)</h2>
+            <section class="api-package" aria-labelledby="@($"package-{package.Key}")">
+                <header class="api-package-head">
+                    <span class="eyebrow">@T["Ui:ApiPackage"]</span>
+                    <h2 id="@($"package-{package.Key}")">@WrapIdentifier(package.Key)</h2>
+                    <p>@T[PackageSummaryKey(package.Key)]</p>
+                    <div class="api-install">
+                        <code>dotnet add package @package.Key@(IsPublished ? $" --version {_version}" : "")</code>
+                        <a href="@(SiteLinks.NuGet(package.Key) + (IsPublished ? $"/{_version}" : ""))" target="_blank" rel="noopener noreferrer">NuGet <span aria-hidden="true">↗</span></a>
+                    </div>
+                </header>
+
                 @foreach (var type in package)
                 {
-                    <section id="@type.Id" class="api-type">
-                        <h3>@WrapIdentifier(type.Name)</h3>
-                        <p><code>@WrapIdentifier(type.Namespace)</code></p>
-                        <p lang="en">@type.Summary</p>
+                    var deprecated = type.IsDeprecatedIn(_version);
+                    <article id="@type.Id" class="api-type" aria-labelledby="@($"{type.Id}-title")">
+                        <header class="api-type-head">
+                            <span class="api-kind api-kind-@type.KindStyle">@type.Kind</span>
+                            <h3 id="@($"{type.Id}-title")">@WrapIdentifier(type.Name)</h3>
+                            <span class="api-since">@T.Format("Ui:ApiSince", "version", type.Introduced)</span>
+                            @if (deprecated)
+                            {
+                                <span class="api-deprecated">@T["Ui:ApiDeprecated"]</span>
+                            }
+                            <a class="api-source" href="@($"{SiteLinks.Repository}/blob/main/{type.Source}")" target="_blank" rel="noopener noreferrer">@T["Ui:ApiSource"] <span aria-hidden="true">↗</span></a>
+                        </header>
+
+                        <pre class="api-code api-declaration"><code>@ApiReference.Highlight(type.Declaration, type.Name, declaration: true)</code></pre>
+
+                        <dl class="api-meta">
+                            <div><dt>@T["Ui:ApiPackage"]</dt><dd><code>@type.Package</code></dd></div>
+                            <div><dt>@T["Ui:ApiNamespace"]</dt><dd><code>@type.Namespace</code></dd></div>
+                        </dl>
+
+                        @if (deprecated)
+                        {
+                            @Lifecycle(type)
+                        }
+                        <p class="api-summary" lang="en">@type.Summary</p>
                         @if (type.Remarks is not null)
                         {
-                            <p lang="en">@type.Remarks</p>
+                            <p class="api-remarks" lang="en">@type.Remarks</p>
                         }
-                        <dl class="api-members" lang="en">
-                            @foreach (var member in type.Members)
-                            {
-                                <dt><code>@WrapIdentifier(member.Signature)</code></dt>
-                                <dd>@member.Description</dd>
-                            }
-                        </dl>
-                        <p><a href="@($"{SiteLinks.Repository}/blob/main/{type.Source}")" target="_blank" rel="noopener noreferrer">@T["Ui:ApiSource"]</a></p>
-                    </section>
+                        @History(type)
+
+                        @foreach (var group in MembersOf(type).GroupBy(member => ApiReference.GroupOf(type, member)).OrderBy(group => group.Key))
+                        {
+                            <section class="api-group">
+                                <h4>@T[$"Ui:Api{group.Key}"] <span class="api-count">@group.Count()</span></h4>
+                                @if (group.Key == ApiMemberGroup.Values)
+                                {
+                                    // The value column appears only when the source declares values explicitly.
+                                    var values = group.Select(member => (Member: member, Entry: ApiReference.EnumValue(member))).ToArray();
+                                    var showValues = values.Any(value => value.Entry.Value.Length > 0);
+                                    <table class="api-enum" lang="en">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">@T["Ui:ApiName"]</th>
+                                                @if (showValues)
+                                                {
+                                                    <th scope="col">@T["Ui:ApiValue"]</th>
+                                                }
+                                                <th scope="col">@T["Ui:ApiDetails"]</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var (member, entry) in values)
+                                            {
+                                                <tr>
+                                                    <th scope="row"><code>@entry.Name</code></th>
+                                                    @if (showValues)
+                                                    {
+                                                        <td><code>@entry.Value</code></td>
+                                                    }
+                                                    <td>@MemberBadges(type, member)@member.Description @History(member)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <ul class="api-members" lang="en">
+                                        @foreach (var member in group)
+                                        {
+                                            <li>
+                                                <pre class="api-code"><code>@ApiReference.Highlight(member.Signature, type.Name)</code></pre>
+                                                <p>@MemberBadges(type, member)@member.Description</p>
+                                                @if (member.IsDeprecatedIn(_version))
+                                                {
+                                                    @Lifecycle(member)
+                                                }
+                                                @History(member)
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </section>
+                        }
+                    </article>
                 }
             </section>
         }
         @if (FilteredTypes.Length == 0)
         {
-            <p role="status">@T["Ui:ApiNoResults"]</p>
+            <p class="api-empty" role="status">@T["Ui:ApiNoResults"]</p>
         }
     </article>
 </div>
 
 @code {
     [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+    private static readonly string[] Packages = ApiReference.Types.Select(type => type.Package).Distinct().ToArray();
     private string _query = "";
+    private string? _package;
+    private string _version = ApiReference.LatestRelease;
+
+    private ApiRelease Release => ApiReference.Versions.First(release => release.Version == _version);
+    private bool IsPublished => Release.Date is not null;
+
+    // Newest first; the latest published version and unpublished previews are labelled.
+    private DropdownOption<string>[] VersionOptions => Enumerable.Reverse(ApiReference.Versions).Select(release => new DropdownOption<string>(release.Version,
+        release.Version == ApiReference.LatestRelease ? T.Format("Ui:ApiLatest", "version", release.Version)
+        : release.Date is null ? T.Format("Ui:ApiPreview", "version", release.Version)
+        : release.Version)).ToArray();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+    }
+
+    private RenderFragment MemberBadges(ApiType type, ApiMember member) => __builder =>
+    {
+        var since = member.IntroducedWith(type);
+        if (since != type.Introduced)
+        {
+            <span class="api-since is-new">@T.Format("Ui:ApiSince", "version", since)</span>
+        }
+        if (member.IsDeprecatedIn(_version))
+        {
+            <span class="api-deprecated">@T["Ui:ApiDeprecated"]</span>
+        }
+    };
+
+    // "Deprecated in 1.0.0. Use instead: A, B. Removal planned in 2.0.0."
+    private RenderFragment Lifecycle(ApiEntry entry) => __builder =>
+    {
+        <div class="api-lifecycle">
+            <strong>@T.Format("Ui:ApiDeprecatedIn", "version", entry.DeprecatedIn!)</strong>
+            @if (entry.ReplacedBy.Length > 0)
+            {
+                <span>
+                    @T["Ui:ApiUseInstead"]
+                    @for (var index = 0; index < entry.ReplacedBy.Length; index++)
+                    {
+                        var replacement = entry.ReplacedBy[index];
+                        var target = ApiReference.Types.FirstOrDefault(type => type.Name == replacement.Split('.')[0]);
+                        @(index > 0 ? ", " : " ")
+                        @if (target is not null && target.IsAvailableIn(_version))
+                        {
+                            <a href="@($"docs/api#{target.Id}")"><code>@replacement</code></a>
+                        }
+                        else
+                        {
+                            <code>@replacement</code>
+                        }
+                    }
+                </span>
+            }
+            @if (entry.RemovedIn is { } removed)
+            {
+                <span>@T.Format(ApiVersion.Compare(removed, ApiReference.LatestRelease) <= 0 ? "Ui:ApiRemovedIn" : "Ui:ApiRemovalPlanned", "version", removed)</span>
+            }
+        </div>
+    };
+
+    private RenderFragment History(ApiEntry entry) => __builder =>
+    {
+        var changes = entry.ChangesUpTo(_version).ToArray();
+        if (changes.Length == 0) return;
+        <div class="api-history">
+            <span>@T["Ui:ApiHistory"]</span>
+            <ul lang="en">
+                @foreach (var change in changes)
+                {
+                    <li><code>@change.Version</code> @change.Description</li>
+                }
+            </ul>
+        </div>
+    };
+
+    private IEnumerable<ApiMember> MembersOf(ApiType type) =>
+        type.Members.Where(member => member.IsAvailableIn(_version, member.IntroducedWith(type)));
+
+    private static string EventTarget(ApiEvent change) =>
+        change.Member is null ? change.Type.Name : change.Type.Name + "." + ApiReference.MemberName(change.Member);
 
     // Allow line breaks between words in compound API names, while preserving the visible identifier.
     private static MarkupString WrapIdentifier(string value) => new(
@@ -73,11 +304,24 @@
             @"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=\.)",
             "<wbr>"));
 
-    private ApiType[] FilteredTypes => ApiReference.Types.Where(type =>
-        string.IsNullOrWhiteSpace(_query) ||
+    private static string ShortPackage(string package) => package == "FluentLocalizer" ? "Core" : package["FluentLocalizer.".Length..];
+
+    private static string PackageSummaryKey(string package) => package switch
+    {
+        "FluentLocalizer" => "Ui:ApiPackageCore",
+        "FluentLocalizer.Store.Json" => "Ui:ApiPackageJson",
+        _ => "Ui:ApiPackageDi"
+    };
+
+    private ApiType[] AvailableTypes => ApiReference.Types.Where(type => type.IsAvailableIn(_version)).ToArray();
+
+    private ApiType[] FilteredTypes => AvailableTypes.Where(type =>
+        (_package is null || type.Package == _package) &&
+        (string.IsNullOrWhiteSpace(_query) ||
         type.Name.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        type.Kind.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
         type.Namespace.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
         type.Package.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
-        type.Members.Any(member => member.Signature.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase)))
+        MembersOf(type).Any(member => member.Signature.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase))))
         .ToArray();
 }

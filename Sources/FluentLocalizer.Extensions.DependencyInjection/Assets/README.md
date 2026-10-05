@@ -170,7 +170,9 @@ This package is intentionally lightweight. It wires FluentLocalizer and your cho
 
 Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
 
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog.
+Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions, changes and deprecations are marked on each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog and can show any earlier version.
+
+Documented version: `1.0.0`
 
 - [FluentLocalizerServiceCollectionExtensions](#api-fluentlocalizerservicecollectionextensions)
 - [FluentLocalizerBuilder](#api-fluentlocalizerbuilder)
@@ -179,7 +181,7 @@ Signatures use C# notation; parameter names, defaults, return values and relevan
 
 ### FluentLocalizerServiceCollectionExtensions
 
-Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection`
+Kind: `static class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection` · Since: `1.0.0`
 
 Static extension methods registering FluentLocalizer in IServiceCollection.
 
@@ -196,7 +198,7 @@ Registers ITranslator as a singleton. Register ITranslationStore before resolvin
 
 ### FluentLocalizerBuilder
 
-Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core`
+Kind: `sealed class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core` · Since: `1.0.0`
 
 Mutable registration builder returned by AddFluentLocalizer.
 

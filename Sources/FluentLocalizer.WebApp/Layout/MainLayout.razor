@@ -18,7 +18,7 @@
         <div class="header-actions">
             <Dropdown TValue="string" Id="language-choice" Class="dropdown-ink language-choice" AriaLabel="@T["Ui:Language"]" Options="LanguageOptions" Value="@T.Culture.TwoLetterISOLanguageName" ValueChanged="ChangeLanguageAsync" />
             <Dropdown Id="theme-choice" Class="dropdown-ink theme-choice" AriaLabel="@T["Ui:Theme"]" Options="ThemeOptions" @bind-Value="_theme" @bind-Value:after="ChangeThemeAsync" />
-            <a class="header-github" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer" aria-label="@T["Ui:GitHubLabel"]">GitHub <span aria-hidden="true">↗</span></a>
+            <a class="header-github" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer" aria-label="@T["Ui:SourceCodeLabel"]">@T["Ui:SourceCode"] <span aria-hidden="true">↗</span></a>
         </div>
     </div>
 </header>

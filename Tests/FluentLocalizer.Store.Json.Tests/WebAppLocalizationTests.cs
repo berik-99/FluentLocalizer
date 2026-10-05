@@ -51,7 +51,8 @@ public sealed class WebAppLocalizationTests
         var arguments = new Dictionary<string, object?>
         {
             ["name"] = "Ada", ["package"] = "FluentLocalizer",
-            ["culture"] = "it-IT", ["language"] = "Italiano", ["quantity"] = 25
+            ["culture"] = "it-IT", ["language"] = "Italiano", ["quantity"] = 25,
+            ["version"] = "1.0.0", ["date"] = "2026-10-02"
         };
 
         string[]? expectedKeys = null;
