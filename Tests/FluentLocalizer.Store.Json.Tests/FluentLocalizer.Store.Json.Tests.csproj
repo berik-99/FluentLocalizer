@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Sources\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
     <ProjectReference Include="..\..\Sources\FluentLocalizer.Store.Json\FluentLocalizer.Store.Json.csproj" />
+    <ProjectReference Include="..\..\Sources\FluentLocalizer.Extensions.DependencyInjection\FluentLocalizer.Extensions.DependencyInjection.csproj" Condition="'$(TargetFramework)' == 'net10.0'" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="System.Net.Http" />
@@ -26,5 +27,12 @@
     <Using Include="Xunit" />
     <Compile Include="..\PublicApiReferenceTests.cs" Link="PublicApiReferenceTests.cs" />
     <EmbeddedResource Include="..\..\Docs\api-reference.json" LogicalName="FluentLocalizer.ApiReference.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="..\..\Sources\FluentLocalizer.WebApp\ApiReference.cs" Link="ApiReference.cs" />
+    <Compile Include="..\..\Sources\FluentLocalizer.WebApp\PlaygroundSession.cs" Link="PlaygroundSession.cs" />
+    <Compile Include="..\..\Sources\FluentLocalizer.WebApp\PlaygroundStore.cs" Link="PlaygroundStore.cs" />
+    <EmbeddedResource Include="..\ApiSnapshots\0.0.1.json" LogicalName="FluentLocalizer.ApiSnapshot.0.0.1.json" />
   </ItemGroup>
 </Project>

@@ -10,15 +10,15 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddSingleton<ITranslationStore>(new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
+builder.Services.AddFluentLocalizer().WithStore(_ => new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
 {
     ResourceAssembly = typeof(SiteText).Assembly,
     ResourcesPath = "Locales",
     FallbackCulture = "en",
     ThrowOnMissingStore = true
 }));
-builder.Services.AddSingleton<ITranslator, Translator>();
 builder.Services.AddSingleton<SiteText>();
+builder.Services.AddTransient<PlaygroundSession>();
 
 var host = builder.Build();
 var js = host.Services.GetRequiredService<IJSRuntime>();

@@ -1,6 +1,8 @@
 {
   "Versions": [
-    { "Version": "1.0.0", "Date": "2026-10-02", "Summary": "First stable release of the core, JSON store and dependency injection packages." }
+    {"Version": "0.0.1", "Date": "2026-07-30", "SourceRevision": "2c4a8561c3a27456f23304b24e73bac35e1f0066", "Summary": "First published release: fluent translation requests, logging, dependency injection and the original mode-based JSON store."},
+    {"Version": "0.1.0-alpha", "Date": "2026-09-30", "SourceRevision": "02ba523883111ab7d19a2f594f1a479ee06400a1", "Summary": "Core namespaces moved to FluentLocalizer; mutable translation options and corrected DI registration. Dedicated JSON stores, shared settings, lazy loading, caching and HTTP refresh; the original JSON store and options were deprecated."},
+    {"Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0", "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."}
   ],
   "Types": [
     {
@@ -9,12 +11,18 @@
       "Package": "FluentLocalizer",
       "Kind": "interface",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Interfaces/ITranslator.cs",
       "Summary": "Contract for creating translation requests by key.",
       "Remarks": "Implemented by Translator. Each Get call creates a separate mutable builder.",
       "Members": [
-        { "Signature": "TranslationBuilder Get(string key)", "Description": "key is the translation identifier. Returns a new builder; Translator captures CurrentUICulture at this call. A null key throws ArgumentNullException in Translator; empty keys are forwarded to the store." }
+        {"Signature": "TranslationBuilder Get(string key)", "Description": "key is the translation identifier. Returns a new builder; Translator captures CurrentUICulture at this call. A null key throws ArgumentNullException in Translator; empty keys are forwarded to the store."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -23,13 +31,19 @@
       "Package": "FluentLocalizer",
       "Kind": "class",
       "BaseTypes": ["ITranslator"],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Translator.cs",
       "Summary": "Default ITranslator implementation, combining a store, translation policies and optional logging.",
       "Remarks": "The translator can be reused after a culture change. Create a new builder for each translation; existing builders retain their captured culture.",
       "Members": [
-        { "Signature": "Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)", "Description": "store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store." },
-        { "Signature": "TranslationBuilder Get(string key)", "Description": "Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and MessageFormat formatting. Throws ArgumentNullException for a null key." }
+        {"Signature": "Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)", "Description": "store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store."},
+        {"Signature": "TranslationBuilder Get(string key)", "Description": "Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and MessageFormat formatting. Throws ArgumentNullException for a null key."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -38,24 +52,30 @@
       "Package": "FluentLocalizer",
       "Kind": "class",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/TranslationBuilder.cs",
       "Summary": "Mutable fluent request that resolves a template, applies arguments and formats the result.",
       "Remarks": "All With*, Pluralize and Genderize methods return the same builder. Culture is captured at construction; WithCulture is optional and affects this request only. Do not share one mutable builder between concurrent operations.",
       "Members": [
-        { "Signature": "TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)", "Description": "store and key identify the template and cannot be null (ArgumentNullException). options defaults to a new TranslationOptions, culture to CurrentUICulture at construction and logger to no logging." },
-        { "Signature": "TranslationBuilder WithCulture(CultureInfo culture)", "Description": "culture overrides lookup and MessageFormat formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture." },
-        { "Signature": "TranslationBuilder WithCulture(string cultureName)", "Description": "cultureName is a .NET culture name, such as it-IT. Uses CultureInfo.GetCultureInfo. Throws ArgumentNullException for null and CultureNotFoundException for an unrecognized name." },
-        { "Signature": "TranslationBuilder WithOptions(TranslationOptions options)", "Description": "Replaces this builder's missing-key, formatting and default-argument policies with options. Passing null resets them to a new TranslationOptions despite the non-nullable signature." },
-        { "Signature": "TranslationBuilder WithArg(string name, object? value)", "Description": "Adds or replaces the named argument. Names are case-insensitive; value may be null. Runtime arguments override configured defaults. A null name throws ArgumentNullException." },
-        { "Signature": "TranslationBuilder WithArgs(Dictionary<string, object?> args)", "Description": "Merges args into the runtime arguments using WithArg. Matching names are replaced, case-insensitively. A null dictionary is ignored." },
-        { "Signature": "TranslationBuilder Pluralize(int quantity)", "Description": "Sets the quantity argument to quantity. Equivalent to WithArg(\"quantity\", quantity); the template's plural expression selects the branch." },
-        { "Signature": "TranslationBuilder Genderize(Gender gender)", "Description": "Sets the gender argument to the lowercase enum name (unspecified, male, female or neuter). Equivalent to WithArg with that string; select expressions choose the template branch." },
-        { "Signature": "TranslationBuilder WithCase(LetterCase letterCase)", "Description": "Selects a text transformation applied after formatting. Default is AsIs. Upper and Lower use invariant casing; the other transformations split words before recombining them." },
-        { "Signature": "string Resolve()", "Description": "Synchronously retrieves and formats the template. Returns a message or the configured fallback. Null, empty, whitespace templates and KeyNotFoundException are treated as missing translations. Missing-key or formatting policies may throw; other store errors propagate. HTTP stores require preloading for synchronous lookup." },
-        { "Signature": "Task<string> ResolveAsync(CancellationToken cancellationToken = default)", "Description": "Asynchronously retrieves the template using cancellationToken, then formats it with the builder's captured culture. Returns the message or configured fallback. Resolution policies match Resolve(); store failures and cancellation propagate." },
-        { "Signature": "string ToString()", "Description": "Overrides ToString by calling Resolve(). Performs a synchronous lookup each time and has the same fallback and exception behavior." },
-        { "Signature": "static implicit operator string(TranslationBuilder builder)", "Description": "Converts builder to a string by calling Resolve(). Supports assignments such as string message = translator.Get(\"Welcome\"); performs synchronous resolution." }
+        {"Signature": "TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)", "Description": "store and key identify the template and cannot be null (ArgumentNullException). options defaults to a new TranslationOptions, culture to CurrentUICulture at construction and logger to no logging."},
+        {"Signature": "TranslationBuilder WithCulture(CultureInfo culture)", "Description": "culture overrides lookup and MessageFormat formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture."},
+        {"Signature": "TranslationBuilder WithCulture(string cultureName)", "Description": "cultureName is a .NET culture name, such as it-IT. Uses CultureInfo.GetCultureInfo. Throws ArgumentNullException for null and CultureNotFoundException for an unrecognized name."},
+        {"Signature": "TranslationBuilder WithOptions(TranslationOptions options)", "Description": "Replaces this builder's missing-key, formatting and default-argument policies with options. Passing null resets them to a new TranslationOptions despite the non-nullable signature."},
+        {"Signature": "TranslationBuilder WithArg(string name, object? value)", "Description": "Adds or replaces the named argument. Names are case-insensitive; value may be null. Runtime arguments override configured defaults. A null name throws ArgumentNullException."},
+        {"Signature": "TranslationBuilder WithArgs(Dictionary<string, object?> args)", "Description": "Merges args into the runtime arguments using WithArg. Matching names are replaced, case-insensitively. A null dictionary is ignored."},
+        {"Signature": "TranslationBuilder Pluralize(int quantity)", "Description": "Sets the quantity argument to quantity. Equivalent to WithArg(\"quantity\", quantity); the template's plural expression selects the branch."},
+        {"Signature": "TranslationBuilder Genderize(Gender gender)", "Description": "Sets the gender argument to the lowercase enum name (unspecified, male, female or neuter). Equivalent to WithArg with that string; select expressions choose the template branch."},
+        {"Signature": "TranslationBuilder WithCase(LetterCase letterCase)", "Description": "Selects a text transformation applied after formatting. Default is AsIs. Upper and Lower use invariant casing; the other transformations split words before recombining them."},
+        {"Signature": "string Resolve()", "Description": "Synchronously retrieves and formats the template. Returns a message or the configured fallback. Null, empty, whitespace templates and KeyNotFoundException are treated as missing translations. Missing-key or formatting policies may throw; other store errors propagate. HTTP stores require preloading for synchronous lookup."},
+        {"Signature": "Task<string> ResolveAsync(CancellationToken cancellationToken = default)", "Description": "Asynchronously retrieves the template using cancellationToken, then formats it with the builder's captured culture. Returns the message or configured fallback. Resolution policies match Resolve(); store failures and cancellation propagate."},
+        {"Signature": "string ToString()", "Description": "Overrides ToString by calling Resolve(). Performs a synchronous lookup each time and has the same fallback and exception behavior."},
+        {"Signature": "static implicit operator string(TranslationBuilder builder)", "Description": "Converts builder to a string by calling Resolve(). Supports assignments such as string message = translator.Get(\"Welcome\"); performs synchronous resolution."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -64,22 +84,28 @@
       "Package": "FluentLocalizer",
       "Kind": "sealed class",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/TranslationOptions.cs",
       "Summary": "Policies for missing translations, formatting failures and default arguments.",
       "Remarks": "Fallback strings replace {key} and {0} with the key, and {culture} and {1} with the requested culture name. The builder's default arguments include gender = unspecified and quantity = null.",
       "Members": [
-        { "Signature": "TranslationOptions()", "Description": "Creates mutable options with the defaults listed below." },
-        { "Signature": "MissingTranslationBehavior MissingKeyBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing." },
-        { "Signature": "string MissingKeyFallbackValue { get; set; }", "Description": "Default: [\u007bkey\u007d]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property." },
-        { "Signature": "Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }", "Description": "Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate." },
-        { "Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails." },
-        { "Signature": "string FormattingErrorFallbackValue { get; set; }", "Description": "Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above." },
-        { "Signature": "Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }", "Description": "Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate." },
-        { "Signature": "IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }", "Description": "Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case." },
-        { "Signature": "IReadOnlyDictionary<string, object?> CreateArgumentSet(IReadOnlyDictionary<string, object?>? runtimeArguments)", "Description": "Returns a new case-insensitive dictionary merging DefaultArguments and runtimeArguments. Runtime values win; null inputs are allowed and neither input dictionary is modified." },
-        { "Signature": "Exception CreateMissingKeyException(string key, CultureInfo? culture)", "Description": "Returns the configured factory result or a TranslationException for key and culture. Direct calls do not throw the returned exception. Rejects null, empty or whitespace keys with ArgumentException (ArgumentNullException for null on modern targets); factory failures propagate." },
-        { "Signature": "Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)", "Description": "Returns the configured factory result, or a TranslationException whose message includes innerException.Message when available. The default exception does not attach innerException as InnerException. A null factory result uses CreateMissingKeyException. Key validation and factory failures match CreateMissingKeyException." }
+        {"Signature": "TranslationOptions()", "Description": "Creates mutable options with the defaults listed below.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Description": "Creates options with init-only properties and the defaults listed below."}]},
+        {"Signature": "MissingTranslationBehavior MissingKeyBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "MissingTranslationBehavior MissingKeyBehavior { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "string MissingKeyFallbackValue { get; set; }", "Description": "Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "string MissingKeyFallbackValue { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }", "Description": "Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "string FormattingErrorFallbackValue { get; set; }", "Description": "Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "string FormattingErrorFallbackValue { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }", "Description": "Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }", "Description": "Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "IReadOnlyDictionary<string, object?>? DefaultArguments { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "IReadOnlyDictionary<string, object?> CreateArgumentSet(IReadOnlyDictionary<string, object?>? runtimeArguments)", "Description": "Returns a new case-insensitive dictionary merging DefaultArguments and runtimeArguments. Runtime values win; null inputs are allowed and neither input dictionary is modified."},
+        {"Signature": "Exception CreateMissingKeyException(string key, CultureInfo? culture)", "Description": "Returns the configured factory result or a TranslationException for key and culture. Direct calls do not throw the returned exception. Rejects null, empty or whitespace keys with ArgumentException (ArgumentNullException for null on modern targets); factory failures propagate."},
+        {"Signature": "Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)", "Description": "Returns the configured factory result, or a TranslationException whose message includes innerException.Message when available. The default exception does not attach innerException as InnerException. A null factory result uses CreateMissingKeyException. Key validation and factory failures match CreateMissingKeyException."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -88,13 +114,19 @@
       "Package": "FluentLocalizer",
       "Kind": "interface",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Interfaces/ITranslationStore.cs",
       "Summary": "Storage contract returning raw templates before formatting.",
       "Remarks": "Implementations own their fallback rules. A null result or KeyNotFoundException is treated as a missing translation by TranslationBuilder. Other failures propagate.",
       "Members": [
-        { "Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "key identifies the template; culture selects the translation. Returns the unformatted template or null. Must complete synchronously; cannot rely on asynchronous loading." },
-        { "Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Asynchronous counterpart returning the raw template or null. cancellationToken allows stores performing asynchronous I/O to cancel the operation." }
+        {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "key identifies the template; culture selects the translation. Returns the unformatted template or null. Must complete synchronously; cannot rely on asynchronous loading."},
+        {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Asynchronous counterpart returning the raw template or null. cancellationToken allows stores performing asynchronous I/O to cancel the operation."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -103,14 +135,20 @@
       "Package": "FluentLocalizer",
       "Kind": "class",
       "BaseTypes": ["Exception"],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Exceptions/TranslationException.cs",
       "Summary": "Exception carrying the translation key and requested culture. Inherits System.Exception.",
       "Remarks": "Standard Exception members, including Message and InnerException, are inherited from .NET.",
       "Members": [
-        { "Signature": "TranslationException(string key, CultureInfo? culture, string message, Exception? innerException = null)", "Description": "Creates an exception with the supplied key, optional culture, message and optional innerException. Does not validate the key." },
-        { "Signature": "string Key { get; }", "Description": "The translation key supplied to the constructor." },
-        { "Signature": "CultureInfo? Culture { get; }", "Description": "The requested culture supplied to the constructor; may be null." }
+        {"Signature": "TranslationException(string key, CultureInfo? culture, string message, Exception? innerException = null)", "Description": "Creates an exception with the supplied key, optional culture, message and optional innerException. Does not validate the key."},
+        {"Signature": "string Key { get; }", "Description": "The translation key supplied to the constructor."},
+        {"Signature": "CultureInfo? Culture { get; }", "Description": "The requested culture supplied to the constructor; may be null."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -119,14 +157,20 @@
       "Package": "FluentLocalizer",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/Gender.cs",
       "Summary": "Enum values accepted by Genderize.",
       "Members": [
-        { "Signature": "Unspecified", "Description": "No explicit gender; supplies unspecified to the template. The default builder value." },
-        { "Signature": "Male", "Description": "Supplies male to a select expression." },
-        { "Signature": "Female", "Description": "Supplies female to a select expression." },
-        { "Signature": "Neuter", "Description": "Supplies neuter to a select expression." }
+        {"Signature": "Unspecified", "Description": "No explicit gender; supplies unspecified to the template. The default builder value."},
+        {"Signature": "Male", "Description": "Supplies male to a select expression."},
+        {"Signature": "Female", "Description": "Supplies female to a select expression."},
+        {"Signature": "Neuter", "Description": "Supplies neuter to a select expression."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -135,17 +179,23 @@
       "Package": "FluentLocalizer",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/LetterCase.cs",
       "Summary": "Enum transformations applied after MessageFormat formatting.",
       "Members": [
-        { "Signature": "AsIs", "Description": "Preserves the formatted text; default transformation." },
-        { "Signature": "Upper", "Description": "Converts text with ToUpperInvariant." },
-        { "Signature": "Lower", "Description": "Converts text with ToLowerInvariant." },
-        { "Signature": "CamelCase", "Description": "Joins words in camelCase." },
-        { "Signature": "PascalCase", "Description": "Joins words in PascalCase." },
-        { "Signature": "SnakeCase", "Description": "Joins lowercase words with underscores." },
-        { "Signature": "KebabCase", "Description": "Joins lowercase words with hyphens." }
+        {"Signature": "AsIs", "Description": "Preserves the formatted text; default transformation."},
+        {"Signature": "Upper", "Description": "Converts text with ToUpperInvariant."},
+        {"Signature": "Lower", "Description": "Converts text with ToLowerInvariant."},
+        {"Signature": "CamelCase", "Description": "Joins words in camelCase."},
+        {"Signature": "PascalCase", "Description": "Joins words in PascalCase."},
+        {"Signature": "SnakeCase", "Description": "Joins lowercase words with underscores."},
+        {"Signature": "KebabCase", "Description": "Joins lowercase words with hyphens."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -154,13 +204,19 @@
       "Package": "FluentLocalizer",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs",
       "Summary": "Enum controlling missing-key resolution.",
       "Members": [
-        { "Signature": "ReturnPlaceholder", "Description": "Returns [key]; default behavior." },
-        { "Signature": "ThrowException", "Description": "Throws the configured missing-key exception or TranslationException." },
-        { "Signature": "ReturnConfiguredValue", "Description": "Returns MissingKeyFallbackValue after token replacement." }
+        {"Signature": "ReturnPlaceholder", "Description": "Returns [key]; default behavior."},
+        {"Signature": "ThrowException", "Description": "Throws the configured missing-key exception or TranslationException."},
+        {"Signature": "ReturnConfiguredValue", "Description": "Returns MissingKeyFallbackValue after token replacement."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -169,12 +225,18 @@
       "Package": "FluentLocalizer",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs",
       "Summary": "Enum controlling MessageFormat failures.",
       "Members": [
-        { "Signature": "ReturnPlaceholder", "Description": "Returns FormattingErrorFallbackValue after token replacement; default behavior." },
-        { "Signature": "ThrowException", "Description": "Throws the configured formatting exception or TranslationException." }
+        {"Signature": "ReturnPlaceholder", "Description": "Returns FormattingErrorFallbackValue after token replacement; default behavior."},
+        {"Signature": "ThrowException", "Description": "Throws the configured formatting exception or TranslationException."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -183,11 +245,17 @@
       "Package": "FluentLocalizer",
       "Kind": "interface",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Logging/ITranslationLogger.cs",
       "Summary": "Optional contract for translation diagnostics.",
       "Members": [
-        { "Signature": "void Log(TranslationLogLevel level, string message, Exception? exception = null)", "Description": "Writes message at level, with an optional exception. Implement this interface and pass it to Translator, or use the dependency injection logger adapter." }
+        {"Signature": "void Log(TranslationLogLevel level, string message, Exception? exception = null)", "Description": "Writes message at level, with an optional exception. Implement this interface and pass it to Translator, or use the dependency injection logger adapter."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core.Logging"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core.Logging to FluentLocalizer.Logging; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -196,16 +264,22 @@
       "Package": "FluentLocalizer",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs",
       "Summary": "Enum severity levels passed to ITranslationLogger.",
       "Members": [
-        { "Signature": "Trace", "Description": "Most verbose tracing." },
-        { "Signature": "Debug", "Description": "Detailed resolution diagnostics." },
-        { "Signature": "Information", "Description": "Informational events." },
-        { "Signature": "Warning", "Description": "Recoverable issues, including fallback results." },
-        { "Signature": "Error", "Description": "Failures that stop normal resolution." },
-        { "Signature": "Critical", "Description": "Unrecoverable failures." }
+        {"Signature": "Trace", "Description": "Most verbose tracing."},
+        {"Signature": "Debug", "Description": "Detailed resolution diagnostics."},
+        {"Signature": "Information", "Description": "Informational events."},
+        {"Signature": "Warning", "Description": "Recoverable issues, including fallback results."},
+        {"Signature": "Error", "Description": "Failures that stop normal resolution."},
+        {"Signature": "Critical", "Description": "Unrecoverable failures."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core.Logging"}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Namespace moved from FluentLocalizer.Core.Logging to FluentLocalizer.Logging; update using directives and references to fully qualified types."}
       ]
     },
     {
@@ -214,16 +288,16 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "class",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonStoreSettings.cs",
       "Summary": "Common options inherited by every JSON store options type.",
       "Remarks": "Configure options before creating the store. The store-specific options inherit every property listed here.",
       "Members": [
-        { "Signature": "JsonStoreSettings()", "Description": "Creates shared settings with the defaults below." },
-        { "Signature": "string FallbackCulture { get; set; }", "Description": "Default: en-US. The final fallback culture after the requested culture and its neutral form. Must be a valid .NET culture name." },
-        { "Signature": "bool ThrowOnMissingStore { get; set; }", "Description": "Default: false. Missing translation files may throw FileNotFoundException when true. When false, filesystem and embedded stores skip individual I/O or JSON parse errors; HTTP request failures and invalid HTTP JSON still throw." },
-        { "Signature": "long MaxDocumentBytes { get; set; }", "Description": "Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents may be skipped by file/embedded stores when ThrowOnMissingStore is false; HTTP always rejects them." },
-        { "Signature": "IDictionary<string, string> FileMappings { get; }", "Description": "Mutable, initially empty, case-insensitive mapping from culture names to JSON file names. Add entries through the returned dictionary; the property cannot be replaced. File and HTTP paths are validated as relative JSON paths." }
+        {"Signature": "JsonStoreSettings()", "Description": "Creates shared settings with the defaults below."},
+        {"Signature": "string FallbackCulture { get; set; }", "Description": "Default: en-US. The final fallback culture after the requested culture and its neutral form. Must be a valid .NET culture name."},
+        {"Signature": "bool ThrowOnMissingStore { get; set; }", "Description": "Default: false. Missing translation files may throw FileNotFoundException when true. When false, filesystem and embedded stores skip individual I/O or JSON parse errors; HTTP request failures and invalid HTTP JSON still throw."},
+        {"Signature": "long MaxDocumentBytes { get; set; }", "Description": "Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents may be skipped by file/embedded stores when ThrowOnMissingStore is false; HTTP always rejects them."},
+        {"Signature": "IDictionary<string, string> FileMappings { get; }", "Description": "Mutable, initially empty, case-insensitive mapping from culture names to JSON file names. Add entries through the returned dictionary; the property cannot be replaced. File and HTTP paths are validated as relative JSON paths."}
       ]
     },
     {
@@ -232,13 +306,13 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonStoreSettings"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonFileStoreOptions.cs",
       "Summary": "Filesystem options, inheriting FallbackCulture, ThrowOnMissingStore, MaxDocumentBytes and FileMappings from JsonStoreSettings.",
       "Members": [
-        { "Signature": "JsonFileStoreOptions()", "Description": "Creates filesystem options with all shared defaults." },
-        { "Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Directory scanned recursively for JSON files. Relative paths are resolved against AppContext.BaseDirectory; absolute directory paths are supported." },
-        { "Signature": "bool ReloadOnChange { get; set; }", "Description": "Default: false. Enables a FileSystemWatcher that invalidates cached translations when files change." }
+        {"Signature": "JsonFileStoreOptions()", "Description": "Creates filesystem options with all shared defaults."},
+        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Directory scanned recursively for JSON files. Relative paths are resolved against AppContext.BaseDirectory; absolute directory paths are supported."},
+        {"Signature": "bool ReloadOnChange { get; set; }", "Description": "Default: false. Enables a FileSystemWatcher that invalidates cached translations when files change."}
       ]
     },
     {
@@ -247,13 +321,13 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonStoreSettings"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/EmbeddedJsonStoreOptions.cs",
       "Summary": "Embedded-resource options, inheriting all JsonStoreSettings properties.",
       "Members": [
-        { "Signature": "EmbeddedJsonStoreOptions()", "Description": "Creates embedded-resource options with all shared defaults." },
-        { "Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing the embedded JSON files. When null, uses the entry assembly, then the executing assembly if no entry assembly exists." },
-        { "Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Folder portion of manifest resource names used to select embedded JSON files; not a filesystem path." }
+        {"Signature": "EmbeddedJsonStoreOptions()", "Description": "Creates embedded-resource options with all shared defaults."},
+        {"Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing the embedded JSON files. When null, uses the entry assembly, then the executing assembly if no entry assembly exists."},
+        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Folder portion of manifest resource names used to select embedded JSON files; not a filesystem path."}
       ]
     },
     {
@@ -262,12 +336,12 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonStoreSettings"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/HttpJsonStoreOptions.cs",
       "Summary": "HTTP options, inheriting all JsonStoreSettings properties.",
       "Members": [
-        { "Signature": "HttpJsonStoreOptions()", "Description": "Creates HTTP options with all shared defaults." },
-        { "Signature": "string ResourcesPath { get; set; }", "Description": "Default: locales. Relative URL path under HttpClient.BaseAddress serving JSON catalogs and the optional manifest.json. Absolute URLs, traversal and query/fragment components are rejected." }
+        {"Signature": "HttpJsonStoreOptions()", "Description": "Creates HTTP options with all shared defaults."},
+        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: locales. Relative URL path under HttpClient.BaseAddress serving JSON catalogs and the optional manifest.json. Absolute URLs, traversal and query/fragment components are rejected."}
       ]
     },
     {
@@ -276,13 +350,13 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "abstract class",
       "BaseTypes": ["ITranslationStore"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonTranslationStoreBase.cs",
       "Summary": "Abstract ITranslationStore implementation with cached JSON lookup, nested keys and culture fallback.",
       "Remarks": "Inherited by JsonFileStore and EmbeddedJsonStore. Its constructor JsonTranslationStoreBase(JsonStoreSettings options) is used by derived stores. Protected extension points are Options, ResolveCandidates(CultureInfo), SetDocument(string, string), SetDocument(string, JsonElement), RemoveDocument(string), HasCandidate(CultureInfo), FindTemplate(string, CultureInfo) and ClearTemplateCache().",
       "Members": [
-        { "Signature": "virtual string? GetTemplate(string key, CultureInfo culture)", "Description": "Returns a raw template from cached documents using nested colon-separated key and culture fallback, or null for a missing key. Throws FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true." },
-        { "Signature": "virtual Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Returns Task.FromResult(GetTemplate(key, culture)). File and embedded stores inherit this synchronous implementation; it performs no asynchronous I/O and does not inspect cancellationToken." }
+        {"Signature": "virtual string? GetTemplate(string key, CultureInfo culture)", "Description": "Returns a raw template from cached documents using nested colon-separated key and culture fallback, or null for a missing key. Throws FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true."},
+        {"Signature": "virtual Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Returns Task.FromResult(GetTemplate(key, culture)). File and embedded stores inherit this synchronous implementation; it performs no asynchronous I/O and does not inspect cancellationToken."}
       ]
     },
     {
@@ -291,15 +365,15 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonTranslationStoreBase", "IDisposable"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonFileStore.cs",
       "Summary": "Filesystem JSON store implementing ITranslationStore and IDisposable, inheriting JsonTranslationStoreBase.",
       "Remarks": "Supports culture and namespace files, bounded template caching and optional reload. Unsupported in browser applications. Copy catalog files to build and publish output.",
       "Members": [
-        { "Signature": "JsonFileStore(JsonFileStoreOptions? options = null)", "Description": "options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw." },
-        { "Signature": "override string? GetTemplate(string key, CultureInfo culture)", "Description": "Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. File, path and JSON errors may propagate with ThrowOnMissingStore." },
-        { "Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Inherited from JsonTranslationStoreBase. Wraps synchronous GetTemplate in a completed task; cancellationToken is not inspected." },
-        { "Signature": "void Dispose()", "Description": "Disposes the optional filesystem watcher. Use a using statement for stores owned by the application." }
+        {"Signature": "JsonFileStore(JsonFileStoreOptions? options = null)", "Description": "options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw."},
+        {"Signature": "override string? GetTemplate(string key, CultureInfo culture)", "Description": "Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. File, path and JSON errors may propagate with ThrowOnMissingStore."},
+        {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Inherited from JsonTranslationStoreBase. Wraps synchronous GetTemplate in a completed task; cancellationToken is not inspected."},
+        {"Signature": "void Dispose()", "Description": "Disposes the optional filesystem watcher. Use a using statement for stores owned by the application."}
       ]
     },
     {
@@ -308,14 +382,14 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonTranslationStoreBase"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/EmbeddedJsonStore.cs",
       "Summary": "Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.",
       "Remarks": "Loads matching assembly resources during construction. Lookup methods are inherited; no Dispose method is required.",
       "Members": [
-        { "Signature": "EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)", "Description": "options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false." },
-        { "Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true." },
-        { "Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected." }
+        {"Signature": "EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)", "Description": "options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false."},
+        {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true."},
+        {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected."}
       ]
     },
     {
@@ -324,18 +398,18 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["ITranslationStore", "IDisposable"],
-      "Since": "1.0.0",
+      "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/HttpJsonStore.cs",
       "Summary": "HTTP JSON store implementing ITranslationStore and IDisposable, with preload, lazy loading and refresh.",
       "Remarks": "Supports an optional manifest.json for culture/namespace discovery. The caller owns the supplied HttpClient. HTTP failures, invalid JSON and cancellation propagate independently of ThrowOnMissingStore.",
       "Members": [
-        { "Signature": "HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null)", "Description": "httpClient serves catalogs from its base address; options defaults to a new HttpJsonStoreOptions. Does not fetch files during construction. Throws ArgumentNullException for a null client, ArgumentOutOfRangeException for a negative size limit, and ArgumentException for invalid resource paths or mappings." },
-        { "Signature": "Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Preloads culture and the configured fallback, including namespace files listed in the manifest. Returns when loading completes. culture cannot be null; cancellationToken cancels network/loading operations. Missing required files may throw FileNotFoundException." },
-        { "Signature": "Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)", "Description": "Preloads distinct culture names and the configured fallback. cultures cannot be null; invalid names throw CultureNotFoundException. Includes manifest namespace files. Returns when loading completes and allows cancellation." },
-        { "Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Returns a raw template from already loaded files, with culture fallback, or null. Throws InvalidOperationException when required culture catalogs were not preloaded. A namespace absent from loaded documents returns null; use LoadAsync with a manifest or GetTemplateAsync to load it." },
-        { "Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Loads the required culture, fallback and key-specific namespace on demand, then returns the raw template or null. Null key/culture are rejected. Pass cancellationToken to cancel loading. Missing required files may throw FileNotFoundException." },
-        { "Signature": "Task RefreshStoreAsync(CancellationToken cancellationToken = default)", "Description": "Revalidates the manifest and loaded cultures using ETag/Last-Modified when available, then atomically replaces cached snapshots. A failed refresh preserves the previous snapshot. Returns on completion; cancellation and HTTP/JSON failures propagate." },
-        { "Signature": "void Dispose()", "Description": "Disposes the store's locks and semaphores. Does not dispose the supplied HttpClient." }
+        {"Signature": "HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null)", "Description": "httpClient serves catalogs from its base address; options defaults to a new HttpJsonStoreOptions. Does not fetch files during construction. Throws ArgumentNullException for a null client, ArgumentOutOfRangeException for a negative size limit, and ArgumentException for invalid resource paths or mappings."},
+        {"Signature": "Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Preloads culture and the configured fallback, including namespace files listed in the manifest. Returns when loading completes. culture cannot be null; cancellationToken cancels network/loading operations. Missing required files may throw FileNotFoundException."},
+        {"Signature": "Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)", "Description": "Preloads distinct culture names and the configured fallback. cultures cannot be null; invalid names throw CultureNotFoundException. Includes manifest namespace files. Returns when loading completes and allows cancellation."},
+        {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Returns a raw template from already loaded files, with culture fallback, or null. Throws InvalidOperationException when required culture catalogs were not preloaded. A namespace absent from loaded documents returns null; use LoadAsync with a manifest or GetTemplateAsync to load it."},
+        {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Loads the required culture, fallback and key-specific namespace on demand, then returns the raw template or null. Null key/culture are rejected. Pass cancellationToken to cancel loading. Missing required files may throw FileNotFoundException."},
+        {"Signature": "Task RefreshStoreAsync(CancellationToken cancellationToken = default)", "Description": "Revalidates the manifest and loaded cultures using ETag/Last-Modified when available, then atomically replaces cached snapshots. A failed refresh preserves the previous snapshot. Returns on completion; cancellation and HTTP/JSON failures propagate."},
+        {"Signature": "void Dispose()", "Description": "Disposes the store's locks and semaphores. Does not dispose the supplied HttpClient."}
       ]
     },
     {
@@ -344,17 +418,23 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["ITranslationStore", "IDisposable"],
-      "Since": "1.0.0",
-      "DeprecatedIn": "1.0.0",
+      "Since": "0.0.1",
+      "DeprecatedIn": "0.1.0-alpha",
       "ReplacedBy": ["JsonFileStore", "EmbeddedJsonStore"],
       "Source": "Sources/FluentLocalizer.Store.Json/JsonStore.cs",
       "Summary": "Deprecated compatibility wrapper for the original mode-based store.",
       "Remarks": "The wrapper forwards to the selected store. It copies fallback, mappings, resource and reload settings, but currently does not copy MaxDocumentBytes.",
       "Members": [
-        { "Signature": "JsonStore(JsonStoreOptions? options = null)", "Description": "Creates a wrapper using options or new JsonStoreOptions. SearchMode selects filesystem or embedded resources. Unsupported enum values throw InvalidOperationException; filesystem mode is unsupported in browsers." },
-        { "Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Forwards key and culture to the selected store. Returns its raw template or null; propagates its errors." },
-        { "Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Forwards to the selected store. File and embedded implementations wrap synchronous lookup and do not inspect cancellationToken." },
-        { "Signature": "void Dispose()", "Description": "Disposes the underlying filesystem store's watcher when filesystem mode is selected." }
+        {"Signature": "JsonStore(JsonStoreOptions? options = null)", "Description": "Creates a wrapper using options or new JsonStoreOptions. SearchMode selects filesystem or embedded resources. Unsupported enum values throw InvalidOperationException; filesystem mode is unsupported in browsers."},
+        {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Forwards key and culture to the selected store. Returns its raw template or null; propagates its errors."},
+        {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Forwards to the selected store. File and embedded implementations wrap synchronous lookup and do not inspect cancellationToken."},
+        {"Signature": "void Dispose()", "Description": "Disposes the underlying filesystem store's watcher when filesystem mode is selected."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Summary": "Original JSON store supporting filesystem and embedded-resource modes.", "Remarks": "Loads catalogs eagerly during construction. There are no dedicated JSON stores, namespace catalogs, size limits or HTTP APIs in this release.", "Members": [{"Signature": "JsonStore(JsonStoreOptions? options = null)", "Description": "Loads all JSON documents eagerly from the filesystem or embedded resources using options or new JsonStoreOptions. Starts a filesystem watcher when ReloadOnChange is true. ThrowOnError controls load failures."}, {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Returns a raw template from eagerly loaded documents using exact, neutral and fallback cultures and FileMappings. Colon-separated key segments are trimmed; JSON property names are case-sensitive. Returns null for a missing key; throws FileNotFoundException when no candidate document exists and ThrowOnError is true."}, {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Returns Task.FromResult(GetTemplate(key, culture)); performs synchronous lookup and does not inspect cancellationToken."}, {"Signature": "void Dispose()", "Description": "Disposes the filesystem watcher, if one was created."}]}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Reimplemented as a compatibility wrapper over JsonFileStore or EmbeddedJsonStore and marked obsolete. Uses dedicated-store loading and validation; filesystem mode is rejected in browsers."}
       ]
     },
     {
@@ -363,18 +443,24 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "sealed class",
       "BaseTypes": ["JsonStoreSettings"],
-      "Since": "1.0.0",
-      "DeprecatedIn": "1.0.0",
+      "Since": "0.0.1",
+      "DeprecatedIn": "0.1.0-alpha",
       "ReplacedBy": ["JsonFileStoreOptions", "EmbeddedJsonStoreOptions", "HttpJsonStoreOptions"],
       "Source": "Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs",
       "Summary": "Deprecated options for JsonStore, inheriting all JsonStoreSettings properties.",
       "Remarks": "JsonStore currently ignores inherited MaxDocumentBytes.",
       "Members": [
-        { "Signature": "JsonStoreOptions()", "Description": "Creates compatibility options with all shared defaults." },
-        { "Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Filesystem directory or embedded-resource folder depending on SearchMode." },
-        { "Signature": "JsonStoreLocation SearchMode { get; set; }", "Description": "Default: FileSystem. Selects the compatibility store's backend." },
-        { "Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing catalogs when SearchMode is EmbeddedResources." },
-        { "Signature": "bool ReloadOnChange { get; set; }", "Description": "Default: false. Enables file watching in FileSystem mode." }
+        {"Signature": "JsonStoreOptions()", "Description": "Creates compatibility options with all shared defaults."},
+        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Filesystem directory or embedded-resource folder depending on SearchMode."},
+        {"Signature": "JsonStoreLocation SearchMode { get; set; }", "Description": "Default: FileSystem. Selects the compatibility store's backend."},
+        {"Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing catalogs when SearchMode is EmbeddedResources."},
+        {"Signature": "bool ReloadOnChange { get; set; }", "Description": "Default: false. Enables file watching in FileSystem mode."}
+      ],
+      "EarlierDefinitions": [
+        {"Before": "0.1.0-alpha", "Kind": "class", "BaseTypes": [], "Summary": "Options for the original mode-based JsonStore.", "Remarks": "Independent options class with ThrowOnError; no shared JsonStoreSettings base class or MaxDocumentBytes property.", "Members": [{"Signature": "JsonStoreOptions()", "Description": "Creates the original JSON store options with the defaults below."}, {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Filesystem directory or embedded-resource folder depending on SearchMode."}, {"Signature": "JsonStoreLocation SearchMode { get; set; }", "Description": "Default: FileSystem. Selects filesystem or embedded-resource lookup."}, {"Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing catalogs when SearchMode is EmbeddedResources."}, {"Signature": "bool ReloadOnChange { get; set; }", "Description": "Default: false. Enables file watching in FileSystem mode."}, {"Signature": "string FallbackCulture { get; set; }", "Description": "Default: en-US. Final fallback culture after the exact and neutral cultures."}, {"Signature": "bool ThrowOnError { get; set; }", "Description": "Default: false. Throws on catalog loading errors, no discovered files, or no candidate document for the requested culture."}, {"Signature": "IDictionary<string, string> FileMappings { get; }", "Description": "Initially empty, mutable, case-insensitive culture-to-filename mappings."}]}
+      ],
+      "Changes": [
+        {"Version": "0.1.0-alpha", "Description": "Became sealed, inherited JsonStoreSettings and was marked obsolete. ThrowOnError was replaced by inherited ThrowOnMissingStore; FallbackCulture and FileMappings moved to the base class, which also adds MaxDocumentBytes."}
       ]
     },
     {
@@ -383,12 +469,12 @@
       "Package": "FluentLocalizer.Store.Json",
       "Kind": "enum",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs",
       "Summary": "Compatibility enum used by deprecated JsonStoreOptions.SearchMode.",
       "Members": [
-        { "Signature": "FileSystem", "Description": "Filesystem backend; default. Unsupported in browser applications." },
-        { "Signature": "EmbeddedResources", "Description": "Embedded-resource backend." }
+        {"Signature": "FileSystem", "Description": "Filesystem backend; default. Unsupported in browser applications."},
+        {"Signature": "EmbeddedResources", "Description": "Embedded-resource backend."}
       ]
     },
     {
@@ -397,13 +483,13 @@
       "Package": "FluentLocalizer.Extensions.DependencyInjection",
       "Kind": "static class",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs",
       "Summary": "Static extension methods registering FluentLocalizer in IServiceCollection.",
       "Remarks": "Registers ITranslator as a singleton. Register ITranslationStore before resolving the translator. WithLogger is optional; without a registered ITranslationLogger, translation logging is disabled.",
       "Members": [
-        { "Signature": "static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)", "Description": "services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration." },
-        { "Signature": "static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)", "Description": "Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity." }
+        {"Signature": "static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)", "Description": "services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Description": "Registers a singleton ITranslator and optionally calls Configure. With configure omitted, this release does not register options services itself; applications must register IOptions<TranslationOptions> before resolving ITranslator. Returns a registration builder."}], "Changes": [{"Version": "0.1.0-alpha", "Description": "Always registers options services, including when configure is omitted, and validates services against null."}]},
+        {"Signature": "static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)", "Description": "Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Description": "Delegates to the configure overload, but its callback only reassigns a local parameter: the supplied TranslationOptions instance is not applied in this release. Returns a registration builder."}], "Changes": [{"Version": "0.1.0-alpha", "Description": "Correctly registers the supplied TranslationOptions instance with IOptions; validates null services and options."}]}
       ]
     },
     {
@@ -412,16 +498,16 @@
       "Package": "FluentLocalizer.Extensions.DependencyInjection",
       "Kind": "sealed class",
       "BaseTypes": [],
-      "Since": "1.0.0",
+      "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs",
       "Summary": "Mutable registration builder returned by AddFluentLocalizer.",
       "Remarks": "Despite its namespace, this type belongs to the dependency injection package. WithStore and WithLogger return the same builder. ILoggerAdapter is internal and is not part of the public API.",
       "Members": [
-        { "Signature": "FluentLocalizerBuilder(IServiceCollection services)", "Description": "Wraps services for further registration. Normally created by AddFluentLocalizer; constructing it directly does not register ITranslator." },
-        { "Signature": "IServiceCollection Services { get; }", "Description": "The service collection supplied to the constructor; can be used for additional application registrations." },
-        { "Signature": "FluentLocalizerBuilder WithStore(ITranslationStore store)", "Description": "Registers store as a singleton ITranslationStore. A null store throws ArgumentNullException. The caller owns an externally created disposable instance." },
-        { "Signature": "FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)", "Description": "Registers a singleton store factory. factory receives the service provider on resolution. A null factory throws ArgumentNullException. The DI container owns disposable stores created by the factory." },
-        { "Signature": "FluentLocalizerBuilder WithLogger()", "Description": "Registers a singleton ITranslationLogger adapter using ILogger<Translator>. Configure Microsoft.Extensions.Logging services and providers so ILogger<Translator> can be resolved." }
+        {"Signature": "FluentLocalizerBuilder(IServiceCollection services)", "Description": "Wraps services for further registration. Normally created by AddFluentLocalizer; constructing it directly does not register ITranslator."},
+        {"Signature": "IServiceCollection Services { get; }", "Description": "The service collection supplied to the constructor; can be used for additional application registrations."},
+        {"Signature": "FluentLocalizerBuilder WithStore(ITranslationStore store)", "Description": "Registers store as a singleton ITranslationStore. A null store throws ArgumentNullException. The caller owns an externally created disposable instance.", "Changes": [{"Version": "0.1.0-alpha", "Description": "Removed a duplicate singleton ITranslationStore registration for the supplied instance."}]},
+        {"Signature": "FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)", "Description": "Registers a singleton store factory. factory receives the service provider on resolution. A null factory throws ArgumentNullException. The DI container owns disposable stores created by the factory."},
+        {"Signature": "FluentLocalizerBuilder WithLogger()", "Description": "Registers a singleton ITranslationLogger adapter using ILogger<Translator>. Configure Microsoft.Extensions.Logging services and providers so ILogger<Translator> can be resolved."}
       ]
     }
   ]

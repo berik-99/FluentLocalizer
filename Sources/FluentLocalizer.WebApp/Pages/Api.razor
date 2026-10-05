@@ -123,7 +123,7 @@
                             {
                                 <span class="api-deprecated">@T["Ui:ApiDeprecated"]</span>
                             }
-                            <a class="api-source" href="@($"{SiteLinks.Repository}/blob/main/{type.Source}")" target="_blank" rel="noopener noreferrer">@T["Ui:ApiSource"] <span aria-hidden="true">↗</span></a>
+                            <a class="api-source" href="@($"{SiteLinks.Repository}/blob/{Release.SourceRevision}/{type.Source}")" target="_blank" rel="noopener noreferrer">@T["Ui:ApiSource"] <span aria-hidden="true">↗</span></a>
                         </header>
 
                         <pre class="api-code api-declaration"><code>@ApiReference.Highlight(type.Declaration, type.Name, declaration: true)</code></pre>
@@ -312,7 +312,7 @@
         _ => "Ui:ApiPackageDi"
     };
 
-    private ApiType[] AvailableTypes => ApiReference.Types.Where(type => type.IsAvailableIn(_version)).ToArray();
+    private ApiType[] AvailableTypes => ApiReference.TypesIn(_version);
 
     private ApiType[] FilteredTypes => AvailableTypes.Where(type =>
         (_package is null || type.Package == _package) &&

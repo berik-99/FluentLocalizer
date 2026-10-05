@@ -6,6 +6,8 @@ $catalog = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'api-reference.json
 $tick = [char]96
 # The README documents the newest listed version; APIs removed by then are left out.
 $current = $catalog.Versions[-1].Version
+$sourceRevision = $catalog.Versions[-1].SourceRevision
+if (-not $sourceRevision) { $sourceRevision = 'main' }
 
 function Compare-ApiVersion([string]$Left, [string]$Right) {
     $l = $Left.Split('-', 2); $r = $Right.Split('-', 2)
@@ -98,7 +100,7 @@ foreach ($target in $targets) {
             foreach ($change in $type.Changes) { $lines.Add('- ' + $change.Version + ': ' + $change.Description) }
             $lines.Add('')
         }
-        $source = 'https://github.com/berik-99/FluentLocalizer/blob/main/' + $type.Source
+        $source = 'https://github.com/berik-99/FluentLocalizer/blob/' + $sourceRevision + '/' + $type.Source
         $lines.Add('[Source](' + $source + ')')
         $lines.Add('')
     }

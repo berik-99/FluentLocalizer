@@ -282,7 +282,7 @@ Documented version: `1.0.0`
 
 ### ITranslator
 
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Contract for creating translation requests by key.
 
@@ -292,13 +292,17 @@ Implemented by Translator. Each Get call creates a separate mutable builder.
 | --- | --- |
 | `TranslationBuilder Get(string key)` | key is the translation identifier. Returns a new builder; Translator captures CurrentUICulture at this call. A null key throws ArgumentNullException in Translator; empty keys are forwarded to the store. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Interfaces/ITranslator.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Interfaces/ITranslator.cs)
 
 <a id="api-translator"></a>
 
 ### Translator
 
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `ITranslator` · Since: `1.0.0`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `ITranslator` · Since: `0.0.1`
 
 Default ITranslator implementation, combining a store, translation policies and optional logging.
 
@@ -309,13 +313,17 @@ The translator can be reused after a culture change. Create a new builder for ea
 | `Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)` | store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store. |
 | `TranslationBuilder Get(string key)` | Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and MessageFormat formatting. Throws ArgumentNullException for a null key. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Translator.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Translator.cs)
 
 <a id="api-translationbuilder"></a>
 
 ### TranslationBuilder
 
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Mutable fluent request that resolves a template, applies arguments and formats the result.
 
@@ -337,13 +345,17 @@ All With*, Pluralize and Genderize methods return the same builder. Culture is c
 | `string ToString()` | Overrides ToString by calling Resolve(). Performs a synchronous lookup each time and has the same fallback and exception behavior. |
 | `static implicit operator string(TranslationBuilder builder)` | Converts builder to a string by calling Resolve(). Supports assignments such as string message = translator.Get("Welcome"); performs synchronous resolution. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/TranslationBuilder.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/TranslationBuilder.cs)
 
 <a id="api-translationoptions"></a>
 
 ### TranslationOptions
 
-Kind: `sealed class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `sealed class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Policies for missing translations, formatting failures and default arguments.
 
@@ -352,24 +364,28 @@ Fallback strings replace {key} and {0} with the key, and {culture} and {1} with 
 | Member | Parameters, return value and behavior |
 | --- | --- |
 | `TranslationOptions()` | Creates mutable options with the defaults listed below. |
-| `MissingTranslationBehavior MissingKeyBehavior { get; set; }` | Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing. |
-| `string MissingKeyFallbackValue { get; set; }` | Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property. |
-| `Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }` | Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate. |
-| `FormattingErrorBehavior FormattingErrorBehavior { get; set; }` | Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails. |
-| `string FormattingErrorFallbackValue { get; set; }` | Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above. |
-| `Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }` | Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate. |
-| `IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }` | Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case. |
+| `MissingTranslationBehavior MissingKeyBehavior { get; set; }` | Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `string MissingKeyFallbackValue { get; set; }` | Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }` | Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `FormattingErrorBehavior FormattingErrorBehavior { get; set; }` | Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `string FormattingErrorFallbackValue { get; set; }` | Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }` | Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }` | Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `IReadOnlyDictionary<string, object?> CreateArgumentSet(IReadOnlyDictionary<string, object?>? runtimeArguments)` | Returns a new case-insensitive dictionary merging DefaultArguments and runtimeArguments. Runtime values win; null inputs are allowed and neither input dictionary is modified. |
 | `Exception CreateMissingKeyException(string key, CultureInfo? culture)` | Returns the configured factory result or a TranslationException for key and culture. Direct calls do not throw the returned exception. Rejects null, empty or whitespace keys with ArgumentException (ArgumentNullException for null on modern targets); factory failures propagate. |
 | `Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)` | Returns the configured factory result, or a TranslationException whose message includes innerException.Message when available. The default exception does not attach innerException as InnerException. A null factory result uses CreateMissingKeyException. Key validation and factory failures match CreateMissingKeyException. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/TranslationOptions.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/TranslationOptions.cs)
 
 <a id="api-itranslationstore"></a>
 
 ### ITranslationStore
 
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Storage contract returning raw templates before formatting.
 
@@ -380,13 +396,17 @@ Implementations own their fallback rules. A null result or KeyNotFoundException 
 | `string? GetTemplate(string key, CultureInfo culture)` | key identifies the template; culture selects the translation. Returns the unformatted template or null. Must complete synchronously; cannot rely on asynchronous loading. |
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Asynchronous counterpart returning the raw template or null. cancellationToken allows stores performing asynchronous I/O to cancel the operation. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Interfaces/ITranslationStore.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Interfaces/ITranslationStore.cs)
 
 <a id="api-translationexception"></a>
 
 ### TranslationException
 
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `Exception` · Since: `1.0.0`
+Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `Exception` · Since: `0.0.1`
 
 Exception carrying the translation key and requested culture. Inherits System.Exception.
 
@@ -398,13 +418,17 @@ Standard Exception members, including Message and InnerException, are inherited 
 | `string Key { get; }` | The translation key supplied to the constructor. |
 | `CultureInfo? Culture { get; }` | The requested culture supplied to the constructor; may be null. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Exceptions/TranslationException.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Exceptions/TranslationException.cs)
 
 <a id="api-gender"></a>
 
 ### Gender
 
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Enum values accepted by Genderize.
 
@@ -415,13 +439,17 @@ Enum values accepted by Genderize.
 | `Female` | Supplies female to a select expression. |
 | `Neuter` | Supplies neuter to a select expression. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/Gender.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/Gender.cs)
 
 <a id="api-lettercase"></a>
 
 ### LetterCase
 
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Enum transformations applied after MessageFormat formatting.
 
@@ -435,13 +463,17 @@ Enum transformations applied after MessageFormat formatting.
 | `SnakeCase` | Joins lowercase words with underscores. |
 | `KebabCase` | Joins lowercase words with hyphens. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/LetterCase.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/LetterCase.cs)
 
 <a id="api-missingtranslationbehavior"></a>
 
 ### MissingTranslationBehavior
 
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Enum controlling missing-key resolution.
 
@@ -451,13 +483,17 @@ Enum controlling missing-key resolution.
 | `ThrowException` | Throws the configured missing-key exception or TranslationException. |
 | `ReturnConfiguredValue` | Returns MissingKeyFallbackValue after token replacement. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs)
 
 <a id="api-formattingerrorbehavior"></a>
 
 ### FormattingErrorBehavior
 
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `1.0.0`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
 Enum controlling MessageFormat failures.
 
@@ -466,13 +502,17 @@ Enum controlling MessageFormat failures.
 | `ReturnPlaceholder` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
 | `ThrowException` | Throws the configured formatting exception or TranslationException. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core to FluentLocalizer; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs)
 
 <a id="api-itranslationlogger"></a>
 
 ### ITranslationLogger
 
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
+Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `0.0.1`
 
 Optional contract for translation diagnostics.
 
@@ -480,13 +520,17 @@ Optional contract for translation diagnostics.
 | --- | --- |
 | `void Log(TranslationLogLevel level, string message, Exception? exception = null)` | Writes message at level, with an optional exception. Implement this interface and pass it to Translator, or use the dependency injection logger adapter. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Logging/ITranslationLogger.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core.Logging to FluentLocalizer.Logging; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Logging/ITranslationLogger.cs)
 
 <a id="api-translationloglevel"></a>
 
 ### TranslationLogLevel
 
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `1.0.0`
+Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `0.0.1`
 
 Enum severity levels passed to ITranslationLogger.
 
@@ -499,6 +543,10 @@ Enum severity levels passed to ITranslationLogger.
 | `Error` | Failures that stop normal resolution. |
 | `Critical` | Unrecoverable failures. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs)
+Changes:
+
+- 0.1.0-alpha: Namespace moved from FluentLocalizer.Core.Logging to FluentLocalizer.Logging; update using directives and references to fully qualified types.
+
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs)
 
 <!-- api-reference:end -->

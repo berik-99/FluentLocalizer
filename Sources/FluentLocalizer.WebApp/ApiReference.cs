@@ -19,6 +19,8 @@ internal sealed class ApiRelease
     /// <summary>Release date, or null for a version that is documented but not yet published.</summary>
     public string? Date { get; set; }
     public string? Summary { get; set; }
+    /// <summary>Verified Git revision for links to the implementation shipped in this release.</summary>
+    public string SourceRevision { get; set; } = "main";
 }
 
 internal sealed class ApiChange
@@ -58,10 +60,27 @@ internal sealed class ApiType : ApiEntry
     public string Summary { get; set; } = "";
     public string? Remarks { get; set; }
     public ApiMember[] Members { get; set; } = [];
+    public ApiTypeDefinition[] EarlierDefinitions { get; set; } = [];
     public string Id => "api-" + Name.ToLowerInvariant();
     public string Introduced => Since ?? ApiReference.FirstVersion;
 
     public bool IsAvailableIn(string version) => IsAvailableIn(version, Introduced);
+
+    public ApiType InVersion(string version)
+    {
+        var definition = EarlierDefinitions.FirstOrDefault(entry => ApiVersion.Compare(version, entry.Before) < 0);
+        var result = (ApiType)MemberwiseClone();
+        if (definition is not null)
+        {
+            result.Namespace = definition.Namespace ?? Namespace;
+            result.Kind = definition.Kind ?? Kind;
+            result.BaseTypes = definition.BaseTypes ?? BaseTypes;
+            result.Summary = definition.Summary ?? Summary;
+            result.Remarks = definition.Remarks ?? Remarks;
+        }
+        result.Members = (definition?.Members ?? Members).Select(member => member.InVersion(version)).ToArray();
+        return result;
+    }
 
     /// <summary>The C# declaration line, such as <c>public sealed class JsonFileStore : JsonTranslationStoreBase</c>.</summary>
     public string Declaration => $"public {Kind} {Name}" + (BaseTypes.Length > 0 ? " : " + string.Join(", ", BaseTypes) : "");
@@ -74,8 +93,38 @@ internal sealed class ApiMember : ApiEntry
 {
     public string Signature { get; set; } = "";
     public string Description { get; set; } = "";
+    public ApiMemberDefinition[] EarlierDefinitions { get; set; } = [];
 
     public string IntroducedWith(ApiType type) => Since ?? type.Introduced;
+
+    public ApiMember InVersion(string version)
+    {
+        var definition = EarlierDefinitions.FirstOrDefault(entry => ApiVersion.Compare(version, entry.Before) < 0);
+        if (definition is null) return this;
+        var result = (ApiMember)MemberwiseClone();
+        result.Signature = definition.Signature ?? Signature;
+        result.Description = definition.Description ?? Description;
+        return result;
+    }
+}
+
+/// <summary>Overrides for releases before a breaking declaration or behavior change.</summary>
+internal sealed class ApiTypeDefinition
+{
+    public string Before { get; set; } = "";
+    public string? Namespace { get; set; }
+    public string? Kind { get; set; }
+    public string[]? BaseTypes { get; set; }
+    public string? Summary { get; set; }
+    public string? Remarks { get; set; }
+    public ApiMember[]? Members { get; set; }
+}
+
+internal sealed class ApiMemberDefinition
+{
+    public string Before { get; set; } = "";
+    public string? Signature { get; set; }
+    public string? Description { get; set; }
 }
 
 internal enum ApiMemberGroup { Constructors, Properties, Methods, Operators, Values }
@@ -105,6 +154,9 @@ internal static partial class ApiReference
     public static readonly ApiRelease[] Versions = Catalog.Versions;
     public static readonly ApiType[] Types = Catalog.Types;
     public static readonly string FirstVersion = Versions[0].Version;
+
+    public static ApiType[] TypesIn(string version) => Types.Where(type => type.IsAvailableIn(version))
+        .Select(type => type.InVersion(version)).ToArray();
 
     /// <summary>The newest published version, shown by default; later entries preview upcoming releases.</summary>
     public static readonly string LatestRelease = Versions.LastOrDefault(release => release.Date is not null)?.Version ?? Versions[^1].Version;

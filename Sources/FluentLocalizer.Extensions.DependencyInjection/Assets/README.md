@@ -181,7 +181,7 @@ Documented version: `1.0.0`
 
 ### FluentLocalizerServiceCollectionExtensions
 
-Kind: `static class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection` · Since: `1.0.0`
+Kind: `static class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection` · Since: `0.0.1`
 
 Static extension methods registering FluentLocalizer in IServiceCollection.
 
@@ -189,16 +189,16 @@ Registers ITranslator as a singleton. Register ITranslationStore before resolvin
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
-| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)` | services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration. |
-| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)` | Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity. |
+| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)` | services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration. *Changed in 0.1.0-alpha:* Always registers options services, including when configure is omitted, and validates services against null. |
+| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)` | Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity. *Changed in 0.1.0-alpha:* Correctly registers the supplied TranslationOptions instance with IOptions; validates null services and options. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs)
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs)
 
 <a id="api-fluentlocalizerbuilder"></a>
 
 ### FluentLocalizerBuilder
 
-Kind: `sealed class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core` · Since: `1.0.0`
+Kind: `sealed class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core` · Since: `0.0.1`
 
 Mutable registration builder returned by AddFluentLocalizer.
 
@@ -208,10 +208,10 @@ Despite its namespace, this type belongs to the dependency injection package. Wi
 | --- | --- |
 | `FluentLocalizerBuilder(IServiceCollection services)` | Wraps services for further registration. Normally created by AddFluentLocalizer; constructing it directly does not register ITranslator. |
 | `IServiceCollection Services { get; }` | The service collection supplied to the constructor; can be used for additional application registrations. |
-| `FluentLocalizerBuilder WithStore(ITranslationStore store)` | Registers store as a singleton ITranslationStore. A null store throws ArgumentNullException. The caller owns an externally created disposable instance. |
+| `FluentLocalizerBuilder WithStore(ITranslationStore store)` | Registers store as a singleton ITranslationStore. A null store throws ArgumentNullException. The caller owns an externally created disposable instance. *Changed in 0.1.0-alpha:* Removed a duplicate singleton ITranslationStore registration for the supplied instance. |
 | `FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)` | Registers a singleton store factory. factory receives the service provider on resolution. A null factory throws ArgumentNullException. The DI container owns disposable stores created by the factory. |
 | `FluentLocalizerBuilder WithLogger()` | Registers a singleton ITranslationLogger adapter using ILogger<Translator>. Configure Microsoft.Extensions.Logging services and providers so ILogger<Translator> can be resolved. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/main/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs)
+[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs)
 
 <!-- api-reference:end -->

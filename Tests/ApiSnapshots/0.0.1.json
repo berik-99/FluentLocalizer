@@ -1,0 +1,226 @@
+{
+  "Version": "0.0.1",
+  "SourceRevision": "2c4a8561c3a27456f23304b24e73bac35e1f0066",
+  "Provenance": "Normalized declared public signatures reflected from the net10.0 DLLs in the three published NuGet 0.0.1 packages.",
+  "Types": [
+    {
+      "Name": "FluentLocalizerBuilder",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "sealed class",
+      "BaseTypes": [],
+      "Members": [
+        "FluentLocalizerBuilder WithLogger()",
+        "FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)",
+        "FluentLocalizerBuilder WithStore(ITranslationStore store)",
+        "FluentLocalizerBuilder(IServiceCollection services)",
+        "IServiceCollection Services"
+      ]
+    },
+    {
+      "Name": "FluentLocalizerServiceCollectionExtensions",
+      "Namespace": "Microsoft.Extensions.DependencyInjection",
+      "Kind": "static class",
+      "BaseTypes": [],
+      "Members": [
+        "FluentLocalizerBuilder AddFluentLocalizer(IServiceCollection services, Action<TranslationOptions> configure)",
+        "FluentLocalizerBuilder AddFluentLocalizer(IServiceCollection services, TranslationOptions translationOptions)"
+      ]
+    },
+    {
+      "Name": "FormattingErrorBehavior",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "ReturnPlaceholder",
+        "ThrowException"
+      ]
+    },
+    {
+      "Name": "Gender",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "Female",
+        "Male",
+        "Neuter",
+        "Unspecified"
+      ]
+    },
+    {
+      "Name": "ITranslationLogger",
+      "Namespace": "FluentLocalizer.Core.Logging",
+      "Kind": "interface",
+      "BaseTypes": [],
+      "Members": [
+        "void Log(TranslationLogLevel level, string message, Exception exception)"
+      ]
+    },
+    {
+      "Name": "ITranslationStore",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "interface",
+      "BaseTypes": [],
+      "Members": [
+        "Task<string> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken)",
+        "string GetTemplate(string key, CultureInfo culture)"
+      ]
+    },
+    {
+      "Name": "ITranslator",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "interface",
+      "BaseTypes": [],
+      "Members": [
+        "TranslationBuilder Get(string key)"
+      ]
+    },
+    {
+      "Name": "JsonStore",
+      "Namespace": "FluentLocalizer.Store.Json",
+      "Kind": "sealed class",
+      "BaseTypes": [
+        "IDisposable",
+        "ITranslationStore"
+      ],
+      "Members": [
+        "JsonStore(JsonStoreOptions options)",
+        "Task<string> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken)",
+        "string GetTemplate(string key, CultureInfo culture)",
+        "void Dispose()"
+      ]
+    },
+    {
+      "Name": "JsonStoreLocation",
+      "Namespace": "FluentLocalizer.Store.Json",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "EmbeddedResources",
+        "FileSystem"
+      ]
+    },
+    {
+      "Name": "JsonStoreOptions",
+      "Namespace": "FluentLocalizer.Store.Json",
+      "Kind": "class",
+      "BaseTypes": [],
+      "Members": [
+        "Assembly ResourceAssembly",
+        "IDictionary<string, string> FileMappings",
+        "JsonStoreLocation SearchMode",
+        "JsonStoreOptions()",
+        "bool ReloadOnChange",
+        "bool ThrowOnError",
+        "string FallbackCulture",
+        "string ResourcesPath"
+      ]
+    },
+    {
+      "Name": "LetterCase",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "AsIs",
+        "CamelCase",
+        "KebabCase",
+        "Lower",
+        "PascalCase",
+        "SnakeCase",
+        "Upper"
+      ]
+    },
+    {
+      "Name": "MissingTranslationBehavior",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "ReturnConfiguredValue",
+        "ReturnPlaceholder",
+        "ThrowException"
+      ]
+    },
+    {
+      "Name": "TranslationBuilder",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "class",
+      "BaseTypes": [],
+      "Members": [
+        "Task<string> ResolveAsync(CancellationToken cancellationToken)",
+        "TranslationBuilder Genderize(Gender gender)",
+        "TranslationBuilder Pluralize(int quantity)",
+        "TranslationBuilder WithArg(string name, object value)",
+        "TranslationBuilder WithArgs(Dictionary<string, object> args)",
+        "TranslationBuilder WithCase(LetterCase letterCase)",
+        "TranslationBuilder WithCulture(CultureInfo culture)",
+        "TranslationBuilder WithCulture(string cultureName)",
+        "TranslationBuilder WithOptions(TranslationOptions options)",
+        "TranslationBuilder(ITranslationStore store, string key, TranslationOptions options, CultureInfo culture, ITranslationLogger logger)",
+        "implicit operator string(TranslationBuilder builder)",
+        "string Resolve()",
+        "string ToString()"
+      ]
+    },
+    {
+      "Name": "TranslationException",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "class",
+      "BaseTypes": [
+        "Exception"
+      ],
+      "Members": [
+        "CultureInfo Culture",
+        "TranslationException(string key, CultureInfo culture, string message, Exception innerException)",
+        "string Key"
+      ]
+    },
+    {
+      "Name": "TranslationLogLevel",
+      "Namespace": "FluentLocalizer.Core.Logging",
+      "Kind": "enum",
+      "BaseTypes": [],
+      "Members": [
+        "Critical",
+        "Debug",
+        "Error",
+        "Information",
+        "Trace",
+        "Warning"
+      ]
+    },
+    {
+      "Name": "TranslationOptions",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "sealed class",
+      "BaseTypes": [],
+      "Members": [
+        "Exception CreateFormattingException(string key, CultureInfo culture, Exception innerException)",
+        "Exception CreateMissingKeyException(string key, CultureInfo culture)",
+        "FormattingErrorBehavior FormattingErrorBehavior",
+        "Func<string, CultureInfo, Exception> FormattingErrorExceptionFactory",
+        "Func<string, CultureInfo, Exception> MissingKeyExceptionFactory",
+        "IReadOnlyDictionary<string, object> CreateArgumentSet(IReadOnlyDictionary<string, object> runtimeArguments)",
+        "IReadOnlyDictionary<string, object> DefaultArguments",
+        "MissingTranslationBehavior MissingKeyBehavior",
+        "TranslationOptions()",
+        "string FormattingErrorFallbackValue",
+        "string MissingKeyFallbackValue"
+      ]
+    },
+    {
+      "Name": "Translator",
+      "Namespace": "FluentLocalizer.Core",
+      "Kind": "class",
+      "BaseTypes": [
+        "ITranslator"
+      ],
+      "Members": [
+        "TranslationBuilder Get(string key)",
+        "Translator(ITranslationStore store, TranslationOptions options, ITranslationLogger logger)"
+      ]
+    }
+  ]
+}

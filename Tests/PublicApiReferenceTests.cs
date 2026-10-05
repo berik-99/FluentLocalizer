@@ -37,6 +37,13 @@ public sealed class PublicApiReferenceTests
                 Assert.False(IsRemoved(documentedMember, CurrentVersion(type.Assembly)), $"{type.FullName}.{signature} is marked as removed but still exists");
             }
 
+            var availableSignatures = ActualMembers(type, declaredOnly: false).Select(member => member.Signature).ToHashSet();
+            foreach (var member in members)
+            {
+                if (IsRemoved(member.Value, CurrentVersion(type.Assembly))) continue;
+                Assert.Contains(member.Key, availableSignatures);
+            }
+
             // Enum values are documented only when the source declares them explicitly; when present they must match.
             if (type.IsEnum)
             {
@@ -79,13 +86,30 @@ public sealed class PublicApiReferenceTests
             var name = type.GetProperty("Name").GetString()!;
             Assert.True(type.TryGetProperty("Since", out var since), $"{name} needs Since");
             AssertLifecycle(name, type, since.GetString()!, releases, typeNames);
+            AssertEarlierDefinitions(name, type, since.GetString()!, releases);
             foreach (var member in type.GetProperty("Members").EnumerateArray())
             {
                 var memberName = name + "." + member.GetProperty("Signature").GetString();
                 var memberSince = member.TryGetProperty("Since", out var value) ? value.GetString()! : since.GetString()!;
                 Assert.True(CompareVersions(since.GetString()!, memberSince) <= 0, $"{memberName} cannot predate its type");
                 AssertLifecycle(memberName, member, memberSince, releases, typeNames);
+                AssertEarlierDefinitions(memberName, member, memberSince, releases);
             }
+        }
+    }
+
+    private static void AssertEarlierDefinitions(string name, JsonElement entry, string since, string[] releases)
+    {
+        if (!entry.TryGetProperty("EarlierDefinitions", out var definitions)) return;
+        string? previous = null;
+        foreach (var definition in definitions.EnumerateArray())
+        {
+            var before = definition.GetProperty("Before").GetString()!;
+            Assert.Contains(before, releases);
+            Assert.True(CompareVersions(since, before) < 0, $"{name}: EarlierDefinitions must end after introduction");
+            if (previous is not null)
+                Assert.True(CompareVersions(previous, before) < 0, $"{name}: EarlierDefinitions must be in ascending order");
+            previous = before;
         }
     }
 
@@ -158,9 +182,10 @@ public sealed class PublicApiReferenceTests
         return leftParts.Length == 1 ? 0 : string.CompareOrdinal(leftParts[1], rightParts[1]);
     }
 
-    private static IEnumerable<(string Signature, MemberInfo Member)> ActualMembers(Type type)
+    private static IEnumerable<(string Signature, MemberInfo Member)> ActualMembers(Type type, bool declaredOnly = true)
     {
-        var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+        var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+        if (declaredOnly) flags |= BindingFlags.DeclaredOnly;
         return type.GetConstructors(flags).Select(ctor => (type.Name + Parameters(ctor), (MemberInfo)ctor))
             .Concat(type.GetMethods(flags).Where(method => !method.IsSpecialName || method.Name == "op_Implicit")
                 .Select(method => (method.Name == "op_Implicit"
@@ -207,7 +232,7 @@ public sealed class PublicApiReferenceTests
             : type.Name;
     }
 
-    private static string Normalize(string signature)
+    internal static string Normalize(string signature)
     {
         signature = signature.Replace("?", "");
         signature = Regex.Replace(signature, @"\b(static|virtual|override|this)\s+", "");

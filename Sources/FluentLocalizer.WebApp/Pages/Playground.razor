@@ -2,7 +2,9 @@
 @using System.Globalization
 @using System.Text.RegularExpressions
 @using FluentLocalizer
+@using Microsoft.Extensions.DependencyInjection
 @inject IJSRuntime JS
+@inherits OwningComponentBase
 
 <PageTitle>@T["Ui:PlaygroundTitle"]</PageTitle>
 
@@ -138,8 +140,10 @@
 
     private DropdownOption<string>[] ArgumentTypeOptions => [new("text", T["Ui:Text"]), new("number", T["Ui:Number"])];
 
-    private readonly PlaygroundStore _store = new();
-    private readonly Translator _translator;
+    private PlaygroundSession? _session;
+    private PlaygroundSession Session => _session ??= ScopedServices.GetRequiredService<PlaygroundSession>();
+    private PlaygroundStore _store => Session.Store;
+    private ITranslator _translator => Session.Translator;
     private readonly ElementReference[] _tabs = new ElementReference[Locales.Length];
     private readonly Dictionary<string, string> _templates = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<PlaygroundArgument> _arguments = [];
@@ -152,12 +156,6 @@
     private string? _error;
     private string _activeExample = "plural";
     private CultureInfo? _uiCulture;
-
-    public Playground() => _translator = new Translator(_store, new TranslationOptions
-    {
-        FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
-        MissingKeyBehavior = MissingTranslationBehavior.ThrowException
-    });
 
     private Locale CurrentLocale => Locales.First(locale => locale.Code == _culture);
     private string CurrentTemplate

@@ -14,11 +14,12 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" PrivateAssets="all" />
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
 		<ProjectReference Include="..\FluentLocalizer.Store.Json\FluentLocalizer.Store.Json.csproj" />
+		<ProjectReference Include="..\FluentLocalizer.Extensions.DependencyInjection\FluentLocalizer.Extensions.DependencyInjection.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Include="Locales\*.json" />
-        <EmbeddedResource Include="..\..\Docs\api-reference.json" LogicalName="FluentLocalizer.ApiReference.json" />
+		<EmbeddedResource Include="..\..\Docs\api-reference.json" LogicalName="FluentLocalizer.ApiReference.json" />
 	</ItemGroup>
 
 </Project>
