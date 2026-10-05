@@ -32,6 +32,42 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public async Task Default_culture_is_captured_at_Get_and_overrides_do_not_change_ambient_cultures()
+    {
+        var previousUiCulture = CultureInfo.CurrentUICulture;
+        var previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+            var store = new Store();
+            var translator = new Translator(store);
+            var original = translator.Get("welcome");
+
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("fr-FR");
+            original.Resolve();
+            Assert.Equal("it-IT", store.LastCulture?.Name);
+            await original.ResolveAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("it-IT", store.LastCulture?.Name);
+
+            translator.Get("welcome").Resolve();
+            Assert.Equal("fr-FR", store.LastCulture?.Name);
+            await translator.Get("welcome").ResolveAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("fr-FR", store.LastCulture?.Name);
+
+            translator.Get("welcome").WithCulture("en-US").Resolve();
+            Assert.Equal("en-US", store.LastCulture?.Name);
+            Assert.Equal("fr-FR", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal("de-DE", CultureInfo.CurrentCulture.Name);
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previousUiCulture;
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
+    [Fact]
     public void Uses_requested_culture_for_store_lookup_and_fallback_tokens()
     {
         var store = new Store();

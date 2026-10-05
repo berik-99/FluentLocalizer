@@ -18,6 +18,7 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="Locales\*.json" />
+        <EmbeddedResource Include="..\..\Docs\api-reference.json" LogicalName="FluentLocalizer.ApiReference.json" />
 	</ItemGroup>
 
 </Project>

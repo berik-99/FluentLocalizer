@@ -1,0 +1,83 @@
+@page "/docs/api"
+
+<PageTitle>@T["Ui:ApiTitle"]</PageTitle>
+
+<section class="docs-hero">
+    <div class="shell">
+        <span class="eyebrow">@T["Ui:DocsEyebrow"]</span>
+        <h1>@T["Ui:ApiReference"]</h1>
+        <p>@T["Ui:ApiDescription"]</p>
+    </div>
+</section>
+
+<div class="shell docs-grid api-grid">
+    <aside class="docs-sidebar api-sidebar">
+        <NavLink href="docs">@T["Ui:BackToDocs"]</NavLink>
+        <nav class="api-index" aria-label="@T["Ui:ApiTypes"]">
+            @foreach (var type in FilteredTypes)
+            {
+                <a href="@($"docs/api#{type.Id}")">@WrapIdentifier(type.Name)</a>
+            }
+        </nav>
+    </aside>
+
+    <article class="docs-content">
+        <div class="api-search">
+            <label for="api-search">@T["Ui:ApiSearch"]</label>
+            <input id="api-search" type="search" @bind="_query" @bind:event="oninput" />
+            <p aria-live="polite">@T.Format("Ui:ApiResults", "quantity", FilteredTypes.Length)</p>
+        </div>
+        <p class="api-language">@T["Ui:ApiLanguage"]</p>
+
+        @foreach (var package in FilteredTypes.GroupBy(type => type.Package))
+        {
+            <section class="docs-section">
+                <h2 class="api-package">@WrapIdentifier(package.Key)</h2>
+                @foreach (var type in package)
+                {
+                    <section id="@type.Id" class="api-type">
+                        <h3>@WrapIdentifier(type.Name)</h3>
+                        <p><code>@WrapIdentifier(type.Namespace)</code></p>
+                        <p lang="en">@type.Summary</p>
+                        @if (type.Remarks is not null)
+                        {
+                            <p lang="en">@type.Remarks</p>
+                        }
+                        <dl class="api-members" lang="en">
+                            @foreach (var member in type.Members)
+                            {
+                                <dt><code>@WrapIdentifier(member.Signature)</code></dt>
+                                <dd>@member.Description</dd>
+                            }
+                        </dl>
+                        <p><a href="@($"{SiteLinks.Repository}/blob/main/{type.Source}")" target="_blank" rel="noopener noreferrer">@T["Ui:ApiSource"]</a></p>
+                    </section>
+                }
+            </section>
+        }
+        @if (FilteredTypes.Length == 0)
+        {
+            <p role="status">@T["Ui:ApiNoResults"]</p>
+        }
+    </article>
+</div>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo? SiteCulture { get; set; }
+    private string _query = "";
+
+    // Allow line breaks between words in compound API names, while preserving the visible identifier.
+    private static MarkupString WrapIdentifier(string value) => new(
+        System.Text.RegularExpressions.Regex.Replace(
+            System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value),
+            @"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=\.)",
+            "<wbr>"));
+
+    private ApiType[] FilteredTypes => ApiReference.Types.Where(type =>
+        string.IsNullOrWhiteSpace(_query) ||
+        type.Name.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        type.Namespace.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        type.Package.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        type.Members.Any(member => member.Signature.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase)))
+        .ToArray();
+}

@@ -28,6 +28,10 @@ jobs:
       - name: Restore
         run: dotnet restore FluentLocalizer.slnx
 
+      - name: Check API reference documentation
+        shell: pwsh
+        run: ./Docs/Update-ApiReference.ps1 -Check
+
       - name: Build
         run: dotnet build FluentLocalizer.slnx --configuration Release --no-restore
 

@@ -47,9 +47,9 @@ public sealed class InMemoryStore : ITranslationStore
 var translator = new Translator(new InMemoryStore());</code></pre>
             <p>@T["Ui:ResolveExample"]</p>
             <pre><code>var message = translator.Get("welcome")
-    .WithCulture("it-IT")
     .WithArg("name", "Ada")
     .Resolve();</code></pre>
+            <p>@T["Ui:DefaultCulture"]</p>
             <p>@T["Ui:Use"] <code>ResolveAsync()</code> @T["Ui:AsyncStore"]</p>
         </section>
 
@@ -71,6 +71,17 @@ var translator = new Translator(new InMemoryStore());</code></pre>
     .Pluralize(3)
     .WithCase(LetterCase.AsIs)
     .Resolve();</code></pre>
+            <h3>@T["Ui:CultureSettings"]</h3>
+            <p>@T["Ui:ChangeCulture"]</p>
+            <pre><code>var culture = CultureInfo.GetCultureInfo("it-IT");
+CultureInfo.CurrentUICulture = culture;
+CultureInfo.CurrentCulture = culture;
+
+var message = translator.Get("welcome")
+    .WithArg("name", "Ada")
+    .Resolve();</code></pre>
+            <p>@T["Ui:CultureScope"]</p>
+            <p>@T["Ui:CultureDefaults"]</p>
         </section>
 
         <section id="options" class="docs-section">
@@ -132,6 +143,13 @@ var message = await translator.Get("Home:Welcome")
 }));</code></pre>
         </section>
 
+        <section id="api-reference" class="docs-section">
+            <span class="eyebrow">API</span>
+            <h2>@T["Ui:ApiReference"]</h2>
+            <p>@T["Ui:ApiDescription"]</p>
+            <p><NavLink href="docs/api">@T["Ui:OpenApiReference"]</NavLink></p>
+        </section>
+
         <section id="more-resources" class="docs-section">
             <span class="eyebrow">@T["Ui:NextSteps"]</span>
             <h2>@T["Ui:MoreResources"]</h2>
@@ -153,7 +171,8 @@ var message = await translator.Get("Home:Welcome")
     [
         ("quick-start", T["Ui:QuickStart"]), ("messageformat", T["Ui:MessageFormat"]), ("fluent-api", T["Ui:FluentApiSection"]),
         ("options", T["Ui:OptionsFallback"]), ("json-stores", T["Ui:JsonStoresSection"]),
-        ("dependency-injection", T["Ui:DependencyInjection"]), ("more-resources", T["Ui:MoreResources"])
+        ("dependency-injection", T["Ui:DependencyInjection"]), ("api-reference", T["Ui:ApiReference"]),
+        ("more-resources", T["Ui:MoreResources"])
     ];
 
     private ElementReference _sidebar;

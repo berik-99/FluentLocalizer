@@ -1,0 +1,24 @@
+.api-sidebar { position: static; }
+.docs-sidebar .api-index { display: grid; max-height: none; overflow: visible; }
+.api-grid { overflow-wrap: normal; word-break: normal; }
+.api-index a { white-space: normal; overflow-wrap: normal; }
+.api-search { margin-bottom: 20px; }
+.api-search label { display: block; font-weight: 700; margin-bottom: 8px; }
+.api-search input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+.api-search input:focus-visible { outline: 2px solid var(--field-focus); outline-offset: 3px; }
+.api-search p, .api-language { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+.docs-section h2.api-package { font-size: clamp(20px, 2.5vw, 30px); }
+.api-type { scroll-margin-top: calc(var(--header-height) + 25px); margin: 30px 0 45px; }
+.api-type h3, .api-type code { overflow-wrap: normal; word-break: normal; }
+.api-members { margin: 20px 0; font-size: 14px; }
+.api-members dt { border-top: 1px solid var(--border); padding: 15px 0 8px; }
+.api-members dt code { display: block; font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: normal; }
+.api-members dd { margin: 0; padding-bottom: 15px; color: var(--text-muted); line-height: 1.8; }

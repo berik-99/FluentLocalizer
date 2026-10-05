@@ -12,7 +12,8 @@
         <nav class="main-nav" aria-label="@T["Ui:Navigation"]">
             <NavLink href="" Match="NavLinkMatch.All">@T["Ui:Overview"]</NavLink>
             <NavLink href="playground">@T["Ui:Playground"]</NavLink>
-            <NavLink href="docs">@T["Ui:Docs"]</NavLink>
+            <NavLink href="docs" Match="NavLinkMatch.All">@T["Ui:Docs"]</NavLink>
+            <NavLink href="docs/api">@T["Ui:ApiReference"]</NavLink>
         </nav>
         <div class="header-actions">
             <Dropdown TValue="string" Id="language-choice" Class="dropdown-ink language-choice" AriaLabel="@T["Ui:Language"]" Options="LanguageOptions" Value="@T.Culture.TwoLetterISOLanguageName" ValueChanged="ChangeLanguageAsync" />

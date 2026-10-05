@@ -18,5 +18,9 @@
     <ProjectReference Include="..\..\Sources\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
     <ProjectReference Include="..\..\Sources\FluentLocalizer.Extensions.DependencyInjection\FluentLocalizer.Extensions.DependencyInjection.csproj" />
   </ItemGroup>
-  <ItemGroup><Using Include="Xunit" /></ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Compile Include="..\PublicApiReferenceTests.cs" Link="PublicApiReferenceTests.cs" />
+    <EmbeddedResource Include="..\..\Docs\api-reference.json" LogicalName="FluentLocalizer.ApiReference.json" />
+  </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'Sources/FluentLocalizer.WebApp/**'
+      - 'Docs/api-reference.json'
       - 'Sources/FluentLocalizer.Core/**'
       - 'Sources/FluentLocalizer.Store.Json/**'
       - 'Sources/FluentLocalizer.Shared.Polyfill/**'
