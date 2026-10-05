@@ -28,14 +28,21 @@ internal sealed partial class SiteText
             }
             else
             {
+                var href = match.Groups["href"].Value;
                 builder.OpenElement(5, "a");
-                builder.AddAttribute(6, "href", match.Groups["href"].Value);
-                builder.AddContent(7, match.Groups["label"].Value);
+                builder.AddAttribute(6, "href", href);
+                // External links open in a new tab, like the other outbound links of the site.
+                if (href.StartsWith("https://", StringComparison.Ordinal))
+                {
+                    builder.AddAttribute(7, "target", "_blank");
+                    builder.AddAttribute(8, "rel", "noopener noreferrer");
+                }
+                builder.AddContent(9, match.Groups["label"].Value);
                 builder.CloseElement();
             }
             position = match.Index + match.Length;
         }
-        builder.AddContent(8, text[position..]);
+        builder.AddContent(10, text[position..]);
     };
 
     [GeneratedRegex(@"`(?<code>[^`]+)`|\*(?<em>[^*]+)\*|\[(?<label>[^\]]+)\]\((?<href>[^)\s]+)\)")]

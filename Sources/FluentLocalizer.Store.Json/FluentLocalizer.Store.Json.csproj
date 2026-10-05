@@ -4,7 +4,7 @@
 		<Product>FluentLocalizer.Store.Json</Product>
 		<Version>1.0.0</Version>
 		<Description>JSON translation stores for FluentLocalizer with culture-aware loading from files, embedded resources, or HTTP.</Description>
-		<PackageTags>json;http;localization;translation;store;messageformat;dotnet</PackageTags>
+		<PackageTags>json;http;localization;translation;store;icu;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 

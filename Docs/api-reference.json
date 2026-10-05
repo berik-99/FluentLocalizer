@@ -37,7 +37,7 @@
       "Remarks": "The translator can be reused after a culture change. Create a new builder for each translation; existing builders retain their captured culture.",
       "Members": [
         {"Signature": "Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)", "Description": "store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store."},
-        {"Signature": "TranslationBuilder Get(string key)", "Description": "Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and MessageFormat formatting. Throws ArgumentNullException for a null key."}
+        {"Signature": "TranslationBuilder Get(string key)", "Description": "Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and ICU message formatting. Throws ArgumentNullException for a null key."}
       ],
       "EarlierDefinitions": [
         {"Before": "0.1.0-alpha", "Namespace": "FluentLocalizer.Core"}
@@ -58,7 +58,7 @@
       "Remarks": "All With*, Pluralize and Genderize methods return the same builder. Culture is captured at construction; WithCulture is optional and affects this request only. Do not share one mutable builder between concurrent operations.",
       "Members": [
         {"Signature": "TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)", "Description": "store and key identify the template and cannot be null (ArgumentNullException). options defaults to a new TranslationOptions, culture to CurrentUICulture at construction and logger to no logging."},
-        {"Signature": "TranslationBuilder WithCulture(CultureInfo culture)", "Description": "culture overrides lookup and MessageFormat formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture."},
+        {"Signature": "TranslationBuilder WithCulture(CultureInfo culture)", "Description": "culture overrides lookup and ICU message formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture."},
         {"Signature": "TranslationBuilder WithCulture(string cultureName)", "Description": "cultureName is a .NET culture name, such as it-IT. Uses CultureInfo.GetCultureInfo. Throws ArgumentNullException for null and CultureNotFoundException for an unrecognized name."},
         {"Signature": "TranslationBuilder WithOptions(TranslationOptions options)", "Description": "Replaces this builder's missing-key, formatting and default-argument policies with options. Passing null resets them to a new TranslationOptions despite the non-nullable signature."},
         {"Signature": "TranslationBuilder WithArg(string name, object? value)", "Description": "Adds or replaces the named argument. Names are case-insensitive; value may be null. Runtime arguments override configured defaults. A null name throws ArgumentNullException."},
@@ -93,7 +93,7 @@
         {"Signature": "MissingTranslationBehavior MissingKeyBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "MissingTranslationBehavior MissingKeyBehavior { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
         {"Signature": "string MissingKeyFallbackValue { get; set; }", "Description": "Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "string MissingKeyFallbackValue { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
         {"Signature": "Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }", "Description": "Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
-        {"Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
+        {"Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; set; }", "Description": "Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when a template cannot be parsed or formatted.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "FormattingErrorBehavior FormattingErrorBehavior { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
         {"Signature": "string FormattingErrorFallbackValue { get; set; }", "Description": "Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "string FormattingErrorFallbackValue { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
         {"Signature": "Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }", "Description": "Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
         {"Signature": "IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }", "Description": "Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case.", "EarlierDefinitions": [{"Before": "0.1.0-alpha", "Signature": "IReadOnlyDictionary<string, object?>? DefaultArguments { get; init; }"}], "Changes": [{"Version": "0.1.0-alpha", "Description": "The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment."}]},
@@ -181,7 +181,7 @@
       "BaseTypes": [],
       "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/LetterCase.cs",
-      "Summary": "Enum transformations applied after MessageFormat formatting.",
+      "Summary": "Enum transformations applied after message formatting.",
       "Members": [
         {"Signature": "AsIs", "Description": "Preserves the formatted text; default transformation."},
         {"Signature": "Upper", "Description": "Converts text with ToUpperInvariant."},
@@ -227,7 +227,7 @@
       "BaseTypes": [],
       "Since": "0.0.1",
       "Source": "Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs",
-      "Summary": "Enum controlling MessageFormat failures.",
+      "Summary": "Enum controlling template parsing and formatting failures.",
       "Members": [
         {"Signature": "ReturnPlaceholder", "Description": "Returns FormattingErrorFallbackValue after token replacement; default behavior."},
         {"Signature": "ThrowException", "Description": "Throws the configured formatting exception or TranslationException."}

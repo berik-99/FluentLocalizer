@@ -14,7 +14,7 @@ Install `FluentLocalizer.Extensions.DependencyInjection` separately when you wan
 
 ## Culture selection
 
-`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and MessageFormat formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
+`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and message formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
 
 To change the culture used by new requests and other .NET components in the same execution context:
 

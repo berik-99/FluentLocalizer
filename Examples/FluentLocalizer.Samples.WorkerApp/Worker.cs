@@ -13,7 +13,7 @@ public class Worker(ILogger<Worker> logger, ITranslator translator) : Background
         {
             if (logger.IsEnabled(LogLevel.Information))
             {
-                // Advanced: namespaced JSON, MessageFormat arguments, and live file reload.
+                // Advanced: namespaced JSON, ICU message arguments, and live file reload.
                 var message = await translator.Get("common:Notifications:MessageCount")
                     .WithArg("name", "Anita")
                     .Genderize(Gender.Female)

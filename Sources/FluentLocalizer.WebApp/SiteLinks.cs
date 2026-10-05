@@ -8,6 +8,7 @@ internal static class SiteLinks
     public const string Repository = "https://github.com/berik-99/FluentLocalizer";
     public const string License = Repository + "/blob/main/LICENSE";
     public const string Examples = Repository + "/tree/main/Examples";
+    public const string ThirdPartyNotices = Repository + "/blob/main/THIRD-PARTY-NOTICES.md";
 
     /// <summary>The version of the referenced core package; all packages are released together.</summary>
     public static readonly string PackageVersion = ReadPackageVersion();

@@ -5,7 +5,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.Extensions.DependencyInjection.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer.Extensions.DependencyInjection)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-**FluentLocalizer** is a lightweight, high-performance .NET library designed for resolving culture-aware translation templates using **ICU / MessageFormat** syntax with clean **Fluent APIs**.
+**FluentLocalizer** is a lightweight, high-performance .NET library designed for resolving culture-aware translation templates written in the **[ICU message syntax](https://unicode-org.github.io/icu/userguide/format_parse/messages/)** with clean **Fluent APIs**. Templates are parsed and formatted by [**MessageFormat**](https://github.com/jeffijoe/messageformat.net), the open-source .NET library by Jeff Hansen ([@jeffijoe](https://github.com/jeffijoe)): FluentLocalizer would not exist without it.
 
 Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/). To run the site locally, use `dotnet run --project Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj`. The GitHub Pages workflow publishes the static WebAssembly output from `main`.
 
@@ -13,7 +13,7 @@ Browse the [complete API reference](#api-reference) below or use the searchable 
 
 The WebApp uses FluentLocalizer with `EmbeddedJsonStore` and embedded catalogs in `Sources/FluentLocalizer.WebApp/Locales`. It selects the first supported language from the browser's preferences (English, Italian, French, German, or Spanish), preserves the regional culture for formatting, and falls back to English for unsupported languages or missing translations. The header's language dropdown updates the site without reloading or clearing playground edits and remembers the choice for subsequent visits.
 
-ICU is the Unicode Consortium's internationalization standard for formatting dates, numbers, plurals, and messages in a culture-aware way. In practice, it defines a common set of rules that let the same message be rendered correctly for different languages and regions, for example by changing plural forms (`one`, `few`, `many`, `other`) or by adapting number and date formatting to the current locale. You can read more at the official documentation: https://unicode-org.github.io/icu/.
+ICU is the Unicode Consortium's internationalization standard for formatting dates, numbers, plurals, and messages in a culture-aware way. In practice, it defines a common set of rules that let the same message be rendered correctly for different languages and regions, for example by changing plural forms (`one`, `few`, `many`, `other`) or by adapting number and date formatting to the current locale. The [ICU message formatting guide](https://unicode-org.github.io/icu/userguide/format_parse/messages/) describes the template syntax (placeholders, `plural`, `select` and more); the [MessageFormat documentation](https://github.com/jeffijoe/messageformat.net#readme) lists the ICU features supported in .NET. More about ICU in general: https://unicode-org.github.io/icu/.
 
 Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string builders. FluentLocalizer makes multi-language management, pluralization, gender-aware translations, and missing-key fallback seamless, extensible, and developer-friendly.
 
@@ -22,7 +22,7 @@ Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string
 ## ✨ Features at a Glance
 
 - **Fluent Translation API:** Expressive, readable, and chainable calls for building translation requests.
-- **ICU / MessageFormat Support:** Out-of-the-box support for complex placeholders, pluralization, gender formatting, and casing transformations.
+- **ICU Message Syntax:** Out-of-the-box support for complex placeholders, pluralization, gender formatting, and casing transformations, powered by [MessageFormat](https://github.com/jeffijoe/messageformat.net).
 - **Culture-Aware & Fallbacks:** Robust culture resolution with configurable fallback chains (e.g., `it-IT` → `it` → `en-US`).
 - **Resilient Error Handling:** Fine-grained options for handling missing translation keys and formatting errors.
 - **Extensible Storage (`ITranslationStore`):** Pluggable backend architecture. Use JSON, in-memory stores, or build your own custom provider.
@@ -90,7 +90,7 @@ Console.WriteLine(message); // Output: Hello Ada!
 
 ## Culture selection
 
-`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and MessageFormat formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
+`WithCulture(...)` is optional: `translator.Get(key)` captures `CultureInfo.CurrentUICulture` when the builder is created and uses it for template lookup and message formatting, including `ResolveAsync()`. Use `WithCulture(...)` only to override that culture for one translation; it does not change the application's ambient culture.
 
 To change the culture used by new requests and other .NET components in the same execution context:
 
@@ -346,9 +346,11 @@ Contributions make the open-source community an amazing place to learn, inspire,
 
 ## 🙏 Acknowledgments
 
-FluentLocalizer relies on the powerful [**MessageFormat**](https://github.com/jeffijoe/messageformat.net) library by [@jeffijoe](https://github.com/jeffijoe) for parsing and resolving complex ICU / MessageFormat string templates (pluralization, gender, select formats, and custom functions). 
+FluentLocalizer is built on [**MessageFormat**](https://github.com/jeffijoe/messageformat.net) by Jeff Hansen ([@jeffijoe](https://github.com/jeffijoe)). Every template that FluentLocalizer resolves, from a simple placeholder to nested `plural` and `select` branches, is parsed and formatted by MessageFormat, an implementation of the [ICU message syntax](https://unicode-org.github.io/icu/userguide/format_parse/messages/) for .NET. FluentLocalizer adds the fluent API, culture handling, stores and fallback policies around it.
 
-Huge thanks to the author and maintainers of **MessageFormat** for providing such a solid foundation for .NET localization!
+Huge thanks to Jeff Hansen and the MessageFormat contributors for providing such a solid foundation for .NET localization! If FluentLocalizer is useful to you, consider giving [MessageFormat a star](https://github.com/jeffijoe/messageformat.net) too.
+
+MessageFormat is distributed under the MIT License. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the full notice.
 
 ---
 
@@ -424,7 +426,7 @@ The translator can be reused after a culture change. Create a new builder for ea
 | Member | Parameters, return value and behavior |
 | --- | --- |
 | `Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)` | store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store. |
-| `TranslationBuilder Get(string key)` | Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and MessageFormat formatting. Throws ArgumentNullException for a null key. |
+| `TranslationBuilder Get(string key)` | Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and ICU message formatting. Throws ArgumentNullException for a null key. |
 
 Changes:
 
@@ -445,7 +447,7 @@ All With*, Pluralize and Genderize methods return the same builder. Culture is c
 | Member | Parameters, return value and behavior |
 | --- | --- |
 | `TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)` | store and key identify the template and cannot be null (ArgumentNullException). options defaults to a new TranslationOptions, culture to CurrentUICulture at construction and logger to no logging. |
-| `TranslationBuilder WithCulture(CultureInfo culture)` | culture overrides lookup and MessageFormat formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture. |
+| `TranslationBuilder WithCulture(CultureInfo culture)` | culture overrides lookup and ICU message formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture. |
 | `TranslationBuilder WithCulture(string cultureName)` | cultureName is a .NET culture name, such as it-IT. Uses CultureInfo.GetCultureInfo. Throws ArgumentNullException for null and CultureNotFoundException for an unrecognized name. |
 | `TranslationBuilder WithOptions(TranslationOptions options)` | Replaces this builder's missing-key, formatting and default-argument policies with options. Passing null resets them to a new TranslationOptions despite the non-nullable signature. |
 | `TranslationBuilder WithArg(string name, object? value)` | Adds or replaces the named argument. Names are case-insensitive; value may be null. Runtime arguments override configured defaults. A null name throws ArgumentNullException. |
@@ -480,7 +482,7 @@ Fallback strings replace {key} and {0} with the key, and {culture} and {1} with 
 | `MissingTranslationBehavior MissingKeyBehavior { get; set; }` | Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `string MissingKeyFallbackValue { get; set; }` | Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }` | Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
-| `FormattingErrorBehavior FormattingErrorBehavior { get; set; }` | Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when MessageFormat fails. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
+| `FormattingErrorBehavior FormattingErrorBehavior { get; set; }` | Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when a template cannot be parsed or formatted. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `string FormattingErrorFallbackValue { get; set; }` | Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }` | Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
 | `IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }` | Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case. *Changed in 0.1.0-alpha:* The init-only accessor became a mutable setter, allowing DI configuration callbacks and later assignment. |
@@ -564,7 +566,7 @@ Changes:
 
 Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
-Enum transformations applied after MessageFormat formatting.
+Enum transformations applied after message formatting.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |
@@ -608,7 +610,7 @@ Changes:
 
 Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
 
-Enum controlling MessageFormat failures.
+Enum controlling template parsing and formatting failures.
 
 | Member | Parameters, return value and behavior |
 | --- | --- |

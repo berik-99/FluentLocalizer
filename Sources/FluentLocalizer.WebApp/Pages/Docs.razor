@@ -52,10 +52,10 @@ var translator = new Translator(new InMemoryStore());</code></pre>
             <p>@T.Rich("Ui:AsyncResolve")</p>
         </section>
 
-        <section id="messageformat" class="docs-section">
+        <section id="icu-syntax" class="docs-section">
             <span class="eyebrow">@T["Ui:TemplatesEyebrow", LetterCase.Upper]</span>
             <h2>@T["Ui:Patterns"]</h2>
-            <p>@T["Ui:PatternsDescription"]</p>
+            <p>@T.Rich("Ui:PatternsDescription")</p>
             <div class="docs-patterns"><div><strong>@T["Ui:Placeholder"]</strong><code>Hello, {name}!</code><p>@T.Rich("Ui:InsertArgument")</p></div><div><strong>@T["Ui:Plural"]</strong><code>{quantity, plural, one{# item} other{# items}}</code><p>@T.Rich("Ui:PluralBranch")</p></div><div><strong>@T["Ui:Select"]</strong><code>{gender, select, female{She} male{He} other{They}}</code><p>@T.Rich("Ui:SelectBranch")</p></div></div>
             <p>@T.Rich("Ui:PatternOther")</p>
         </section>
@@ -168,7 +168,7 @@ var message = await translator.Get("Home:Welcome")
 
     private (string Id, string Title)[] Sections =>
     [
-        ("quick-start", T["Ui:QuickStart"]), ("messageformat", T["Ui:MessageFormat"]), ("fluent-api", T["Ui:FluentApiSection"]),
+        ("quick-start", T["Ui:QuickStart"]), ("icu-syntax", T["Ui:IcuSyntax"]), ("fluent-api", T["Ui:FluentApiSection"]),
         ("options", T["Ui:OptionsFallback"]), ("json-stores", T["Ui:JsonStoresSection"]),
         ("dependency-injection", T["Ui:DependencyInjection"]), ("api-reference", T["Ui:ApiReference"]),
         ("more-resources", T["Ui:MoreResources"])
