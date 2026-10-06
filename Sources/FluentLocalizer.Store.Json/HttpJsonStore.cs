@@ -54,6 +54,7 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
 
     /// <summary>
     /// Preloads a culture and its fallback, including namespace files listed in manifest.json when present.
+    /// With a manifest, the files listed for each culture's neutral culture are preloaded too.
     /// </summary>
     public async Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)
     {
@@ -66,6 +67,7 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
 
     /// <summary>
     /// Preloads the requested cultures and fallback, including namespace files listed in manifest.json when present.
+    /// With a manifest, the files listed for each culture's neutral culture are preloaded too.
     /// </summary>
     public async Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)
     {
@@ -365,9 +367,13 @@ public sealed class HttpJsonStore : ITranslationStore, IDisposable
         if (selected is null) return [];
         if (key is null)
         {
-            return [.. manifest.Files.Where(file => JsonStoreCore.CultureFromPath(file)?.Equals(selected, StringComparison.OrdinalIgnoreCase) == true ||
-                (_options.FileMappings.TryGetValue(selected, out var mapped) && file.Equals(mapped.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(static file => file, StringComparer.OrdinalIgnoreCase)];
+            // Keyed lookups also consult the neutral culture's files, so preload the listed ones too.
+            var neutral = CultureInfo.GetCultureInfo(selected).TwoLetterISOLanguageName;
+            string[] preload = neutral.Equals(selected, StringComparison.OrdinalIgnoreCase) ? [selected] : [selected, neutral];
+            return [.. preload.SelectMany(name => manifest.Files.Where(file => JsonStoreCore.CultureFromPath(file)?.Equals(name, StringComparison.OrdinalIgnoreCase) == true ||
+                    (_options.FileMappings.TryGetValue(name, out var mapped) && file.Equals(mapped.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase)))
+                    .OrderBy(static file => file, StringComparer.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)];
         }
 
         return [.. JsonStoreCore.ResolveFileCandidates(CultureInfo.GetCultureInfo(selected), selected, _options.FileMappings, key)

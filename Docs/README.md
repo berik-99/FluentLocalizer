@@ -11,6 +11,8 @@ pwsh -File Docs/Update-ApiReference.ps1 -Check
 
 Keep the generated sections between the `api-reference:start` and `api-reference:end` markers intact. Edit the surrounding guides normally. The reference is in English, matching the package READMEs; WebUI navigation is localized.
 
+For the translated WebApp guides and interface copy, follow [WebApp localization style](WebApp-Localization-Style.md) for tone, terminology and catalog verification.
+
 ## Catalog fields
 
 | Field | Where | Meaning |

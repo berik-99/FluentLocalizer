@@ -221,6 +221,29 @@ public sealed class HttpJsonStoreTests
     }
 
     [Fact]
+    public async Task Manifest_preload_includes_neutral_culture_files_for_sync_lookup()
+    {
+        var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath switch
+        {
+            "/locales/manifest.json" => "[\"it-IT.json\",\"it.json\",\"en-US.json\"]",
+            "/locales/it-IT.json" => "{\"A\":\"itIT\"}",
+            "/locales/it.json" => "{\"N\":\"neutral only\"}",
+            "/locales/en-US.json" => "{\"N\":\"en\",\"A\":\"enA\"}",
+            _ => null
+        })) { ServeManifest = true };
+        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/") };
+        using var store = new HttpJsonStore(client);
+        var culture = CultureInfo.GetCultureInfo("it-IT");
+
+        await store.LoadAsync(culture, TestContext.Current.CancellationToken);
+        Assert.Contains("/locales/it.json", handler.Requests);
+        Assert.Equal("neutral only", store.GetTemplate("N", culture));
+        Assert.Equal("itIT", store.GetTemplate("A", culture));
+        Assert.Equal("neutral only", await store.GetTemplateAsync("N", culture, TestContext.Current.CancellationToken));
+        Assert.Equal(1, handler.Requests.Count(request => request == "/locales/it.json"));
+    }
+
+    [Fact]
     public async Task Without_manifest_a_missing_region_does_not_use_a_sibling_as_fallback()
     {
         var handler = new StubHttpHandler((request, _) => JsonResponse(request.RequestUri!.AbsolutePath.EndsWith("/en-US.json", StringComparison.Ordinal)
