@@ -57,6 +57,8 @@ public sealed class WebAppLocalizationTests
         };
 
         string[]? expectedKeys = null;
+        // Guides link to a versioned documentation set, docs/{scope}/v{major}, so frozen sets keep working.
+        var scopes = new[] { "core", "store-json" };
         var itemResults = new[] { "You have 3 items.", "Hai 3 elementi.", "Vous avez 3 éléments.", "Du hast 3 Elemente.", "Tienes 3 elementos." };
         var index = 0;
         foreach (var language in new[] { "en", "it", "fr", "de", "es" })
@@ -75,6 +77,11 @@ public sealed class WebAppLocalizationTests
             foreach (var (key, template) in entries)
             {
                 Assert.False(string.IsNullOrWhiteSpace(template), $"{language}.json {key} is empty.");
+                foreach (Match link in Regex.Matches(template, @"\]\((?<href>docs[^)]*)\)"))
+                {
+                    var route = Regex.Match(link.Groups["href"].Value, @"^docs/(?<scope>[a-z0-9-]+)/v\d+(/|#|$)");
+                    Assert.True(route.Success && scopes.Contains(route.Groups["scope"].Value), $"{language}.json {key} links to {link.Groups["href"].Value}");
+                }
                 var request = translator.Get(key).WithCulture(language);
                 foreach (var argument in arguments) request.WithArg(argument.Key, argument.Value);
                 // Quoted '{...}' spans are literal MessageFormat text; every other {name} must be a known argument.
@@ -100,7 +107,7 @@ public sealed class WebAppLocalizationTests
         Assert.Equal("POURQUOI FLUENTLOCALIZER", translator.Get("Ui:Why").WithCulture(french).WithCase(LetterCase.Upper).Resolve());
         Assert.Equal("Supprimer l'argument Ada", translator.Get("Ui:RemoveArgument").WithCulture(french).WithArg("name", "Ada").Resolve());
         Assert.Equal("Overview", translator.Get("Ui:Overview").WithCulture("ja-JP").Resolve());
-        Assert.Equal("Introduzione", translator.Get("Docs:Intro:Nav").WithCulture("it-CH").Resolve());
+        Assert.Equal("Introduzione", translator.Get("Docs:CoreV1:Intro:Nav").WithCulture("it-CH").Resolve());
     }
 
     // Every string of a catalog object with its colon-separated key, such as Docs:Templates:Title.

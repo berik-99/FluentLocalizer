@@ -246,7 +246,7 @@ code { font-size: .91em; }
 .brand-accent { color: var(--lime); }
 
 .main-nav { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-muted); }
-.main-nav a { position: relative; padding: 8px 12px; border-radius: var(--radius-sm); transition: color .2s, background-color .2s; }
+.main-nav a { position: relative; white-space: nowrap; padding: 8px 12px; border-radius: var(--radius-sm); transition: color .2s, background-color .2s; }
 .main-nav a::after {
     content: "";
     position: absolute;
@@ -509,6 +509,58 @@ code { font-size: .91em; }
 .header-actions .dropdown-trigger { height: 39px; font-weight: 700; }
 .header-actions .dropdown-menu { left: auto; right: 0; }
 
+/* ---------- Documentation toolbar ---------- */
+
+/* Shared by the guides, the API reference and the changelog, and kept in view while reading. */
+.docs-toolbar {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 2;
+    display: grid;
+    gap: 10px;
+    padding: 12px 0;
+    margin-bottom: 8px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+.docs-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.docs-toolbar p { margin: 0; color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+
+/* Scope tabs: links in the guides and the API reference, buttons in the changelog. */
+.docs-scopes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+}
+.docs-scopes a, .docs-scopes button {
+    padding: 7px 16px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color .2s, color .2s;
+}
+.docs-scopes a:hover, .docs-scopes button:hover { background: var(--surface-hover); color: var(--text); }
+.docs-scopes .is-current { background: var(--surface); color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--field-focus); }
+
+.docs-version { display: flex; align-items: center; gap: 8px; }
+.docs-version-label { color: var(--text-subtle); font-size: 13px; font-weight: 700; }
+.docs-version .dropdown { min-width: 190px; }
+.docs-version .dropdown-menu { left: auto; right: 0; }
+
+@media (max-width: 760px) {
+    .docs-toolbar { position: static; }
+}
+
 /* ---------- Not found ---------- */
 
 .not-found { padding: 110px 0 140px; min-height: 60vh; }
@@ -704,7 +756,8 @@ code { font-size: .91em; }
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 1000px) {
+/* The header moves its links to a second row before brand, links and actions stop fitting on one. */
+@media (max-width: 1240px) {
     :root { --header-height: 96px; }
     .header-inner { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 12px 0 6px; }
     .main-nav { grid-column: 1 / -1; grid-row: 2; justify-content: space-between; margin: 0 -9px; }
@@ -727,7 +780,8 @@ code { font-size: .91em; }
     .brand { font-size: 17px; }
     .brand .brand-logo { width: 28px; height: 28px; }
     .header-actions { grid-column: 1 / -1; grid-row: 2; }
-    .main-nav { grid-row: 3; }
+    /* Five links do not fit one row in every language, so they wrap instead of widening the page. */
+    .main-nav { grid-row: 3; flex-wrap: wrap; justify-content: flex-start; }
     .theme-choice { width: 104px; }
     .footer-inner { display: block; }
     .footer-links { margin-top: 24px; flex-wrap: wrap; gap: 16px 24px; }

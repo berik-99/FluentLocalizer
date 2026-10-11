@@ -1,28 +1,9 @@
-@page "/docs/migration"
 @inherits DocsPageBase
 
 <DocsPage PageKey="@PageKey" Sections="Sections">
-    <DocsSection Id="versions" Title="@T("VersionsTitle")">
-        <p><RichText Text="@T("Versions1")" /></p>
-        <div class="docs-table-wrap">
-            <table class="docs-table">
-                <thead><tr><th>@T("Version")</th><th>@T("Date")</th><th>@T("Changes")</th></tr></thead>
-                <tbody>
-                    <tr><td><code>1.0.0</code></td><td>2026-10-02</td><td><RichText Text="@T("Version100")" /></td></tr>
-                    <tr><td><code>0.1.0-alpha</code></td><td>2026-09-30</td><td><RichText Text="@T("Version010")" /></td></tr>
-                    <tr><td><code>0.0.1</code></td><td>2026-07-30</td><td><RichText Text="@T("Version001")" /></td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p><RichText Text="@T("Versions2")" /></p>
-    </DocsSection>
-
     <DocsSection Id="from-001" Title="@T("From001Title")">
         <p><RichText Text="@T("From0011")" /></p>
-        <h3>@T("NamespacesTitle")</h3>
-        <p><RichText Text="@T("Namespaces")" /></p>
-        <CodeBlock Code="@Namespaces" />
-        <h3>@T("JsonStoreTitle")</h3>
+        <h3 id="json-store">@T("JsonStoreTitle")</h3>
         <p><RichText Text="@T("JsonStore1")" /></p>
         <div class="docs-table-wrap">
             <table class="docs-table">
@@ -38,10 +19,6 @@
             </table>
         </div>
         <CodeBlock Code="@JsonStore" />
-        <h3>@T("OptionsTitle")</h3>
-        <p><RichText Text="@T("Options")" /></p>
-        <h3>@T("InjectionTitle")</h3>
-        <p><RichText Text="@T("Injection")" /></p>
     </DocsSection>
 
     <DocsSection Id="from-http" Title="@T("FromHttpTitle")">
@@ -68,19 +45,9 @@
 
     protected override (string Id, string Title)[] Sections =>
     [
-        ("versions", T("VersionsTitle")), ("from-001", T("From001Title")), ("from-http", T("FromHttpTitle")),
+        ("from-001", T("From001Title")), ("from-http", T("FromHttpTitle")),
         ("deprecated", T("DeprecatedTitle")), ("reference", T("ReferenceTitle"))
     ];
-
-    private const string Namespaces = """
-        // 0.0.1
-        using FluentLocalizer.Core;
-        using FluentLocalizer.Core.Logging;
-
-        // 0.1.0-alpha and later
-        using FluentLocalizer;
-        using FluentLocalizer.Logging;
-        """;
 
     private const string JsonStore = """
         // 0.0.1

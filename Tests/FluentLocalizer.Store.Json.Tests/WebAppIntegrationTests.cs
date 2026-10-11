@@ -36,7 +36,7 @@ public sealed class WebAppIntegrationTests
         using var stream = typeof(WebAppIntegrationTests).Assembly.GetManifestResourceStream("FluentLocalizer.ApiSnapshot.0.0.1.json");
         Assert.NotNull(stream);
         using var snapshot = JsonDocument.Parse(stream);
-        var actual = ApiReference.TypesIn("0.0.1").OrderBy(type => type.Name).ToArray();
+        var actual = ApiReference.Scopes.SelectMany(scope => ApiReference.TypesIn(scope, "0.0.1")).OrderBy(type => type.Name).ToArray();
         var expected = snapshot.RootElement.GetProperty("Types").EnumerateArray().OrderBy(type => type.GetProperty("Name").GetString()).ToArray();
         Assert.Equal(expected.Length, actual.Length);
         for (var index = 0; index < expected.Length; index++)
@@ -56,9 +56,10 @@ public sealed class WebAppIntegrationTests
     [Fact]
     public void History_renders_old_options_and_preserves_latest_definitions()
     {
-        var initial = ApiReference.TypesIn("0.0.1");
-        var stable = ApiReference.TypesIn("1.0.0");
-        var alpha = ApiReference.TypesIn("0.1.0-alpha");
+        ApiType[] TypesIn(string version) => ApiReference.Scopes.SelectMany(scope => ApiReference.TypesIn(scope, version)).ToArray();
+        var initial = TypesIn("0.0.1");
+        var stable = TypesIn("1.0.0");
+        var alpha = TypesIn("0.1.0-alpha");
         Assert.Equal(25, alpha.Length);
         Assert.Equal(alpha.Select(type => type.Declaration), stable.Select(type => type.Declaration));
         Assert.DoesNotContain(initial, type => type.Name == "HttpJsonStore");
@@ -67,10 +68,26 @@ public sealed class WebAppIntegrationTests
         Assert.Contains(initial.Single(type => type.Name == "JsonStoreOptions").Members, member => member.Signature.Contains("ThrowOnError"));
         Assert.DoesNotContain(stable.Single(type => type.Name == "JsonStoreOptions").Members, member => member.Signature.Contains("ThrowOnError"));
         Assert.Contains(alpha, type => type.Name == "JsonStore" && type.IsDeprecatedIn("0.1.0-alpha"));
-        Assert.Equal("1.0.0", ApiReference.LatestRelease);
-        Assert.Equal("0.0.1", ApiReference.FirstVersion);
-        Assert.Empty(ApiReference.EventsIn("1.0.0"));
-        Assert.Equal(8, ApiReference.EventsIn("0.1.0-alpha").Count(change => change.Kind == ApiEventKind.Added && change.Member is null));
+        var core = ApiReference.Scope("core");
+        var json = ApiReference.Scope("store-json");
+        Assert.Equal("1.0.0", core.LatestRelease);
+        Assert.Equal("0.0.1", json.FirstVersion);
+        Assert.Empty(ApiReference.EventsIn(core, "1.0.0"));
+        Assert.DoesNotContain(ApiReference.EventsIn(core, "0.1.0-alpha"), change => change.Kind == ApiEventKind.Added);
+        Assert.Equal(8, ApiReference.EventsIn(json, "0.1.0-alpha").Count(change => change.Kind == ApiEventKind.Added && change.Member is null));
+        Assert.All(ApiReference.EventsIn(json, "0.1.0-alpha"), change => Assert.Equal("FluentLocalizer.Store.Json", change.Type.Package));
+    }
+
+    [Fact]
+    public void Scopes_split_packages_and_version_lines()
+    {
+        Assert.Equal(["core", "store-json"], ApiReference.Scopes.Select(scope => scope.Id));
+        Assert.Equal(["FluentLocalizer", "FluentLocalizer.Extensions.DependencyInjection"], ApiReference.Scope("core").Packages);
+        Assert.All(ApiReference.Types, type => Assert.Contains(type.Package, type.Scope.Packages));
+        Assert.Equal(["0.0.1", "0.1.0-alpha"], ApiReference.Scope("store-json").VersionsOf(0).Select(release => release.Version));
+        Assert.Equal(ApiEventKind.Fixed, ApiReference.Scope("core").Release("0.1.0-alpha").Notes[^1].Kind);
+        Assert.Contains(ApiReference.TypesIn(ApiReference.Scope("store-json"), "1.0.0"), type => type.Name == "JsonFileStore");
+        Assert.DoesNotContain(ApiReference.TypesIn(ApiReference.Scope("core"), "1.0.0"), type => type.Package == "FluentLocalizer.Store.Json");
     }
 }
 #endif

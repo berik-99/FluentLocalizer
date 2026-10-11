@@ -1,0 +1,65 @@
+/* ---------- Hero ---------- */
+
+/* Long single-word titles, such as the German one, break instead of widening phone screens. */
+.docs-hero h1 { hyphens: auto; overflow-wrap: break-word; }
+
+.docs-hero p ::deep code { background: var(--ink-raised); color: var(--lime); border-radius: 4px; padding: 2px 5px; }
+
+/* ---------- Sidebar index ---------- */
+
+.changelog-sidebar { max-height: calc(100vh - var(--header-height) - 56px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.changelog-index { display: grid; gap: 1px; }
+.changelog-index-title { margin: 0 0 7px; color: var(--eyebrow); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.docs-sidebar .changelog-index a { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; font-weight: 700; }
+
+.changelog-language { margin: 12px 0 0; color: var(--text-subtle); font-size: 13px; line-height: 1.7; }
+
+/* ---------- Release ---------- */
+
+.changelog-release {
+    scroll-margin-top: calc(var(--header-height) + 80px);
+    margin-top: 24px;
+    padding: 24px 28px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+.changelog-release:target { border-color: var(--field-focus); box-shadow: 0 0 0 3px var(--field-ring); }
+.changelog-release-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.changelog-release-head h2 { margin: 0; font-family: var(--font-mono); font-size: 24px; }
+.changelog-date { margin-left: auto; color: var(--text-subtle); font-size: 13px; font-weight: 700; }
+.changelog-summary { margin: 14px 0 0; color: var(--text); font-size: 15px; line-height: 1.75; }
+
+.changelog-scope { padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+.changelog-scope-core { background: var(--kind-class-bg); color: var(--kind-class-text); }
+.changelog-scope-store-json { background: var(--kind-interface-bg); color: var(--kind-interface-text); }
+
+.changelog-release h3 { margin: 20px 0 8px; font-size: 13px; }
+.changelog-kind { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.changelog-kind-added { background: var(--kind-class-bg); color: var(--kind-class-text); }
+.changelog-kind-changed { background: var(--kind-interface-bg); color: var(--kind-interface-text); }
+.changelog-kind-deprecated { background: var(--kind-enum-bg); color: var(--kind-enum-text); }
+.changelog-kind-removed { background: var(--danger-bg); color: var(--danger-text); }
+.changelog-kind-fixed { background: var(--tip-bg); color: var(--tip-text); }
+
+.changelog-notes, .changelog-api ul { display: grid; gap: 6px; margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+.changelog-notes ::deep code, .changelog-api code { padding: 1px 5px; border-radius: 4px; background: var(--surface-code); color: var(--accent-text); font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+.changelog-notes ::deep a, .changelog-api a { color: var(--accent-text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+.changelog-api-note { margin: 18px 0 0; color: var(--text-subtle); font-size: 13px; }
+.changelog-api { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
+.changelog-api summary { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; font-weight: 800; cursor: pointer; }
+.changelog-api summary::marker { color: var(--field-focus); }
+.changelog-api h4 { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12px; }
+.changelog-count { padding: 1px 7px; border-radius: 999px; background: var(--surface-muted); color: var(--text-muted); font-size: 11px; font-weight: 700; }
+
+.changelog-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 13px; }
+.changelog-links a { color: var(--accent-text); font-weight: 800; }
+.changelog-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 760px) {
+    .changelog-sidebar { display: none; }
+    .changelog-release { padding: 20px 18px; scroll-margin-top: 20px; }
+    .changelog-date { margin-left: 0; width: 100%; }
+}

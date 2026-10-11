@@ -1,0 +1,174 @@
+@page "/changelog"
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>@Translator.Get("Ui:ChangelogTitle")</PageTitle>
+
+<section class="docs-hero">
+    <div class="shell">
+        <h1>@Translator.Get("Ui:Changelog")</h1>
+        <p><RichText Text="@Translator.Get("Ui:ChangelogDescription")" /></p>
+    </div>
+</section>
+
+<div class="shell docs-grid changelog-grid">
+    <aside class="docs-sidebar changelog-sidebar">
+        <nav class="changelog-index" aria-label="@Translator.Get("Ui:ChangelogReleases")">
+            <span class="changelog-index-title">@Translator.Get("Ui:ChangelogReleases")</span>
+            @foreach (var entry in Entries)
+            {
+                <a href="@($"{CurrentAddress}#{entry.Id}")">
+                    <span class="changelog-scope changelog-scope-@entry.Scope.Id">@ScopeName(entry.Scope)</span>
+                    <span>@entry.Release.Version</span>
+                </a>
+            }
+        </nav>
+    </aside>
+
+    <article class="docs-content">
+        <div class="docs-toolbar">
+            <div class="docs-toolbar-row">
+                <div class="docs-scopes" role="group" aria-label="@Translator.Get("Ui:ChangelogFilter")">
+                    <button type="button" class="@(_scope is null ? "is-current" : null)" aria-pressed="@(_scope is null ? "true" : "false")" @onclick="() => _scope = null">@Translator.Get("Ui:ChangelogAll")</button>
+                    @foreach (var scope in ApiReference.Scopes)
+                    {
+                        <button type="button" class="@(_scope == scope.Id ? "is-current" : null)" aria-pressed="@(_scope == scope.Id ? "true" : "false")" @onclick="() => _scope = scope.Id">@ScopeName(scope)</button>
+                    }
+                </div>
+                <p aria-live="polite">@Translator.Get("Ui:ChangelogResults").Pluralize(Entries.Length)</p>
+            </div>
+        </div>
+
+        <p class="changelog-language">@Translator.Get("Ui:ChangelogLanguage")</p>
+
+        @foreach (var entry in Entries)
+        {
+            var release = entry.Release;
+            var set = DocsSets.ForVersion(entry.Scope.Id, release.Version);
+            var events = ApiReference.EventsIn(entry.Scope, release.Version).ToArray();
+            <article id="@entry.Id" class="changelog-release" aria-labelledby="@($"{entry.Id}-title")">
+                <header class="changelog-release-head">
+                    <span class="changelog-scope changelog-scope-@entry.Scope.Id">@ScopeName(entry.Scope)</span>
+                    <h2 id="@($"{entry.Id}-title")">@release.Version</h2>
+                    <span class="changelog-date">@(release.Date is { } date ? Translator.Get("Ui:ApiReleasedOn").WithArg("date", date) : Translator.Get("Ui:ApiNotReleased"))</span>
+                </header>
+                @if (release.Summary is not null)
+                {
+                    <p class="changelog-summary" lang="en">@release.Summary</p>
+                }
+
+                @foreach (var group in release.Notes.GroupBy(note => note.Kind).OrderBy(group => group.Key))
+                {
+                    <h3><span class="changelog-kind changelog-kind-@group.Key.ToString().ToLowerInvariant()">@Translator.Get($"Ui:Api{group.Key}")</span></h3>
+                    <ul class="changelog-notes" lang="en">
+                        @foreach (var note in group)
+                        {
+                            <li><RichText Text="@note.Text" /></li>
+                        }
+                    </ul>
+                }
+
+                @if (release.Version == entry.Scope.FirstVersion)
+                {
+                    <p class="changelog-api-note">@Translator.Get("Ui:ChangelogInitial")</p>
+                }
+                else if (events.Length == 0)
+                {
+                    <p class="changelog-api-note">@Translator.Get("Ui:ApiNoChanges")</p>
+                }
+                else
+                {
+                    <details class="changelog-api">
+                        <summary>@Translator.Get("Ui:ChangelogApiChanges") <span class="changelog-count">@events.Length</span></summary>
+                        @foreach (var group in events.GroupBy(change => change.Kind).OrderBy(group => group.Key))
+                        {
+                            <h4><span class="changelog-kind changelog-kind-@group.Key.ToString().ToLowerInvariant()">@Translator.Get($"Ui:Api{group.Key}")</span> <span class="changelog-count">@group.Count()</span></h4>
+                            <ul lang="en">
+                                @foreach (var change in group)
+                                {
+                                    <li>
+                                        @if (change.Type.IsAvailableIn(release.Version))
+                                        {
+                                            <a href="@DocsSets.ApiLink(change.Type, release.Version)"><code>@EventTarget(change)</code></a>
+                                        }
+                                        else
+                                        {
+                                            <code>@EventTarget(change)</code>
+                                        }
+                                        @if (change.Description is not null)
+                                        {
+                                            <span> — @change.Description</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </details>
+                }
+
+                <footer class="changelog-links">
+                    @if (!set.IsExperimental)
+                    {
+                        <a href="@set.Route">@Translator.Get("Ui:ChangelogGuides").WithArg("version", set.Version) <span aria-hidden="true">→</span></a>
+                    }
+                    <a href="@ApiAddress(set, release)">@Translator.Get("Ui:ChangelogApi").WithArg("version", release.Version) <span aria-hidden="true">→</span></a>
+                    @if (release.Date is not null)
+                    {
+                        @foreach (var package in entry.Scope.Packages)
+                        {
+                            <a href="@($"{SiteLinks.NuGet(package)}/{release.Version}")" target="_blank" rel="noopener noreferrer">@package <span aria-hidden="true">↗</span></a>
+                        }
+                    }
+                </footer>
+            </article>
+        }
+    </article>
+</div>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
+    /// <summary>One release of one scope.</summary>
+    private sealed record Entry(ApiScope Scope, ApiRelease Release)
+    {
+        public string Id => Anchor(Scope.Id, Release.Version);
+    }
+
+    // Unreleased previews first, then newest first; releases published together follow the order of the scopes.
+    private static readonly Entry[] AllEntries = ApiReference.Scopes
+        .SelectMany(scope => scope.Versions.Select(release => new Entry(scope, release)))
+        .OrderBy(entry => entry.Release.Date is not null)
+        .ThenByDescending(entry => entry.Release.Date, StringComparer.Ordinal)
+        .ThenBy(entry => Array.IndexOf(ApiReference.Scopes, entry.Scope))
+        .ThenByDescending(entry => entry.Release.Version, Comparer<string>.Create(ApiVersion.Compare))
+        .ToArray();
+
+    private string? _scope;
+
+    private Entry[] Entries => AllEntries.Where(entry => _scope is null || entry.Scope.Id == _scope).ToArray();
+
+    private string CurrentAddress => Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0];
+
+    /// <summary>The id of a release in the changelog, the same as its release tag, such as <c>store-json-v1.0.0</c>.</summary>
+    public static string Anchor(string scopeId, string version) => $"{scopeId}-v{version}";
+
+    // Documentation pages link here with ?scope= to show the releases of their own packages.
+    protected override void OnInitialized()
+    {
+        var scope = SiteLinks.QueryValue(Navigation.Uri, "scope");
+        _scope = ApiReference.Scopes.Any(candidate => candidate.Id == scope) ? scope : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+    }
+
+    private string ScopeName(ApiScope scope) => Translator.Get(DocsSets.ScopeNameKey(scope.Id));
+
+    private static string ApiAddress(DocsSet set, ApiRelease release) =>
+        $"{set.Route}/api" + (release.Version == set.LatestRelease ? "" : $"?version={Uri.EscapeDataString(release.Version)}");
+
+    private static string EventTarget(ApiEvent change) =>
+        change.Member is null ? change.Type.Name : change.Type.Name + "." + ApiReference.MemberName(change.Member);
+}

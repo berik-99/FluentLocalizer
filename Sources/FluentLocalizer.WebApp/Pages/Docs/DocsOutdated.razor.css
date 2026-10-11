@@ -1,0 +1,16 @@
+.docs-outdated {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    max-width: 760px;
+    margin: 0 0 26px;
+    padding: 12px 16px;
+    border: 1px solid var(--ink-border);
+    border-left: 3px solid var(--lime);
+    border-radius: var(--radius-sm);
+    background: var(--ink-raised);
+    color: var(--ink-text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.docs-outdated a { color: var(--lime); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }

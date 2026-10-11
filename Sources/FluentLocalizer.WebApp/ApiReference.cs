@@ -9,8 +9,30 @@ namespace FluentLocalizer.WebApp;
 
 internal sealed class ApiCatalog
 {
-    public ApiRelease[] Versions { get; set; } = [];
+    public ApiScope[] Scopes { get; set; } = [];
     public ApiType[] Types { get; set; } = [];
+}
+
+/// <summary>Packages released together under one version line, such as Core (core and DI) or one store.</summary>
+/// <remarks>The release tag of a scope is <c>{Id}-v{Version}</c>, such as <c>core-v1.0.0</c> or <c>store-json-v1.0.0</c>.</remarks>
+internal sealed class ApiScope
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string[] Packages { get; set; } = [];
+    public ApiRelease[] Versions { get; set; } = [];
+
+    public string FirstVersion => Versions[0].Version;
+
+    /// <summary>The newest published version, shown by default; later entries preview upcoming releases.</summary>
+    public string LatestRelease => Versions.LastOrDefault(release => release.Date is not null)?.Version ?? Versions[^1].Version;
+
+    public ApiRelease Release(string version) => Versions.First(release => release.Version == version);
+
+    /// <summary>The versions of one major release line, such as 1.0.0 and 1.1.0 for 1.x.</summary>
+    public IEnumerable<ApiRelease> VersionsOf(int major) => Versions.Where(release => release.Major == major);
+
+    public IEnumerable<ApiType> Types => ApiReference.Types.Where(type => Packages.Contains(type.Package));
 }
 
 internal sealed class ApiRelease
@@ -21,6 +43,16 @@ internal sealed class ApiRelease
     public string? Summary { get; set; }
     /// <summary>Verified Git revision for links to the implementation shipped in this release.</summary>
     public string SourceRevision { get; set; } = "main";
+    /// <summary>Release notes shown in the changelog, with links to the guides.</summary>
+    public ApiNote[] Notes { get; set; } = [];
+    public int Major => ApiVersion.Major(Version);
+}
+
+/// <summary>One release note: <c>`code`</c>, <c>*emphasis*</c> and <c>[label](route)</c> become markup.</summary>
+internal sealed class ApiNote
+{
+    public ApiEventKind Kind { get; set; }
+    public string Text { get; set; } = "";
 }
 
 internal sealed class ApiChange
@@ -45,8 +77,6 @@ internal abstract class ApiEntry
         ApiVersion.Compare(since, version) <= 0 && (RemovedIn is null || ApiVersion.Compare(version, RemovedIn) < 0);
 
     public bool IsDeprecatedIn(string version) => DeprecatedIn is not null && ApiVersion.Compare(DeprecatedIn, version) <= 0;
-
-    public IEnumerable<ApiChange> ChangesUpTo(string version) => Changes.Where(change => ApiVersion.Compare(change.Version, version) <= 0);
 }
 
 internal sealed class ApiType : ApiEntry
@@ -62,7 +92,8 @@ internal sealed class ApiType : ApiEntry
     public ApiMember[] Members { get; set; } = [];
     public ApiTypeDefinition[] EarlierDefinitions { get; set; } = [];
     public string Id => "api-" + Name.ToLowerInvariant();
-    public string Introduced => Since ?? ApiReference.FirstVersion;
+    public ApiScope Scope => ApiReference.ScopeOf(Package);
+    public string Introduced => Since ?? Scope.FirstVersion;
 
     public bool IsAvailableIn(string version) => IsAvailableIn(version, Introduced);
 
@@ -129,7 +160,8 @@ internal sealed class ApiMemberDefinition
 
 internal enum ApiMemberGroup { Constructors, Properties, Methods, Operators, Values }
 
-internal enum ApiEventKind { Added, Changed, Deprecated, Removed }
+/// <summary>Kinds of change, in changelog order.</summary>
+internal enum ApiEventKind { Added, Changed, Deprecated, Removed, Fixed }
 
 /// <summary>Something that happened to a type or member in one version.</summary>
 internal sealed record ApiEvent(ApiEventKind Kind, ApiType Type, ApiMember? Member, string? Description);
@@ -146,20 +178,24 @@ internal static class ApiVersion
         if (leftParts.Length != rightParts.Length) return leftParts.Length > rightParts.Length ? -1 : 1;
         return leftParts.Length == 1 ? 0 : string.CompareOrdinal(leftParts[1], rightParts[1]);
     }
+
+    public static int Major(string version) => int.Parse(version.Split('.', 2)[0], System.Globalization.CultureInfo.InvariantCulture);
 }
 
 internal static partial class ApiReference
 {
     private static readonly ApiCatalog Catalog = Load();
-    public static readonly ApiRelease[] Versions = Catalog.Versions;
+    public static readonly ApiScope[] Scopes = Catalog.Scopes;
     public static readonly ApiType[] Types = Catalog.Types;
-    public static readonly string FirstVersion = Versions[0].Version;
 
-    public static ApiType[] TypesIn(string version) => Types.Where(type => type.IsAvailableIn(version))
+    public static ApiScope Scope(string id) => Scopes.First(scope => scope.Id == id);
+
+    public static ApiScope ScopeOf(string package) => Scopes.First(scope => scope.Packages.Contains(package));
+
+    public static ApiType? FindById(string id) => Types.FirstOrDefault(type => type.Id == id);
+
+    public static ApiType[] TypesIn(ApiScope scope, string version) => scope.Types.Where(type => type.IsAvailableIn(version))
         .Select(type => type.InVersion(version)).ToArray();
-
-    /// <summary>The newest published version, shown by default; later entries preview upcoming releases.</summary>
-    public static readonly string LatestRelease = Versions.LastOrDefault(release => release.Date is not null)?.Version ?? Versions[^1].Version;
 
     private static readonly Dictionary<string, ApiType> TypesByName = Types.ToDictionary(type => type.Name);
 
@@ -180,21 +216,22 @@ internal static partial class ApiReference
         return ApiMemberGroup.Methods;
     }
 
-    /// <summary>Additions, changes, deprecations and removals introduced by <paramref name="version"/>.</summary>
-    public static IEnumerable<ApiEvent> EventsIn(string version)
+    /// <summary>Additions, changes, deprecations and removals introduced by <paramref name="version"/> of <paramref name="scope"/>.</summary>
+    public static IEnumerable<ApiEvent> EventsIn(ApiScope scope, string version)
     {
         bool Is(string? value) => value is not null && ApiVersion.Compare(value, version) == 0;
-        foreach (var type in Types)
+        var first = version == scope.FirstVersion;
+        foreach (var type in scope.Types)
         {
             // Everything is new in the first version, so only later additions are listed.
-            var typeAdded = version != FirstVersion && Is(type.Introduced);
+            var typeAdded = !first && Is(type.Introduced);
             if (typeAdded) yield return new(ApiEventKind.Added, type, null, null);
             foreach (var change in type.Changes.Where(change => Is(change.Version))) yield return new(ApiEventKind.Changed, type, null, change.Description);
             if (Is(type.DeprecatedIn)) yield return new(ApiEventKind.Deprecated, type, null, null);
             if (Is(type.RemovedIn)) yield return new(ApiEventKind.Removed, type, null, null);
             foreach (var member in type.Members)
             {
-                if (!typeAdded && version != FirstVersion && Is(member.Since)) yield return new(ApiEventKind.Added, type, member, null);
+                if (!typeAdded && !first && Is(member.Since)) yield return new(ApiEventKind.Added, type, member, null);
                 foreach (var change in member.Changes.Where(change => Is(change.Version))) yield return new(ApiEventKind.Changed, type, member, change.Description);
                 if (Is(member.DeprecatedIn)) yield return new(ApiEventKind.Deprecated, type, member, null);
                 if (Is(member.RemovedIn)) yield return new(ApiEventKind.Removed, type, member, null);
@@ -211,9 +248,9 @@ internal static partial class ApiReference
 
     /// <summary>
     /// Renders C# code with token classes, links to documented types and, for long signatures,
-    /// one parameter per line.
+    /// one parameter per line. <paramref name="link"/> gives the address of a documented type; without it, type names are not linked.
     /// </summary>
-    public static MarkupString Highlight(string code, string? currentType = null, bool declaration = false)
+    public static MarkupString Highlight(string code, string? currentType = null, bool declaration = false, Func<ApiType, string>? link = null)
     {
         var tokens = Token().Matches(code).Select(match => match.Value).ToArray();
         var memberIndex = declaration ? Array.IndexOf(tokens, currentType) : MemberNameIndex(tokens);
@@ -243,8 +280,8 @@ internal static partial class ApiReference
                 html.Append("<span class=\"tok-member\">").Append(encoded).Append("</span>");
             else if (Keywords.Contains(token))
                 html.Append("<span class=\"tok-keyword\">").Append(encoded).Append("</span>");
-            else if (TypesByName.TryGetValue(token, out var linked) && token != currentType)
-                html.Append("<a class=\"tok-type\" href=\"docs/api#").Append(linked.Id).Append("\">").Append(encoded).Append("</a>");
+            else if (link is not null && TypesByName.TryGetValue(token, out var linked) && token != currentType)
+                html.Append("<a class=\"tok-type\" href=\"").Append(HtmlEncoder.Default.Encode(link(linked))).Append("\">").Append(encoded).Append("</a>");
             else if (char.IsUpper(token[0]))
                 html.Append("<span class=\"tok-type\">").Append(encoded).Append("</span>");
             else if (char.IsDigit(token[0]) || token[0] == '"')
@@ -297,7 +334,8 @@ internal static partial class ApiReference
         using var stream = typeof(ApiReference).Assembly.GetManifestResourceStream("FluentLocalizer.ApiReference.json")
             ?? throw new InvalidOperationException("The API reference catalog is missing.");
         var catalog = JsonSerializer.Deserialize(stream, ApiReferenceJsonContext.Default.ApiCatalog);
-        return catalog is { Versions.Length: > 0 } ? catalog : throw new InvalidOperationException("The API reference catalog is empty.");
+        return catalog is { Scopes.Length: > 0 } && catalog.Scopes.All(scope => scope.Versions.Length > 0)
+            ? catalog : throw new InvalidOperationException("The API reference catalog is empty.");
     }
 
     [GeneratedRegex(@"\s+|[A-Za-z_][A-Za-z0-9_]*|\d+|""[^""]*""|.")]
@@ -310,5 +348,6 @@ internal static partial class ApiReference
     private static partial Regex EnumEntry();
 }
 
+[JsonSourceGenerationOptions(UseStringEnumConverter = true)]
 [JsonSerializable(typeof(ApiCatalog))]
 internal partial class ApiReferenceJsonContext : JsonSerializerContext;

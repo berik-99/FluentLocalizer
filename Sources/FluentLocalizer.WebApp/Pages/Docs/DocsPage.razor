@@ -1,13 +1,15 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
-<PageTitle>@($"{Translator.Get($"Docs:{PageKey}:Title")} · FluentLocalizer")</PageTitle>
+<PageTitle>@($"{Translator.Get(Set.TextKey(Page, "Title"))} · FluentLocalizer")</PageTitle>
 
 <section class="docs-hero docs-page-hero">
     <div class="shell">
+        <DocsOutdated PageKey="@PageKey" />
         <span class="eyebrow">@Translator.Get($"Docs:Nav:{Group.Key}").WithCase(LetterCase.Upper)</span>
-        <h1>@Translator.Get($"Docs:{PageKey}:Title")</h1>
-        <p><RichText Text="@Translator.Get($"Docs:{PageKey}:Description")" /></p>
+        <h1>@Translator.Get(Set.TextKey(Page, "Title"))</h1>
+        <p><RichText Text="@Translator.Get(Set.TextKey(Page, "Description"))" /></p>
     </div>
 </section>
 
@@ -16,39 +18,52 @@
         <details class="docs-menu" open @ref="_menu">
             <summary>@Translator.Get("Docs:Common:Menu")</summary>
             <nav aria-label="@Translator.Get("Docs:Common:Navigation")" @ref="_sidebar">
-                @foreach (var group in DocsNav.Groups)
+                @foreach (var group in Set.Groups)
                 {
                     <span class="docs-tree-group">@Translator.Get($"Docs:Nav:{group.Key}")</span>
                     @foreach (var entry in group.Pages)
                     {
                         var current = entry == Page;
-                        <a href="@entry.Route" class="docs-tree-page level-@entry.Level @(current ? "is-current" : null)" aria-current="@(current ? "page" : null)">@Translator.Get($"Docs:{entry.Key}:Nav")</a>
+                        var route = Set.RouteOf(entry);
+                        <a href="@route" class="docs-tree-page level-@entry.Level @(current ? "is-current" : null)" aria-current="@(current ? "page" : null)">@Translator.Get(Set.TextKey(entry, "Nav"))</a>
                         @if (current && Sections.Length > 0)
                         {
                             <div class="docs-tree-sections level-@entry.Level">
                                 @foreach (var (id, title) in Sections)
                                 {
-                                    <a href="@($"{entry.Route}#{id}")">@title</a>
+                                    <a href="@($"{route}#{id}")">@title</a>
                                 }
                             </div>
                         }
                     }
                 }
+                <a href="@($"changelog?scope={Set.ScopeId}")" class="docs-tree-page">@Translator.Get("Ui:Changelog")</a>
             </nav>
         </details>
     </aside>
 
     <article class="docs-content">
+        @* The same toolbar as the API reference: the documented scope and its major version. *@
+        <div class="docs-toolbar docs-page-toolbar">
+            <div class="docs-toolbar-row">
+                <DocsScopeTabs PageKey="@PageKey" />
+                <div class="docs-version">
+                    <span class="docs-version-label" id="docs-version-label">@Translator.Get("Ui:ApiVersion")</span>
+                    <Dropdown TValue="int" Id="docs-version" LabelledBy="docs-version-label" Options="VersionOptions" Value="@Set.Major" ValueChanged="ChangeVersion" />
+                </div>
+            </div>
+        </div>
+
         @ChildContent
 
         <nav class="docs-pager" aria-label="@Translator.Get("Docs:Common:Pager")">
             @if (Previous is not null)
             {
-                <a class="docs-pager-previous" href="@Previous.Route"><span>@Translator.Get("Docs:Common:Previous")</span><strong><span aria-hidden="true">←</span> @Translator.Get($"Docs:{Previous.Key}:Nav")</strong></a>
+                <a class="docs-pager-previous" href="@Set.RouteOf(Previous)"><span>@Translator.Get("Docs:Common:Previous")</span><strong><span aria-hidden="true">←</span> @Translator.Get(Set.TextKey(Previous, "Nav"))</strong></a>
             }
             @if (Next is not null)
             {
-                <a class="docs-pager-next" href="@Next.Route"><span>@Translator.Get("Docs:Common:Next")</span><strong>@Translator.Get($"Docs:{Next.Key}:Nav") <span aria-hidden="true">→</span></strong></a>
+                <a class="docs-pager-next" href="@Set.RouteOf(Next)"><span>@Translator.Get("Docs:Common:Next")</span><strong>@Translator.Get(Set.TextKey(Next, "Nav")) <span aria-hidden="true">→</span></strong></a>
             }
         </nav>
     </article>
@@ -57,7 +72,10 @@
 @code {
     [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
 
-    /// <summary>The page's key in <see cref="DocsNav"/>.</summary>
+    /// <summary>The documentation set being read, supplied by <see cref="DocsRouter"/>.</summary>
+    [CascadingParameter] private DocsSet Set { get; set; } = default!;
+
+    /// <summary>The page's key in its <see cref="DocsSet"/>.</summary>
     [Parameter, EditorRequired] public string PageKey { get; set; } = string.Empty;
 
     /// <summary>The page's sections, listed below it in the sidebar.</summary>
@@ -65,15 +83,28 @@
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private DocsPageInfo Page => DocsNav.Find(PageKey);
-    private DocsGroup Group => DocsNav.GroupOf(Page);
+    private DocsPageInfo Page => Set.Find(PageKey)!;
+    private DocsGroup Group => Set.GroupOf(Page);
     private DocsPageInfo? Previous => Neighbor(-1);
     private DocsPageInfo? Next => Neighbor(1);
 
+    // Major versions of the scope, newest first; the experimental 0.x set says so.
+    private DropdownOption<int>[] VersionOptions => DocsSets.Of(Set.ScopeId).Select(set => new DropdownOption<int>(set.Major,
+        set == DocsSets.Latest(Set.ScopeId) ? Translator.Get("Ui:ApiLatest").WithArg("version", set.Version)
+        : set.IsExperimental ? Translator.Get("Ui:DocsExperimental").WithArg("version", set.Version)
+        : set.Version)).ToArray();
+
+    // The same page opens in the chosen version when it exists there.
+    private void ChangeVersion(int major)
+    {
+        var set = DocsSets.Of(Set.ScopeId).First(candidate => candidate.Major == major);
+        Navigation.NavigateTo(set.RouteOf(set.Find(PageKey) ?? set.Pages[0]));
+    }
+
     private DocsPageInfo? Neighbor(int offset)
     {
-        var index = Array.IndexOf(DocsNav.Pages, Page) + offset;
-        return index >= 0 && index < DocsNav.Pages.Length ? DocsNav.Pages[index] : null;
+        var index = Array.IndexOf(Set.Pages, Page) + offset;
+        return index >= 0 && index < Set.Pages.Length ? Set.Pages[index] : null;
     }
 
     private ElementReference _menu;
@@ -85,7 +116,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
             await JS.InvokeVoidAsync("fluentSite.collapseOnNarrow", _menu);
+            await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+        }
         if (_watchedPage == PageKey) return;
         _watchedPage = PageKey;
         await DisposeWatcherAsync();

@@ -1,12 +1,13 @@
-@page "/docs/api"
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <PageTitle>@Translator.Get("Ui:ApiTitle")</PageTitle>
 
 <section class="docs-hero">
     <div class="shell">
+        <DocsOutdated PageKey="Api" />
         <h1>@Translator.Get("Ui:ApiReference")</h1>
-        <p>@Translator.Get("Ui:ApiDescription")</p>
+        <p><RichText Text="@Translator.Get(DescriptionKey)" /></p>
         <dl class="api-stats">
             <div><dt>@Translator.Get("Ui:ApiPackages")</dt><dd>@Packages.Length</dd></div>
             <div><dt>@Translator.Get("Ui:ApiTypesStat")</dt><dd>@AvailableTypes.Length</dd></div>
@@ -24,7 +25,7 @@
                 <span class="api-index-package">@WrapIdentifier(package.Key)</span>
                 @foreach (var type in package)
                 {
-                    <a href="@($"docs/api#{type.Id}")" class="@(type.IsDeprecatedIn(_version) ? "is-deprecated" : null)">
+                    <a href="@TypeLink(type)" class="@(type.IsDeprecatedIn(_version) ? "is-deprecated" : null)">
                         <span class="api-glyph api-kind-@type.KindStyle" title="@type.Kind" aria-hidden="true">@char.ToUpperInvariant(type.KindStyle[0])</span>
                         <span>@WrapIdentifier(type.Name)</span>
                     </a>
@@ -34,67 +35,24 @@
     </aside>
 
     <article class="docs-content">
-        <div class="api-toolbar">
+        @* The same toolbar as the guides: scope tabs and version, then the search of the reference. *@
+        <div class="docs-toolbar">
+            <div class="docs-toolbar-row">
+                <DocsScopeTabs PageKey="Api" />
+                <div class="docs-version">
+                    <span class="docs-version-label" id="api-version-label">@Translator.Get("Ui:ApiVersion")</span>
+                    <Dropdown TValue="string" Id="api-version" LabelledBy="api-version-label" Options="VersionOptions" Value="@_version" ValueChanged="ChangeVersion" />
+                </div>
+            </div>
             <label class="sr-only" for="api-search">@Translator.Get("Ui:ApiSearch")</label>
             <input id="api-search" type="search" placeholder="@Translator.Get("Ui:ApiSearch")" @bind="_query" @bind:event="oninput" />
-            <div class="api-toolbar-row">
-                <div class="api-version">
-                    <span class="api-version-label" id="api-version-label">@Translator.Get("Ui:ApiVersion")</span>
-                    <Dropdown TValue="string" Id="api-version" LabelledBy="api-version-label" Options="VersionOptions" @bind-Value="_version" />
-                </div>
-                <div class="api-filters" role="group" aria-label="@Translator.Get("Ui:ApiFilterPackages")">
-                    <button type="button" aria-pressed="@(_package is null ? "true" : "false")" @onclick="() => _package = null">@Translator.Get("Ui:ApiAllPackages")</button>
-                    @foreach (var package in Packages)
-                    {
-                        <button type="button" aria-pressed="@(_package == package ? "true" : "false")" @onclick="() => _package = package">@ShortPackage(package)</button>
-                    }
-                </div>
-                <p aria-live="polite">@Translator.Get("Ui:ApiResults").Pluralize(FilteredTypes.Length)</p>
-            </div>
         </div>
 
-        <section class="api-overview" aria-labelledby="api-overview-title">
-            <header>
-                <h2 id="api-overview-title">@Translator.Get("Ui:ApiOverviewTitle").WithArg("version", _version)</h2>
-                <span class="api-release-date">@(Release.Date is { } date ? Translator.Get("Ui:ApiReleasedOn").WithArg("date", date) : Translator.Get("Ui:ApiNotReleased"))</span>
-            </header>
-            @if (Release.Summary is not null)
-            {
-                <p lang="en">@Release.Summary</p>
-            }
-            @if (_version == ApiReference.FirstVersion)
-            {
-                <p>@Translator.Get("Ui:ApiInitialRelease")</p>
-            }
-            @{ var events = ApiReference.EventsIn(_version).ToArray(); }
-            @foreach (var group in events.GroupBy(change => change.Kind).OrderBy(group => group.Key))
-            {
-                <h3><span class="api-event api-event-@group.Key.ToString().ToLowerInvariant()">@Translator.Get($"Ui:Api{group.Key}")</span> <span class="api-count">@group.Count()</span></h3>
-                <ul>
-                    @foreach (var change in group)
-                    {
-                        <li>
-                            @if (change.Type.IsAvailableIn(_version))
-                            {
-                                <a href="@($"docs/api#{change.Type.Id}")"><code>@EventTarget(change)</code></a>
-                            }
-                            else
-                            {
-                                <code>@EventTarget(change)</code>
-                            }
-                            @if (change.Description is not null)
-                            {
-                                <span lang="en"> — @change.Description</span>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-            @if (events.Length == 0 && _version != ApiReference.FirstVersion)
-            {
-                <p>@Translator.Get("Ui:ApiNoChanges")</p>
-            }
-        </section>
+        @* What each version changed is listed in the changelog, shared by every package. *@
+        <p class="api-release">
+            <span class="api-release-date">@(Release.Date is { } date ? Translator.Get("Ui:ApiReleasedOn").WithArg("date", date) : Translator.Get("Ui:ApiNotReleased"))</span>
+            <a href="@($"changelog?scope={Set.ScopeId}#{Changelog.Anchor(Set.ScopeId, _version)}")">@Translator.Get("Ui:ApiSeeChangelog").WithArg("version", _version) <span aria-hidden="true">→</span></a>
+        </p>
 
         <p class="api-language">@Translator.Get("Ui:ApiLanguage")</p>
 
@@ -126,7 +84,7 @@
                             <a class="api-source" href="@($"{SiteLinks.Repository}/blob/{Release.SourceRevision}/{type.Source}")" target="_blank" rel="noopener noreferrer">@Translator.Get("Ui:ApiSource") <span aria-hidden="true">↗</span></a>
                         </header>
 
-                        <pre class="api-code api-declaration"><code>@ApiReference.Highlight(type.Declaration, type.Name, declaration: true)</code></pre>
+                        <pre class="api-code api-declaration"><code>@ApiReference.Highlight(type.Declaration, type.Name, declaration: true, link: TypeLink)</code></pre>
 
                         <dl class="api-meta">
                             <div><dt>@Translator.Get("Ui:ApiPackage")</dt><dd><code>@type.Package</code></dd></div>
@@ -142,7 +100,6 @@
                         {
                             <p class="api-remarks" lang="en">@type.Remarks</p>
                         }
-                        @History(type)
 
                         @foreach (var group in MembersOf(type).GroupBy(member => ApiReference.GroupOf(type, member)).OrderBy(group => group.Key))
                         {
@@ -173,7 +130,7 @@
                                                     {
                                                         <td><code>@entry.Value</code></td>
                                                     }
-                                                    <td>@MemberBadges(type, member)@member.Description @History(member)</td>
+                                                    <td>@MemberBadges(type, member)@member.Description</td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -185,13 +142,12 @@
                                         @foreach (var member in group)
                                         {
                                             <li>
-                                                <pre class="api-code"><code>@ApiReference.Highlight(member.Signature, type.Name)</code></pre>
+                                                <pre class="api-code"><code>@ApiReference.Highlight(member.Signature, type.Name, link: TypeLink)</code></pre>
                                                 <p>@MemberBadges(type, member)@member.Description</p>
                                                 @if (member.IsDeprecatedIn(_version))
                                                 {
                                                     @Lifecycle(member)
                                                 }
-                                                @History(member)
                                             </li>
                                         }
                                     </ul>
@@ -211,19 +167,47 @@
 
 @code {
     [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
-    private static readonly string[] Packages = ApiReference.Types.Select(type => type.Package).Distinct().ToArray();
+
+    /// <summary>The documentation set being read: its scope's packages and the versions of its major release line.</summary>
+    [CascadingParameter] private DocsSet Set { get; set; } = default!;
+
+    private string[] Packages => Set.Scope.Packages;
     private string _query = "";
-    private string? _package;
-    private string _version = ApiReference.LatestRelease;
+    private string _version = "";
 
-    private ApiRelease Release => ApiReference.Versions.First(release => release.Version == _version);
+    private ApiRelease Release => Set.Scope.Release(_version);
     private bool IsPublished => Release.Date is not null;
+    private string DescriptionKey => "Ui:ApiDescription" + DocsSets.ScopeNameKey(Set.ScopeId)["Ui:Scope".Length..];
 
-    // Newest first; the latest published version and unpublished previews are labelled.
-    private DropdownOption<string>[] VersionOptions => Enumerable.Reverse(ApiReference.Versions).Select(release => new DropdownOption<string>(release.Version,
-        release.Version == ApiReference.LatestRelease ? Translator.Get("Ui:ApiLatest").WithArg("version", release.Version)
+    // Every version of the scope, newest first; the latest published version and unpublished previews are labelled.
+    private DropdownOption<string>[] VersionOptions => Enumerable.Reverse(Set.Scope.Versions).Select(release => new DropdownOption<string>(release.Version,
+        release.Version == Set.Scope.LatestRelease ? Translator.Get("Ui:ApiLatest").WithArg("version", release.Version)
         : release.Date is null ? Translator.Get("Ui:ApiPreview").WithArg("version", release.Version)
         : release.Version)).ToArray();
+
+    // The changelog links to a version with ?version=; otherwise the set's latest published version is shown.
+    protected override void OnInitialized()
+    {
+        var requested = SiteLinks.QueryValue(Navigation.Uri, "version");
+        _version = Set.Releases.Any(release => release.Version == requested) ? requested! : Set.LatestRelease;
+    }
+
+    // A version of another major release line opens the reference of its documentation set.
+    private void ChangeVersion(string version)
+    {
+        if (Set.Releases.Any(release => release.Version == version))
+        {
+            _version = version;
+            return;
+        }
+        var set = DocsSets.ForVersion(Set.ScopeId, version);
+        Navigation.NavigateTo($"{set.RouteOf(set.ApiPage!)}?version={Uri.EscapeDataString(version)}");
+    }
+
+    // Types of this scope stay on this page and version; types of another scope open its latest reference.
+    private string TypeLink(ApiType type) => type.Scope.Id == Set.ScopeId
+        ? Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0] + "#" + type.Id
+        : DocsSets.ApiLink(type);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -257,9 +241,9 @@
                         var replacement = entry.ReplacedBy[index];
                         var target = ApiReference.Types.FirstOrDefault(type => type.Name == replacement.Split('.')[0]);
                         @(index > 0 ? ", " : " ")
-                        @if (target is not null && target.IsAvailableIn(_version))
+                        @if (target is not null && (target.Scope.Id != Set.ScopeId || target.IsAvailableIn(_version)))
                         {
-                            <a href="@($"docs/api#{target.Id}")"><code>@replacement</code></a>
+                            <a href="@TypeLink(target)"><code>@replacement</code></a>
                         }
                         else
                         {
@@ -270,31 +254,14 @@
             }
             @if (entry.RemovedIn is { } removed)
             {
-                <span>@Translator.Get(ApiVersion.Compare(removed, ApiReference.LatestRelease) <= 0 ? "Ui:ApiRemovedIn" : "Ui:ApiRemovalPlanned").WithArg("version", removed)</span>
+                <span>@Translator.Get(ApiVersion.Compare(removed, Set.Scope.LatestRelease) <= 0 ? "Ui:ApiRemovedIn" : "Ui:ApiRemovalPlanned").WithArg("version", removed)</span>
             }
         </div>
     };
 
-    private RenderFragment History(ApiEntry entry) => __builder =>
-    {
-        var changes = entry.ChangesUpTo(_version).ToArray();
-        if (changes.Length == 0) return;
-        <div class="api-history">
-            <span>@Translator.Get("Ui:ApiHistory")</span>
-            <ul lang="en">
-                @foreach (var change in changes)
-                {
-                    <li><code>@change.Version</code> @change.Description</li>
-                }
-            </ul>
-        </div>
-    };
 
     private IEnumerable<ApiMember> MembersOf(ApiType type) =>
         type.Members.Where(member => member.IsAvailableIn(_version, member.IntroducedWith(type)));
-
-    private static string EventTarget(ApiEvent change) =>
-        change.Member is null ? change.Type.Name : change.Type.Name + "." + ApiReference.MemberName(change.Member);
 
     // Allow line breaks between words in compound API names, while preserving the visible identifier.
     private static MarkupString WrapIdentifier(string value) => new(
@@ -303,7 +270,6 @@
             @"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=\.)",
             "<wbr>"));
 
-    private static string ShortPackage(string package) => package == "FluentLocalizer" ? "Core" : package["FluentLocalizer.".Length..];
 
     private static string PackageSummaryKey(string package) => package switch
     {
@@ -312,10 +278,9 @@
         _ => "Ui:ApiPackageDi"
     };
 
-    private ApiType[] AvailableTypes => ApiReference.TypesIn(_version);
+    private ApiType[] AvailableTypes => ApiReference.TypesIn(Set.Scope, _version);
 
     private ApiType[] FilteredTypes => AvailableTypes.Where(type =>
-        (_package is null || type.Package == _package) &&
         (string.IsNullOrWhiteSpace(_query) ||
         type.Name.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||
         type.Kind.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase) ||

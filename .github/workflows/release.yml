@@ -3,7 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'core-v*'
+      - 'store-*-v*'
 
 permissions:
   contents: read
@@ -16,6 +17,9 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.value }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      package_ids: ${{ steps.version.outputs.package_ids }}
+      release_group: ${{ steps.version.outputs.release_group }}
+      release_package_id: ${{ steps.version.outputs.release_package_id }}
 
     steps:
       - name: Check out tagged commit
@@ -43,19 +47,85 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Derive package version from tag
+      - name: Derive package selection and version from tag
         id: version
         shell: pwsh
         env:
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          $version = $env:TAG_NAME.Substring(1)
+          $tag = $env:TAG_NAME
+          $packageIds = @()
+
+          if ($tag -match '^core-v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z-]+)*)?)$') {
+            $version = $Matches.version
+            $packageIds = @('FluentLocalizer', 'FluentLocalizer.Extensions.DependencyInjection')
+            $releaseGroup = 'core'
+            $releasePackageId = ''
+          }
+          elseif ($tag -match '^store-(?<store>[a-z0-9]+(?:-[a-z0-9]+)*)-v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z-]+)*)?)$') {
+            $version = $Matches.version
+            $storeSlug = $Matches.store
+            $storeProjects = foreach ($project in Get-ChildItem -Path 'Sources' -Recurse -Filter '*.csproj') {
+              $packageId = dotnet msbuild $project.FullName -getProperty:PackageId
+
+              if ($LASTEXITCODE -ne 0) {
+                exit $LASTEXITCODE
+              }
+
+              if ($packageId -match '^FluentLocalizer\.Store\.(?<name>.+)$' -and
+                  ($Matches.name.ToLowerInvariant() -replace '\.', '-') -eq $storeSlug) {
+                [pscustomobject]@{ Project = $project; PackageId = $packageId }
+              }
+            }
+
+            if (@($storeProjects).Count -ne 1) {
+              throw "Tag '$tag' must identify exactly one packable FluentLocalizer.Store.* project; found $(@($storeProjects).Count)."
+            }
+
+            $storeProject = @($storeProjects)[0]
+            $isPackable = dotnet msbuild $storeProject.Project.FullName -getProperty:IsPackable
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+            if (($isPackable | Out-String).Trim() -ne 'true') {
+              throw "Store project '$($storeProject.Project.FullName)' is not packable."
+            }
+
+            $packageIds = @($storeProject.PackageId)
+            $releaseGroup = 'store'
+            $releasePackageId = $storeProject.PackageId
+          }
+          else {
+            throw "Tag '$tag' must be core-vMAJOR.MINOR.PATCH or store-<name>-vMAJOR.MINOR.PATCH, optionally followed by a prerelease suffix."
+          }
 
           if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z-]+)*)?$') {
-            throw "Tag '$env:TAG_NAME' must be vMAJOR.MINOR.PATCH, optionally followed by a prerelease suffix."
+            throw "Version '$version' is not a valid NuGet version."
+          }
+
+          foreach ($expectedPackageId in $packageIds) {
+            $matchingProjects = foreach ($project in Get-ChildItem -Path 'Sources' -Recurse -Filter '*.csproj') {
+              $packageId = dotnet msbuild $project.FullName -getProperty:PackageId
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              if ($packageId -eq $expectedPackageId) { $project }
+            }
+
+            if (@($matchingProjects).Count -ne 1) {
+              throw "Expected one project for package ID '$expectedPackageId'; found $(@($matchingProjects).Count)."
+            }
+
+            $matchingProject = @($matchingProjects)[0]
+            $projectVersion = dotnet msbuild $matchingProject.FullName -getProperty:Version
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if (($projectVersion | Out-String).Trim() -ne $version) {
+              throw "Package '$expectedPackageId' declares version '$($projectVersion.Trim())', but tag '$tag' specifies '$version'. Update the project's <Version> before tagging."
+            }
           }
 
           "value=$version" >> $env:GITHUB_OUTPUT
+          "package_ids=$($packageIds -join ',')" >> $env:GITHUB_OUTPUT
+          "release_group=$releaseGroup" >> $env:GITHUB_OUTPUT
+          "release_package_id=$releasePackageId" >> $env:GITHUB_OUTPUT
 
           $prerelease = $version.Contains('-')
           "prerelease=$($prerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
@@ -69,28 +139,26 @@ jobs:
       - name: Test
         run: dotnet test FluentLocalizer.slnx --configuration Release --no-build --no-restore
 
-      - name: Pack library projects
+      - name: Pack selected packages
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.version.outputs.value }}
+          PACKAGE_IDS: ${{ steps.version.outputs.package_ids }}
+          RELEASE_GROUP: ${{ steps.version.outputs.release_group }}
+          RELEASE_PACKAGE_ID: ${{ steps.version.outputs.release_package_id }}
         run: |
           $packageDirectory = Join-Path $PWD 'artifacts/packages'
           New-Item -ItemType Directory -Force -Path $packageDirectory | Out-Null
 
+          $expectedPackageIds = $env:PACKAGE_IDS -split ','
           $projects = foreach ($project in Get-ChildItem -Path 'Sources' -Recurse -Filter '*.csproj') {
-            $isPackable = dotnet msbuild $project.FullName -getProperty:IsPackable
-
-            if ($LASTEXITCODE -ne 0) {
-              exit $LASTEXITCODE
-            }
-
-            if (($isPackable | Out-String).Trim() -eq 'true') {
-              $project
-            }
+            $packageId = dotnet msbuild $project.FullName -getProperty:PackageId
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if ($expectedPackageIds -contains $packageId) { $project }
           }
 
-          if (-not $projects) {
-            throw 'No packable library projects were found under Sources.'
+          if ($projects.Count -ne $expectedPackageIds.Count) {
+            throw "Expected $($expectedPackageIds.Count) projects for package IDs '$env:PACKAGE_IDS', found $($projects.Count)."
           }
 
           foreach ($project in $projects) {
@@ -98,7 +166,9 @@ jobs:
               --configuration Release `
               --no-build `
               --no-restore `
-              -p:PackageVersion=$env:PACKAGE_VERSION `
+              -p:ReleaseGroup=$env:RELEASE_GROUP `
+              -p:ReleasePackageVersion=$env:PACKAGE_VERSION `
+              -p:ReleasePackageId=$env:RELEASE_PACKAGE_ID `
               --output $packageDirectory
 
             if ($LASTEXITCODE -ne 0) {

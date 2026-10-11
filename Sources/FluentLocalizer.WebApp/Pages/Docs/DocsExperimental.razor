@@ -1,0 +1,30 @@
+@inherits DocsPageBase
+
+@* The first page of the 0.x sets: those experimental releases have no guides, and this page says where to look instead. *@
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="why" Title="@T("WhyTitle")">
+        <p><RichText Text="@T("Why1")" /></p>
+        <p><RichText Text="@T("Why2")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="available" Title="@T("AvailableTitle")">
+        <div class="docs-cards">
+            <a class="docs-card" href="@Set.RouteOf(Set.ApiPage!)"><strong>@Translator.Get("Ui:ChangelogApi").WithArg("version", Set.Version) <span aria-hidden="true">→</span></strong><span>@T("ApiText")</span></a>
+            <a class="docs-card" href="@($"changelog?scope={Set.ScopeId}")"><strong>@Translator.Get("Ui:Changelog") <span aria-hidden="true">→</span></strong><span>@T("ChangelogText")</span></a>
+            @if (Latest.Find("Migration") is { } migration)
+            {
+                <a class="docs-card" href="@Latest.RouteOf(migration)"><strong>@Translator.Get(Latest.TextKey(migration, "Nav")) <span aria-hidden="true">→</span></strong><span>@T("MigrationText")</span></a>
+            }
+            <a class="docs-card" href="@Latest.Route"><strong>@Translator.Get("Ui:ChangelogGuides").WithArg("version", Latest.Version) <span aria-hidden="true">→</span></strong><span>@T("LatestText")</span></a>
+        </div>
+        <DocsCallout Kind="DocsCallout.CalloutKind.Tip" Text="@T("Upgrade")" />
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Experimental";
+
+    protected override (string Id, string Title)[] Sections => [("why", T("WhyTitle")), ("available", T("AvailableTitle"))];
+
+    private DocsSet Latest => DocsSets.Latest(Set.ScopeId);
+}

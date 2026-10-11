@@ -70,20 +70,39 @@ public sealed class PublicApiReferenceTests
     public void Catalog_versions_are_consistent()
     {
         using var catalog = LoadCatalog();
-        var releases = catalog.RootElement.GetProperty("Versions").EnumerateArray()
-            .Select(release => release.GetProperty("Version").GetString()!).ToArray();
-        Assert.NotEmpty(releases);
-        Assert.All(releases, AssertSemVer);
-        for (var index = 1; index < releases.Length; index++)
-            Assert.True(CompareVersions(releases[index - 1], releases[index]) < 0, $"Versions must be listed in ascending order: {releases[index]}");
-        foreach (var assembly in LoadedLibraries())
-            Assert.Contains(CurrentVersion(assembly), releases);
+        var scopes = catalog.RootElement.GetProperty("Scopes").EnumerateArray().ToArray();
+        Assert.NotEmpty(scopes);
+        Assert.Equal(scopes.Length, scopes.Select(scope => scope.GetProperty("Id").GetString()).Distinct().Count());
+        // Each package is released by exactly one scope, which owns its version numbers.
+        var releasesByPackage = new Dictionary<string, string[]>();
+        foreach (var scope in scopes)
+        {
+            var id = scope.GetProperty("Id").GetString()!;
+            Assert.Matches(@"^(core|store-[a-z0-9]+(-[a-z0-9]+)*)$", id);
+            var versions = scope.GetProperty("Versions").EnumerateArray().ToArray();
+            var releases = versions.Select(release => release.GetProperty("Version").GetString()!).ToArray();
+            Assert.NotEmpty(releases);
+            Assert.All(releases, AssertSemVer);
+            for (var index = 1; index < releases.Length; index++)
+                Assert.True(CompareVersions(releases[index - 1], releases[index]) < 0, $"{id}: versions must be listed in ascending order: {releases[index]}");
+            foreach (var release in versions)
+                AssertReleaseNotes(id, release, scopes);
+            foreach (var package in scope.GetProperty("Packages").EnumerateArray())
+                releasesByPackage.Add(package.GetString()!, releases);
+        }
 
         var types = catalog.RootElement.GetProperty("Types").EnumerateArray().ToArray();
+        foreach (var assembly in LoadedLibraries())
+        {
+            var package = types.Where(type => AssemblyOf(type) == assembly.GetName().Name).Select(type => type.GetProperty("Package").GetString()!).Distinct().Single();
+            Assert.Contains(CurrentVersion(assembly), releasesByPackage[package]);
+        }
+
         var typeNames = types.Select(type => type.GetProperty("Name").GetString()!).ToHashSet();
         foreach (var type in types)
         {
             var name = type.GetProperty("Name").GetString()!;
+            Assert.True(releasesByPackage.TryGetValue(type.GetProperty("Package").GetString()!, out var releases), $"{name}: its package belongs to no scope");
             Assert.True(type.TryGetProperty("Since", out var since), $"{name} needs Since");
             AssertLifecycle(name, type, since.GetString()!, releases, typeNames);
             AssertEarlierDefinitions(name, type, since.GetString()!, releases);
@@ -94,6 +113,29 @@ public sealed class PublicApiReferenceTests
                 Assert.True(CompareVersions(since.GetString()!, memberSince) <= 0, $"{memberName} cannot predate its type");
                 AssertLifecycle(memberName, member, memberSince, releases, typeNames);
                 AssertEarlierDefinitions(memberName, member, memberSince, releases);
+            }
+        }
+    }
+
+    // Releases have a date in yyyy-MM-dd form when published and a source revision; notes have a known kind, text,
+    // and documentation links to a versioned documentation set, docs/{scope}/v{major}.
+    private static void AssertReleaseNotes(string scope, JsonElement release, JsonElement[] scopes)
+    {
+        var version = release.GetProperty("Version").GetString()!;
+        if (release.TryGetProperty("Date", out var date))
+            Assert.Matches(@"^\d{4}-\d{2}-\d{2}$", date.GetString()!);
+        Assert.True(release.TryGetProperty("SourceRevision", out var revision) && !string.IsNullOrWhiteSpace(revision.GetString()), $"{scope} {version} needs SourceRevision");
+        if (!release.TryGetProperty("Notes", out var notes)) return;
+        var scopeIds = scopes.Select(candidate => candidate.GetProperty("Id").GetString()).ToHashSet();
+        foreach (var note in notes.EnumerateArray())
+        {
+            Assert.Contains(note.GetProperty("Kind").GetString(), new[] { "Added", "Changed", "Deprecated", "Removed", "Fixed" });
+            var text = note.GetProperty("Text").GetString()!;
+            Assert.False(string.IsNullOrWhiteSpace(text), $"{scope} {version}: empty release note");
+            foreach (Match link in Regex.Matches(text, @"\]\((?<href>docs/[^)]*)\)"))
+            {
+                var route = Regex.Match(link.Groups["href"].Value, @"^docs/(?<scope>[a-z0-9-]+)/v\d+(/|#|$)");
+                Assert.True(route.Success && scopeIds.Contains(route.Groups["scope"].Value), $"{scope} {version}: unknown documentation link {link.Groups["href"].Value}");
             }
         }
     }

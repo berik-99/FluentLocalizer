@@ -1,0 +1,9 @@
+<Project>
+	<PropertyGroup Condition="'$(ReleasePackageVersion)' != '' and '$(ReleaseGroup)' == 'core' and ('$(PackageId)' == 'FluentLocalizer' or '$(PackageId)' == 'FluentLocalizer.Extensions.DependencyInjection')">
+		<PackageVersion>$(ReleasePackageVersion)</PackageVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(ReleasePackageVersion)' != '' and '$(ReleaseGroup)' == 'store' and '$(PackageId)' == '$(ReleasePackageId)'">
+		<PackageVersion>$(ReleasePackageVersion)</PackageVersion>
+	</PropertyGroup>
+</Project>

@@ -280,9 +280,9 @@ Replace the `FluentLocalizer.Store.Http` package reference with `FluentLocalizer
 
 Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
 
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions, changes and deprecations are marked on each member. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/api) uses the same catalog and can show any earlier version.
+Version numbers shown for a type or member refer to the NuGet package named on that type. `FluentLocalizer` and `FluentLocalizer.Extensions.DependencyInjection` share the Core version line; each store has its own.
 
-Documented version: `1.0.0`
+Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions and deprecations are marked on each member, and the changes between versions are listed in the changelog. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1/api) uses the same catalog and can show any earlier version; the [changelog](https://berik-99.github.io/FluentLocalizer/changelog?scope=store-json) lists the changes of every release.
 
 - [JsonStoreSettings](#api-jsonstoresettings)
 - [JsonFileStoreOptions](#api-jsonfilestoreoptions)
@@ -458,10 +458,6 @@ The wrapper forwards to the selected store. It copies fallback, mappings, resour
 | `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Forwards to the selected store. File and embedded implementations wrap synchronous lookup and do not inspect cancellationToken. |
 | `void Dispose()` | Disposes the underlying filesystem store's watcher when filesystem mode is selected. |
 
-Changes:
-
-- 0.1.0-alpha: Reimplemented as a compatibility wrapper over JsonFileStore or EmbeddedJsonStore and marked obsolete. Uses dedicated-store loading and validation; filesystem mode is rejected in browsers.
-
 [Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Store.Json/JsonStore.cs)
 
 <a id="api-jsonstoreoptions"></a>
@@ -483,10 +479,6 @@ JsonStore currently ignores inherited MaxDocumentBytes.
 | `JsonStoreLocation SearchMode { get; set; }` | Default: FileSystem. Selects the compatibility store's backend. |
 | `Assembly? ResourceAssembly { get; set; }` | Default: null. Assembly containing catalogs when SearchMode is EmbeddedResources. |
 | `bool ReloadOnChange { get; set; }` | Default: false. Enables file watching in FileSystem mode. |
-
-Changes:
-
-- 0.1.0-alpha: Became sealed, inherited JsonStoreSettings and was marked obsolete. ThrowOnError was replaced by inherited ThrowOnMissingStore; FallbackCulture and FileMappings moved to the base class, which also adds MaxDocumentBytes.
 
 [Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs)
 

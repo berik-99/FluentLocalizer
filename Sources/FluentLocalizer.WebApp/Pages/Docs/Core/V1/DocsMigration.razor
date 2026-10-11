@@ -1,0 +1,37 @@
+@inherits DocsPageBase
+
+<DocsPage PageKey="@PageKey" Sections="Sections">
+    <DocsSection Id="from-001" Title="@T("From001Title")">
+        <p><RichText Text="@T("From0011")" /></p>
+        <h3 id="namespaces">@T("NamespacesTitle")</h3>
+        <p><RichText Text="@T("Namespaces")" /></p>
+        <CodeBlock Code="@Namespaces" />
+        <h3 id="options">@T("OptionsTitle")</h3>
+        <p><RichText Text="@T("Options")" /></p>
+        <h3 id="injection">@T("InjectionTitle")</h3>
+        <p><RichText Text="@T("Injection")" /></p>
+    </DocsSection>
+
+    <DocsSection Id="reference" Title="@T("ReferenceTitle")">
+        <p><RichText Text="@T("Reference1")" /></p>
+    </DocsSection>
+</DocsPage>
+
+@code {
+    protected override string PageKey => "Migration";
+
+    protected override (string Id, string Title)[] Sections =>
+    [
+        ("from-001", T("From001Title")), ("reference", T("ReferenceTitle"))
+    ];
+
+    private const string Namespaces = """
+        // 0.0.1
+        using FluentLocalizer.Core;
+        using FluentLocalizer.Core.Logging;
+
+        // 0.1.0-alpha and later
+        using FluentLocalizer;
+        using FluentLocalizer.Logging;
+        """;
+}

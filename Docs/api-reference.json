@@ -1,8 +1,67 @@
 {
-  "Versions": [
-    {"Version": "0.0.1", "Date": "2026-07-30", "SourceRevision": "2c4a8561c3a27456f23304b24e73bac35e1f0066", "Summary": "First published release: fluent translation requests, logging, dependency injection and the original mode-based JSON store."},
-    {"Version": "0.1.0-alpha", "Date": "2026-09-30", "SourceRevision": "02ba523883111ab7d19a2f594f1a479ee06400a1", "Summary": "Core namespaces moved to FluentLocalizer; mutable translation options and corrected DI registration. Dedicated JSON stores, shared settings, lazy loading, caching and HTTP refresh; the original JSON store and options were deprecated."},
-    {"Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0", "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."}
+  "Scopes": [
+    {
+      "Id": "core",
+      "Name": "Core",
+      "Packages": ["FluentLocalizer", "FluentLocalizer.Extensions.DependencyInjection"],
+      "Versions": [
+        {
+          "Version": "0.0.1", "Date": "2026-07-30", "SourceRevision": "2c4a8561c3a27456f23304b24e73bac35e1f0066",
+          "Summary": "First published release of the core and dependency injection packages.",
+          "Notes": [
+            {"Kind": "Added", "Text": "`ITranslator`, `Translator` and the fluent `TranslationBuilder`: arguments, plurals, gender, letter case and per-request cultures. See [Translation requests](docs/core/v1/requests)."},
+            {"Kind": "Added", "Text": "ICU message templates, formatted with the MessageFormat library, with `plural` and `select` blocks. See [Templates](docs/core/v1/templates)."},
+            {"Kind": "Added", "Text": "`TranslationOptions` policies for missing keys and formatting errors, and `TranslationException`. See [Errors and missing translations](docs/core/v1/errors)."},
+            {"Kind": "Added", "Text": "`ITranslationLogger` and `TranslationLogLevel` for translation events. See [Logging](docs/core/v1/logging)."},
+            {"Kind": "Added", "Text": "`ITranslationStore`, the contract implemented by every store. See [Custom stores](docs/core/v1/stores/custom)."},
+            {"Kind": "Added", "Text": "`AddFluentLocalizer()` and `FluentLocalizerBuilder` for Microsoft.Extensions.DependencyInjection. See [Dependency injection](docs/core/v1/dependency-injection)."}
+          ]
+        },
+        {
+          "Version": "0.1.0-alpha", "Date": "2026-09-30", "SourceRevision": "02ba523883111ab7d19a2f594f1a479ee06400a1",
+          "Summary": "Breaking namespace changes, mutable translation options and corrected dependency injection registration.",
+          "Notes": [
+            {"Kind": "Changed", "Text": "Breaking: the core types moved from `FluentLocalizer.Core` to `FluentLocalizer`, and the logging types from `FluentLocalizer.Core.Logging` to `FluentLocalizer.Logging`. See [Upgrading from 0.0.1](docs/core/v1/migration#namespaces)."},
+            {"Kind": "Changed", "Text": "`TranslationOptions` properties have `set` accessors instead of `init`, so they can be configured in a dependency injection callback. See [TranslationOptions](docs/core/v1/migration#options)."},
+            {"Kind": "Fixed", "Text": "`AddFluentLocalizer(services, options)` registers the options object it receives, and both overloads validate their arguments against `null`. See [Dependency injection](docs/core/v1/migration#injection)."},
+            {"Kind": "Fixed", "Text": "`WithStore(store)` no longer registers the store twice."}
+          ]
+        },
+        {
+          "Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0",
+          "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."
+        }
+      ]
+    },
+    {
+      "Id": "store-json",
+      "Name": "JSON store",
+      "Packages": ["FluentLocalizer.Store.Json"],
+      "Versions": [
+        {
+          "Version": "0.0.1", "Date": "2026-07-30", "SourceRevision": "2c4a8561c3a27456f23304b24e73bac35e1f0066",
+          "Summary": "First published release of the JSON store package.",
+          "Notes": [
+            {"Kind": "Added", "Text": "`JsonStore` reads JSON catalogs from the file system or from embedded resources, selected by `JsonStoreOptions.SearchMode`."}
+          ]
+        },
+        {
+          "Version": "0.1.0-alpha", "Date": "2026-09-30", "SourceRevision": "02ba523883111ab7d19a2f594f1a479ee06400a1",
+          "Summary": "Dedicated JSON stores with shared settings, lazy loading, caching and HTTP refresh; the original JSON store was deprecated.",
+          "Notes": [
+            {"Kind": "Added", "Text": "[JsonFileStore](docs/store-json/v1/file), [EmbeddedJsonStore](docs/store-json/v1/embedded) and [HttpJsonStore](docs/store-json/v1/http), each with its own options class."},
+            {"Kind": "Added", "Text": "`JsonStoreSettings`, the settings shared by every JSON store, including the `MaxDocumentBytes` size limit. See [Settings](docs/store-json/v1#settings)."},
+            {"Kind": "Added", "Text": "Optional namespace files that split a catalog by feature. See [Namespaces](docs/store-json/v1#namespaces)."},
+            {"Kind": "Changed", "Text": "The HTTP store, previously in the separate `FluentLocalizer.Store.Http` package, is now part of this package. See [Moving from FluentLocalizer.Store.Http](docs/store-json/v1/migration#from-http)."},
+            {"Kind": "Deprecated", "Text": "`JsonStore`, `JsonStoreOptions` and `JsonStoreLocation`. `JsonStore` now forwards every lookup to a `JsonFileStore` or an `EmbeddedJsonStore`. See [Deprecated APIs](docs/store-json/v1/migration#deprecated)."}
+          ]
+        },
+        {
+          "Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0",
+          "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."
+        }
+      ]
+    }
   ],
   "Types": [
     {

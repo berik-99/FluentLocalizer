@@ -1,4 +1,3 @@
-@page "/docs"
 @inherits DocsPageBase
 
 <DocsPage PageKey="@PageKey" Sections="Sections">
@@ -57,9 +56,9 @@
 
     <DocsSection Id="next" Title="@T("NextTitle")">
         <div class="docs-cards">
-            <a class="docs-card" href="docs/quick-start"><strong>@T("NextQuickStart") <span aria-hidden="true">→</span></strong><span>@T("NextQuickStartText")</span></a>
-            <a class="docs-card" href="docs/templates"><strong>@T("NextTemplates") <span aria-hidden="true">→</span></strong><span>@T("NextTemplatesText")</span></a>
-            <a class="docs-card" href="docs/stores"><strong>@T("NextStores") <span aria-hidden="true">→</span></strong><span>@T("NextStoresText")</span></a>
+            <a class="docs-card" href="docs/core/v1/quick-start"><strong>@T("NextQuickStart") <span aria-hidden="true">→</span></strong><span>@T("NextQuickStartText")</span></a>
+            <a class="docs-card" href="docs/core/v1/templates"><strong>@T("NextTemplates") <span aria-hidden="true">→</span></strong><span>@T("NextTemplatesText")</span></a>
+            <a class="docs-card" href="docs/core/v1/stores"><strong>@T("NextStores") <span aria-hidden="true">→</span></strong><span>@T("NextStoresText")</span></a>
             <a class="docs-card" href="playground"><strong>@T("NextPlayground") <span aria-hidden="true">→</span></strong><span>@T("NextPlaygroundText")</span></a>
             <a class="docs-card" href="@SiteLinks.Examples" target="_blank" rel="noopener noreferrer"><strong>@T("NextSamples") <span aria-hidden="true">↗</span></strong><span>@T("NextSamplesText")</span></a>
             <a class="docs-card" href="@SiteLinks.Repository" target="_blank" rel="noopener noreferrer"><strong>@T("NextReadmes") <span aria-hidden="true">↗</span></strong><span>@T("NextReadmesText")</span></a>

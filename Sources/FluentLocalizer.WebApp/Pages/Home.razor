@@ -15,7 +15,7 @@
             <p class="hero-lede">@Translator.Get("Ui:HeroDescription")</p>
             <div class="hero-actions">
                 <NavLink class="button button-primary" href="playground">@Translator.Get("Ui:TryPlayground") <span aria-hidden="true">↗</span></NavLink>
-                <NavLink class="button button-ghost" href="docs">@Translator.Get("Ui:ReadDocs") <span aria-hidden="true">→</span></NavLink>
+                <NavLink class="button button-ghost" href="@DocsSets.Latest(DocsSets.DefaultScope).Route">@Translator.Get("Ui:ReadDocs") <span aria-hidden="true">→</span></NavLink>
             </div>
             <div class="hero-meta"><span>@Translator.Get("Ui:Licensed")</span><span class="meta-divider"></span><span><RichText Text="@Translator.Get("Ui:Powered")" /></span><span class="meta-divider"></span><span>@Translator.Get("Ui:BlazorReady")</span></div>
         </div>

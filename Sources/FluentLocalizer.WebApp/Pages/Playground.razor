@@ -111,7 +111,7 @@
     </div>
 </section>
 
-<section class="playground-more"><div class="shell"><div><span class="eyebrow">@Translator.Get("Ui:KeepGoing").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:BringApp")</h2><p>@Translator.Get("Ui:ExploreDocs")</p></div><NavLink class="button button-primary" href="docs">@Translator.Get("Ui:ReadDocumentation") <span aria-hidden="true">↗</span></NavLink></div></section>
+<section class="playground-more"><div class="shell"><div><span class="eyebrow">@Translator.Get("Ui:KeepGoing").WithCase(LetterCase.Upper)</span><h2>@Translator.Get("Ui:BringApp")</h2><p>@Translator.Get("Ui:ExploreDocs")</p></div><NavLink class="button button-primary" href="@DocsSets.Latest(DocsSets.DefaultScope).Route">@Translator.Get("Ui:ReadDocumentation") <span aria-hidden="true">↗</span></NavLink></div></section>
 
 @code {
     [CascadingParameter] private CultureInfo SiteCulture { get; set; } = CultureInfo.CurrentUICulture;

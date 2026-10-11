@@ -1,0 +1,18 @@
+@* Shown in the hero of a set for an earlier major version, with a link to the same page in the latest set. *@
+@if (Set.Major < Latest.Major)
+{
+    <p class="docs-outdated" role="note">
+        <span>@Translator.Get("Ui:DocsOutdated").WithArg("version", Set.Version)</span>
+        <a href="@Latest.RouteOf(Latest.Find(PageKey) ?? Latest.Pages[0])">@Translator.Get("Ui:DocsGoLatest").WithArg("version", Latest.Version) <span aria-hidden="true">→</span></a>
+    </p>
+}
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+    [CascadingParameter] private DocsSet Set { get; set; } = default!;
+
+    /// <summary>The key of the page being read, opened again in the latest set when it exists there.</summary>
+    [Parameter, EditorRequired] public string PageKey { get; set; } = string.Empty;
+
+    private DocsSet Latest => DocsSets.Latest(Set.ScopeId);
+}

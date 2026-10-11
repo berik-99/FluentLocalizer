@@ -1,0 +1,24 @@
+@* The documented scopes as tabs, shared by the guides and the API reference.
+   A tab opens the same page and major version in the other scope when it has them. *@
+<nav class="docs-scopes" aria-label="@Translator.Get("Ui:DocsChoiceScope")">
+    @foreach (var scopeId in DocsSets.ScopeIds)
+    {
+        var current = scopeId == Set.ScopeId;
+        <a href="@Target(scopeId)" class="@(current ? "is-current" : null)" aria-current="@(current ? "page" : null)"
+           title="@string.Join(", ", ApiReference.Scope(scopeId).Packages)">@Translator.Get(DocsSets.ScopeNameKey(scopeId))</a>
+    }
+</nav>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+    [CascadingParameter] private DocsSet Set { get; set; } = default!;
+
+    /// <summary>The key of the page being read.</summary>
+    [Parameter, EditorRequired] public string PageKey { get; set; } = string.Empty;
+
+    private string Target(string scopeId)
+    {
+        var set = DocsSets.Find(scopeId, $"v{Set.Major}") ?? DocsSets.Latest(scopeId);
+        return set.RouteOf(set.Find(PageKey) ?? set.Pages[0]);
+    }
+}
