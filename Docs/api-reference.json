@@ -59,6 +59,14 @@
         {
           "Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0",
           "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."
+        },
+        {
+          "Version": "1.0.1", "Date": "2026-10-11", "SourceRevision": "store-json-v1.0.1",
+          "Summary": "Fixed neutral-culture fallback after manifest preloading in HttpJsonStore.",
+          "Notes": [
+            {"Kind": "Fixed", "Text": "With a manifest, `HttpJsonStore.LoadAsync` now preloads catalog files listed for the neutral culture too. Synchronous `GetTemplate` can therefore use the same neutral-culture fallback as `GetTemplateAsync` after preloading."},
+            {"Kind": "Changed", "Text": "Updated the `HttpJsonStore.LoadAsync` API reference and package documentation to describe manifest-based neutral-culture preloading."}
+          ]
         }
       ]
     }

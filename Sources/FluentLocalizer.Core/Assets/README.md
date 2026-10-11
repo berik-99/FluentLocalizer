@@ -296,7 +296,7 @@ Message parsing and formatting are provided by [MessageFormat](https://github.co
 
 Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
 
-Version numbers shown for a type or member refer to the NuGet package named on that type. `FluentLocalizer` and `FluentLocalizer.Extensions.DependencyInjection` share the Core version line; each store has its own.
+Version numbers shown for a type or member refer to the NuGet package named on that type.
 
 Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions and deprecations are marked on each member, and the changes between versions are listed in the changelog. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/core/v1/api) uses the same catalog and can show any earlier version; the [changelog](https://berik-99.github.io/FluentLocalizer/changelog?scope=core) lists the changes of every release.
 
