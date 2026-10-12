@@ -2,7 +2,7 @@
 
 ## API reference
 
-For all public types, constructors, method overloads, options and enum values, see the [complete API reference](../README.md#api-reference) or the searchable WebUI reference for [Core](https://berik-99.github.io/FluentLocalizer/docs/core/api) and the [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/api). The examples below demonstrate how these APIs work together.
+For all public types, constructors, method overloads, options and enum values, see the [complete API reference](../API-REFERENCE.md) or the searchable WebUI reference for [Core](https://berik-99.github.io/FluentLocalizer/docs/core/api) and the [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/api). The examples below demonstrate how these APIs work together.
 
 | Project | Store | Basic use | Advanced use |
 |---|---|---|---|

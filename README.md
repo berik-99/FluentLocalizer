@@ -7,13 +7,7 @@
 
 **FluentLocalizer** is a lightweight, high-performance .NET library designed for resolving culture-aware translation templates written in the **[ICU message syntax](https://unicode-org.github.io/icu/userguide/format_parse/messages/)** with clean **Fluent APIs**. Templates are parsed and formatted by [**MessageFormat**](https://github.com/jeffijoe/messageformat.net), the open-source .NET library by Jeff Hansen ([@jeffijoe](https://github.com/jeffijoe)): FluentLocalizer would not exist without it.
 
-Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/). To run the site locally, use `dotnet run --project Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj`. The GitHub Pages workflow publishes the static WebAssembly output from `main`.
-
-The documentation explains every feature step by step: the [Core guides](https://berik-99.github.io/FluentLocalizer/docs/core) cover templates, requests, culture, errors, logging and dependency injection, and the [JSON store guides](https://berik-99.github.io/FluentLocalizer/docs/store-json) cover each JSON store. Browse the [complete API reference](#api-reference) below or use the searchable WebUI API reference for [Core](https://berik-99.github.io/FluentLocalizer/docs/core/api) and the [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/api). The [changelog](CHANGELOG.md) lists the changes of every release.
-
-The WebApp uses FluentLocalizer with `EmbeddedJsonStore` and embedded catalogs in `Sources/FluentLocalizer.WebApp/Locales`. It selects the first supported language from the browser's preferences (English, Italian, French, German, or Spanish), preserves the regional culture for formatting, and falls back to English for unsupported languages or missing translations. The header's language dropdown updates the site without reloading or clearing playground edits and remembers the choice for subsequent visits.
-
-ICU is the Unicode Consortium's internationalization standard for formatting dates, numbers, plurals, and messages in a culture-aware way. In practice, it defines a common set of rules that let the same message be rendered correctly for different languages and regions, for example by changing plural forms (`one`, `few`, `many`, `other`) or by adapting number and date formatting to the current locale. The [ICU message formatting guide](https://unicode-org.github.io/icu/userguide/format_parse/messages/) describes the template syntax (placeholders, `plural`, `select` and more); the [MessageFormat documentation](https://github.com/jeffijoe/messageformat.net#readme) lists the ICU features supported in .NET. More about ICU in general: https://unicode-org.github.io/icu/.
+Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/).
 
 Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string builders. FluentLocalizer makes multi-language management, pluralization, gender-aware translations, and missing-key fallback seamless, extensible, and developer-friendly.
 
@@ -46,7 +40,6 @@ Install the core package:
 
 ```bash
 dotnet add package FluentLocalizer
-
 ```
 
 Create a quick in-memory store and resolve your first message:
@@ -54,6 +47,15 @@ Create a quick in-memory store and resolve your first message:
 ```csharp
 using FluentLocalizer;
 using System.Globalization;
+
+var translator = new Translator(new InMemoryStore());
+
+var message = translator
+    .Get("welcome")
+    .WithArg("name", "Ada")
+    .Resolve();
+
+Console.WriteLine(message); // Output: Hello Ada!
 
 public sealed class InMemoryStore : ITranslationStore
 {
@@ -68,255 +70,22 @@ public sealed class InMemoryStore : ITranslationStore
     public Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default) =>
         Task.FromResult(GetTemplate(key, culture));
 }
-
-var store = new InMemoryStore();
-var translator = new Translator(store, new TranslationOptions
-{
-    DefaultArguments = new Dictionary<string, object?>
-    {
-        ["name"] = "Ada"
-    }
-});
-
-var message = translator
-    .Get("welcome")
-    .Resolve();
-
-Console.WriteLine(message); // Output: Hello Ada!
-
 ```
+
+For a real application, use the [JSON stores](DOCUMENTATION.md#json-stores) and [dependency injection](DOCUMENTATION.md#dependency-injection).
 
 ---
 
-## Culture selection
+## 📚 Documentation
 
-**You normally don't call `WithCulture(...)`.** `translator.Get(key)` uses `CultureInfo.CurrentUICulture`, the culture of your user interface, both to look up the template and to format it, with `Resolve()` and `ResolveAsync()` alike. Set the UI culture where your application decides the user's language, and every request follows it:
-
-```csharp
-using System.Globalization;
-
-var culture = CultureInfo.GetCultureInfo("it-IT");
-CultureInfo.CurrentUICulture = culture; // Translation lookup and message formatting.
-CultureInfo.CurrentCulture = culture;   // Standard .NET number/date formatting elsewhere in the app.
-
-var message = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Italian
-```
-
-`WithCulture(...)` exists only to **force** a culture that differs from the UI culture for one message, such as an email written in the recipient's language or a page that shows the same text in several languages:
-
-```csharp
-var subject = translator.Get("Email:Subject").WithCulture(recipientCulture).Resolve();
-```
-
-It affects that request only and never changes `CurrentUICulture` or `CurrentCulture`. If you pass the same culture to every request, set `CurrentUICulture` instead: repeating `WithCulture(...)` hides the real culture of the application and ignores later language changes.
-
-`Get(key)` captures the culture when it creates the builder, so create a new builder after changing it. Components that cache rendered text need their own update or rerender. On modern .NET, the ambient culture flows through task-based asynchronous operations.
-
-For application-wide thread defaults, set `CultureInfo.DefaultThreadCurrentUICulture` and `CultureInfo.DefaultThreadCurrentCulture` at startup; these do not override explicitly set thread cultures. In ASP.NET Core, `app.UseRequestLocalization(...)` sets both cultures for each request, so `Get(key)` already follows the user's language; don't change the process-wide defaults per user.
-
-See Microsoft's [CurrentUICulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentuiculture) and [CurrentCulture](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.currentculture) documentation.
-
-## ⚙️ Translation Options
-
-Customize how missing keys or invalid format strings are handled:
-
-```csharp
-var options = new TranslationOptions
-{
-    MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue,
-    MissingKeyFallbackValue = "Missing '{key}' for culture '{culture}'.",
-    FormattingErrorBehavior = FormattingErrorBehavior.ThrowException,
-    FormattingErrorExceptionFactory = (key, culture) => new TranslationException(
-        key,
-        culture,
-        $"Format error for {key}")
-};
-
-```
-
-| Property | Default | Behavior |
-| --- | --- | --- |
-| `MissingKeyBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `[key]`; `ReturnConfiguredValue` returns `MissingKeyFallbackValue`; `ThrowException` throws. |
-| `MissingKeyFallbackValue` | `"[{key}]"` | Used only with `ReturnConfiguredValue`. |
-| `MissingKeyExceptionFactory` | `null` | Creates the exception thrown with `ThrowException`; defaults to `TranslationException`. |
-| `FormattingErrorBehavior` | `ReturnPlaceholder` | `ReturnPlaceholder` returns `FormattingErrorFallbackValue`; `ThrowException` throws. |
-| `FormattingErrorFallbackValue` | `"[Format Error]"` | Returned for parse and formatting failures. |
-| `FormattingErrorExceptionFactory` | `null` | Creates the exception thrown with `ThrowException`; a `null` result falls back to the missing-key exception. |
-| `DefaultArguments` | `null` | Values merged into every request; request values win, names are case-insensitive. |
-
-Fallback values replace `{key}`/`{0}` with the key and `{culture}`/`{1}` with the culture name, case-insensitively and as plain text (not ICU). The translator keeps a reference to the options object, so configure it before creating the translator. `WithOptions(...)` replaces the whole object for a single request.
-
-### Resolution rules worth knowing
-
-- A missing translation is a `null`, empty or whitespace-only template, or a `KeyNotFoundException` thrown by the store. An empty string in a catalog is therefore *missing* and does not fall back to another culture.
-- A formatting error is any parse or format failure: unbalanced braces, a placeholder without a value, a non-numeric `plural` value, no matching branch without `other`, an unsupported format style. Missing arguments are never rendered as empty text.
-- Any other store exception (I/O, HTTP, `FileNotFoundException`, cancellation) propagates unchanged; it is logged at `Error` first when a logger is configured.
-- Every request starts with `quantity = null` and `gender = "unspecified"`; `Pluralize` and `Genderize` overwrite them. Because they are request values, `DefaultArguments` entries for these two names are never used. A `plural` block treats a `null` quantity as `0`.
-- If a template contains `{Length}` and no `Length` argument is supplied, it receives the count of non-null arguments, including the built-in `gender`.
-- `#` is replaced only directly inside a `plural` branch; inside a `select` nested in a `plural` it stays literal. Nest `plural` inside `select` instead.
-- Literal braces are escaped ICU-style with apostrophes (`'{name}'`), and `''` prints one apostrophe; backslashes are not escapes. MessageFormat supports `number` (`integer`, `percent`, `currency`), `date` (`short`, `full`), `time` (`short`), `plural` with `offset:` and `=N`, `select` and `selectordinal`.
-- `WithCase` runs after formatting: `Upper`/`Lower` use invariant casing; `CamelCase`, `PascalCase`, `SnakeCase` and `KebabCase` split words and drop spaces and punctuation, so they suit identifiers rather than sentences.
-- With `ThrowException`, the default `TranslationException` carries `Key` and `Culture`; formatting exceptions include the formatter's message but do not set `InnerException`. An empty or whitespace key throws `ArgumentException` instead.
-- `Translator` is stateless and thread-safe; `TranslationBuilder` is mutable, not thread-safe, and keeps the culture captured by `Get(key)`. `ToString()` and the implicit `string` conversion call `Resolve()`.
-
----
-
-## 📄 JSON Stores
-
-The `FluentLocalizer.Store.Json` package provides three stores that share culture fallback, file mappings, JSON parsing, and nested-key lookup:
-
-- `JsonFileStore` reads files from disk and can reload them when they change.
-- `EmbeddedJsonStore` reads JSON resources from an assembly.
-- `HttpJsonStore` downloads files asynchronously and caches them in memory.
-
-Install the package:
-
-```bash
-dotnet add package FluentLocalizer.Store.Json
-```
-
-### Organizing the JSON files
-
-A key is a path through nested objects, with `:` between segments, and each string value is an ICU template. This file defines `Welcome`, `Checkout:Title` and `Checkout:Items`:
-
-```json
-{
-  "Welcome": "Hello {name}!",
-  "Checkout": {
-    "Title": "Your cart",
-    "Items": "{quantity, plural, one {# item} other {# items}}"
-  }
-}
-```
-
-Always nest objects: keys are split at every `:`, so a property named `"Checkout:Title"` is never found. Property names are case-sensitive, and only string values count as templates.
-
-The first segment of a key with two or more segments is its *namespace*. `common:Buttons:Save` can live in the culture file as a top-level object, `{ "common": { "Buttons": { "Save": "Salva" } } }` in `it-IT.json`, or in a namespace file without the namespace object, `{ "Buttons": { "Save": "Salva" } }` in `it-IT.common.json`. The key is the same in both cases. `JsonFileStore` and `HttpJsonStore` accept `it-IT.common.json`, `common.it-IT.json` and `it-IT/common.json`; `EmbeddedJsonStore` reads only the culture file.
-
-Fallback works per key: the store tries the namespace file, the culture file, the neutral culture (`it`) and then `FallbackCulture`, so regional and namespace files only need the strings that differ. Name each language's main catalog after its neutral culture and add regional files only for differences:
-
-```text
-Locales/
-  en.json            complete catalog, also the fallback (FallbackCulture = "en")
-  en-GB.json         only British differences
-  it.json            Italian for it-IT, it-CH, it...
-  it.checkout.json   optional namespace file
-```
-
-With regional-only names such as `it-IT.json`, `JsonFileStore` and `HttpJsonStore` with a manifest throw `FileNotFoundException` for a sibling region like `it-CH` instead of using it; map it with `FileMappings["it-CH"] = "it-IT.json"`. The same selection applies to `FallbackCulture`, so the fallback culture (or its neutral culture) needs a file of its own, and the exception is thrown whatever `ThrowOnMissingStore` says. The [JSON store guide](Sources/FluentLocalizer.Store.Json/Assets/README.md#organizing-json-files) details the lookup order, every supported file name and the differences between stores.
-
-`JsonFileStore` reads each file the first time a lookup needs it and keeps the parsed document in memory. It reads from the application output directory by default. Add the files explicitly to the consuming project and copy them to both build and publish output:
-
-```xml
-<ItemGroup>
-  <Content Include="Locales\**\*.json"
-           CopyToOutputDirectory="PreserveNewest"
-           CopyToPublishDirectory="PreserveNewest" />
-</ItemGroup>
-```
-
-The store indexes the `*.json` files in `ResourcesPath` (default `Locales`) and its subfolders. This is a filesystem store and is not supported in browser applications; use `EmbeddedJsonStore` or `HttpJsonStore` there.
-
-```csharp
-using FluentLocalizer;
-using FluentLocalizer.Store.Json;
-
-using var store = new JsonFileStore(new JsonFileStoreOptions
-{
-    ResourcesPath = "Locales",
-    FallbackCulture = "en",
-    ThrowOnMissingStore = true
-});
-var translator = new Translator(store);
-var greeting = translator.Get("Welcome").WithArg("name", "Ada").Resolve(); // Uses CurrentUICulture.
-```
-
-For embedded resources, include the locale files as `EmbeddedResource` and create an `EmbeddedJsonStore`:
-
-```xml
-<ItemGroup>
-  <EmbeddedResource Include="Locales\**\*.json" />
-</ItemGroup>
-```
-
-The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. It reads one file per culture, so keep namespaces as top-level objects, and never embed names such as `common.it-IT.json`: MSBuild moves them to a satellite assembly that the store does not read. Always set `ResourceAssembly`; the default is the entry assembly, which in tests or plugins is not the one containing the files. `EmbeddedJsonStore` holds no resources and is not `IDisposable`.
-
-```csharp
-var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions
-{
-    ResourceAssembly = typeof(Program).Assembly,
-    ResourcesPath = "Locales"
-});
-```
-
-For HTTP, publish the locale files as static files on the server (for example under `wwwroot/locales` in an ASP.NET Core or Blazor WebAssembly app), then configure an `HttpClient` with the base address that serves them. `ResourcesPath` (default `locales`, lowercase) is the URL path below that base address; end `BaseAddress` with `/`, otherwise its last segment is dropped when relative URLs are resolved. Call `LoadAsync` before synchronous `Resolve()`, or use `ResolveAsync()` for lazy loading. An optional `manifest.json` lists all culture and namespace files for complete preload and short-to-regional culture selection. `RefreshStoreAsync()` revalidates loaded files with HTTP cache validators when available.
-
-```csharp
-using FluentLocalizer.Store.Json;
-
-var client = new HttpClient { BaseAddress = new Uri("https://example.com/") };
-using var store = new HttpJsonStore(client, new HttpJsonStoreOptions { ResourcesPath = "locales" });
-await store.LoadAsync(["it-IT", "en-US"]);
-```
-
-The Blazor WebAssembly sample in `Examples/FluentLocalizer.Samples.BlazorWebApp` uses `+` and `−` buttons to change the unread message count. The pluralized message rerenders immediately, and the language selector switches between the preloaded English and Italian files.
-
-All options support `FallbackCulture`, `FileMappings`, `ThrowOnMissingStore`, and the optional `MaxDocumentBytes` limit. Catalogs must be strict JSON (no comments or trailing commas); without `ThrowOnMissingStore`, the file and embedded stores skip an invalid file silently. A document larger than `MaxDocumentBytes` always throws. See the [JSON store package guide](Sources/FluentLocalizer.Store.Json/Assets/README.md) for full examples and behavior.
-
-When upgrading from the separate HTTP package, replace `FluentLocalizer.Store.Http` with `FluentLocalizer.Store.Json` and update the namespace to `FluentLocalizer.Store.Json`. The mode-based `JsonStore` and `JsonStoreOptions` API is deprecated; use a store-specific type above.
-
----
-## 🧩 Dependency Injection Integration
-
-Integration with `IServiceCollection` for ASP.NET Core, Worker Services, or Console apps.
-
-```bash
-dotnet add package FluentLocalizer.Extensions.DependencyInjection
-
-```
-
-### Registration & Worker Example
-
-```csharp
-using FluentLocalizer;
-using FluentLocalizer.Store.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
-var builder = Host.CreateApplicationBuilder(args);
-
-builder.Services.AddFluentLocalizer(options =>
-{
-    options.MissingKeyBehavior = MissingTranslationBehavior.ReturnConfiguredValue;
-    options.MissingKeyFallbackValue = "[{key}]";
-})
-.WithStore(new JsonFileStore(new JsonFileStoreOptions
-{
-    ResourcesPath = "Locales",
-    FallbackCulture = "en-US",
-    ThrowOnMissingStore = true
-}))
-.WithLogger();
-
-builder.Services.AddHostedService<NotificationWorker>();
-
-await builder.Build().RunAsync();
-
-public sealed class NotificationWorker(ITranslator translator) : BackgroundService
-{
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        var message = translator
-            .Get("Notifications:MessageCount")
-            .Pluralize(3)
-            .Resolve();
-
-        Console.WriteLine(message); // In CurrentUICulture, for example: You have 3 messages.
-        return Task.CompletedTask;
-    }
-}
-
-```
+| Where | What you find |
+| :--- | :--- |
+| [DOCUMENTATION.md](DOCUMENTATION.md) | [ICU templates](DOCUMENTATION.md#icu-message-templates), [culture selection](DOCUMENTATION.md#culture-selection), [translation options and resolution rules](DOCUMENTATION.md#translation-options), [JSON stores](DOCUMENTATION.md#json-stores) and [dependency injection](DOCUMENTATION.md#dependency-injection). |
+| [API-REFERENCE.md](API-REFERENCE.md) | Every public type and member of the three packages, generated from the shared API catalog. |
+| [CHANGELOG.md](CHANGELOG.md) | The changes of every release. |
+| [Website](https://berik-99.github.io/FluentLocalizer/) | Step-by-step [Core guides](https://berik-99.github.io/FluentLocalizer/docs/core) and [JSON store guides](https://berik-99.github.io/FluentLocalizer/docs/store-json), the searchable API reference for [Core](https://berik-99.github.io/FluentLocalizer/docs/core/v1/api) and the [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1/api) with earlier versions, and a browser playground. |
+| Package READMEs | Shipped with each NuGet package: [Core](Sources/FluentLocalizer.Core/Assets/README.md), [JSON store](Sources/FluentLocalizer.Store.Json/Assets/README.md), [dependency injection](Sources/FluentLocalizer.Extensions.DependencyInjection/Assets/README.md). |
+| [Examples](Examples/README.md) | Runnable console, worker and Blazor samples. |
 
 ---
 
@@ -328,12 +97,9 @@ Clone the repository and build using the .NET CLI:
 dotnet restore FluentLocalizer.slnx
 dotnet build FluentLocalizer.slnx --configuration Release
 dotnet test FluentLocalizer.slnx --configuration Release
-
 ```
 
-The library projects target `netstandard2.0`, `net8.0`, and `net10.0`; the samples target `net10.0`. The test projects also target `net472`, so run the full test matrix on Windows. On other platforms, run the `.NET 10` tests with `dotnet test FluentLocalizer.slnx --configuration Release --framework net10.0`.
-
-**Website documentation:** the pages live in `Sources/FluentLocalizer.WebApp/Pages/Docs`, their text in the `Docs` object of `Sources/FluentLocalizer.WebApp/Locales/*.json` (one key per paragraph, in all five languages), and the sidebar outline in `DocsNav.cs`. To document a new store, add its page next to the existing store pages and register it in the `Stores` group of `DocsNav`. The WebApp localization test resolves every catalog string in every language with the real formatter.
+The library projects target `netstandard2.0`, `net8.0`, and `net10.0`; the samples and the website target `net10.0`. The test projects also target `net472`, so run the full test matrix on Windows. On other platforms, run the `.NET 10` tests with `dotnet test FluentLocalizer.slnx --configuration Release --framework net10.0`. The website's browser script has its own Node.js test: `node Tests/FluentLocalizer.WebApp.Tests/site.test.cjs`.
 
 **Run sample projects:**
 
@@ -346,7 +112,24 @@ dotnet run --project Examples/FluentLocalizer.Samples.ConsoleApp/FluentLocalizer
 # Worker Service Sample
 dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.Samples.WorkerApp.csproj
 
+# Blazor Web App Sample
+dotnet run --project Examples/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp/FluentLocalizer.Samples.BlazorWebApp.csproj
 ```
+
+**Run the website:**
+
+```bash
+dotnet run --project Sources/FluentLocalizer.WebApp/FluentLocalizer.WebApp.csproj
+```
+
+The website is a Blazor WebAssembly app; the GitHub Pages workflow publishes its static output from `main`. It uses FluentLocalizer with `EmbeddedJsonStore` and embedded catalogs in `Sources/FluentLocalizer.WebApp/Locales`. It selects the first supported language from the browser's preferences (English, Italian, French, German, or Spanish), preserves the regional culture for formatting, and falls back to English for unsupported languages or missing translations. The header's language dropdown updates the site without reloading or clearing playground edits and remembers the choice for subsequent visits.
+
+**Documentation sources:**
+
+- `DOCUMENTATION.md` and the package READMEs are written by hand. The API reference sections, `API-REFERENCE.md` and `CHANGELOG.md` are generated from `Docs/api-reference.json` by `Docs/Update-ApiReference.ps1`; CI fails when they are out of date.
+- The website guides are versioned documentation sets: the pages live in `Sources/FluentLocalizer.WebApp/Pages/Docs/Core/V1` and `Pages/Docs/StoreJson/V1`, their text in the `Docs:CoreV1` and `Docs:StoreJsonV1` objects of `Sources/FluentLocalizer.WebApp/Locales/*.json` (one key per paragraph, in all five languages), and each set is registered in `Pages/Docs/DocsSets.cs`. A new store gets its own release scope and documentation set. The WebApp localization test resolves every catalog string in every language with the real formatter.
+
+[Docs/README.md](Docs/README.md) explains the catalog, release scopes, documentation sets and the release process.
 
 ---
 
@@ -354,8 +137,12 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 
 ```text
 ├── FluentLocalizer.slnx
-├── Assets/                                         # Repository branding assets
-├── Docs/                                           # API catalog (api-reference.json) and its README generator
+├── README.md
+├── DOCUMENTATION.md                                 # Usage guide: culture, options, JSON stores, DI
+├── API-REFERENCE.md                                 # Generated API reference
+├── CHANGELOG.md                                     # Generated release notes
+├── Assets/                                          # Repository branding assets
+├── Docs/                                            # API catalog (api-reference.json), generator and maintainer guides
 ├── Sources/
 │   ├── FluentLocalizer.Core/                        # Core engine and abstractions
 │   ├── FluentLocalizer.Extensions.DependencyInjection/
@@ -368,8 +155,7 @@ dotnet run --project Examples/FluentLocalizer.Samples.WorkerApp/FluentLocalizer.
 │   └── FluentLocalizer.Samples.BlazorWebApp/
 │       ├── FluentLocalizer.Samples.BlazorWebApp/    # ASP.NET Core host
 │       └── FluentLocalizer.Samples.BlazorWebApp.Client/ # Blazor WebAssembly client
-└── Tests/                                           # Core, JSON store, and DI test projects
-
+└── Tests/                                           # Core, JSON store, DI and website tests, API snapshots
 ```
 
 ---
@@ -401,501 +187,3 @@ MessageFormat is distributed under the MIT License. See [THIRD-PARTY-NOTICES.md]
 ## 📜 License
 
 Distributed under the **MIT License**.
-
-<!-- api-reference:start -->
-## API reference
-
-Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.
-
-Version numbers shown for a type or member refer to the NuGet package named on that type.
-
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions and deprecations are marked on each member, and the changes between versions are listed in the changelog. The searchable WebUI API reference ([Core](https://berik-99.github.io/FluentLocalizer/docs/core/v1/api), [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1/api)) uses the same catalog and can show any earlier version; the [changelog](https://berik-99.github.io/FluentLocalizer/changelog) lists the changes of every release.
-
-- [ITranslator](#api-itranslator)
-- [Translator](#api-translator)
-- [TranslationBuilder](#api-translationbuilder)
-- [TranslationOptions](#api-translationoptions)
-- [ITranslationStore](#api-itranslationstore)
-- [TranslationException](#api-translationexception)
-- [Gender](#api-gender)
-- [LetterCase](#api-lettercase)
-- [MissingTranslationBehavior](#api-missingtranslationbehavior)
-- [FormattingErrorBehavior](#api-formattingerrorbehavior)
-- [ITranslationLogger](#api-itranslationlogger)
-- [TranslationLogLevel](#api-translationloglevel)
-- [JsonStoreSettings](#api-jsonstoresettings)
-- [JsonFileStoreOptions](#api-jsonfilestoreoptions)
-- [EmbeddedJsonStoreOptions](#api-embeddedjsonstoreoptions)
-- [HttpJsonStoreOptions](#api-httpjsonstoreoptions)
-- [JsonTranslationStoreBase](#api-jsontranslationstorebase)
-- [JsonFileStore](#api-jsonfilestore)
-- [EmbeddedJsonStore](#api-embeddedjsonstore)
-- [HttpJsonStore](#api-httpjsonstore)
-- [JsonStore](#api-jsonstore)
-- [JsonStoreOptions](#api-jsonstoreoptions)
-- [JsonStoreLocation](#api-jsonstorelocation)
-- [FluentLocalizerServiceCollectionExtensions](#api-fluentlocalizerservicecollectionextensions)
-- [FluentLocalizerBuilder](#api-fluentlocalizerbuilder)
-
-<a id="api-itranslator"></a>
-
-### ITranslator
-
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Contract for creating translation requests by key.
-
-Implemented by Translator. Each Get call creates a separate mutable builder.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `TranslationBuilder Get(string key)` | key is the translation identifier. Returns a new builder; Translator captures CurrentUICulture at this call. A null key throws ArgumentNullException in Translator; empty keys are forwarded to the store. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Interfaces/ITranslator.cs)
-
-<a id="api-translator"></a>
-
-### Translator
-
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `ITranslator` · Since: `0.0.1`
-
-Default ITranslator implementation, combining a store, translation policies and optional logging.
-
-The translator can be reused after a culture change. Create a new builder for each translation; existing builders retain their captured culture.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `Translator(ITranslationStore store, TranslationOptions? options = null, ITranslationLogger? logger = null)` | store supplies templates and must not be null. options defaults to a new TranslationOptions; logger defaults to no logging. Stores the supplied references. Throws ArgumentNullException for a null store. |
-| `TranslationBuilder Get(string key)` | Returns a new builder for key using the configured store, options and logger. Captures CurrentUICulture for lookup and ICU message formatting. Throws ArgumentNullException for a null key. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Translator.cs)
-
-<a id="api-translationbuilder"></a>
-
-### TranslationBuilder
-
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Mutable fluent request that resolves a template, applies arguments and formats the result.
-
-All With*, Pluralize and Genderize methods return the same builder. Culture is captured at construction; WithCulture is optional and affects this request only. Do not share one mutable builder between concurrent operations.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `TranslationBuilder(ITranslationStore store, string key, TranslationOptions? options = null, CultureInfo? culture = null, ITranslationLogger? logger = null)` | store and key identify the template and cannot be null (ArgumentNullException). options defaults to a new TranslationOptions, culture to CurrentUICulture at construction and logger to no logging. |
-| `TranslationBuilder WithCulture(CultureInfo culture)` | culture overrides lookup and ICU message formatting for this request. Does not change CurrentUICulture or CurrentCulture. Although the parameter is declared non-nullable, passing null currently selects CurrentCulture, not CurrentUICulture. |
-| `TranslationBuilder WithCulture(string cultureName)` | cultureName is a .NET culture name, such as it-IT. Uses CultureInfo.GetCultureInfo. Throws ArgumentNullException for null and CultureNotFoundException for an unrecognized name. |
-| `TranslationBuilder WithOptions(TranslationOptions options)` | Replaces this builder's missing-key, formatting and default-argument policies with options. Passing null resets them to a new TranslationOptions despite the non-nullable signature. |
-| `TranslationBuilder WithArg(string name, object? value)` | Adds or replaces the named argument. Names are case-insensitive; value may be null. Runtime arguments override configured defaults. A null name throws ArgumentNullException. |
-| `TranslationBuilder WithArgs(Dictionary<string, object?> args)` | Merges args into the runtime arguments using WithArg. Matching names are replaced, case-insensitively. A null dictionary is ignored. |
-| `TranslationBuilder Pluralize(int quantity)` | Sets the quantity argument to quantity. Equivalent to WithArg("quantity", quantity); the template's plural expression selects the branch. |
-| `TranslationBuilder Genderize(Gender gender)` | Sets the gender argument to the lowercase enum name (unspecified, male, female or neuter). Equivalent to WithArg with that string; select expressions choose the template branch. |
-| `TranslationBuilder WithCase(LetterCase letterCase)` | Selects a text transformation applied after formatting. Default is AsIs. Upper and Lower use invariant casing; the other transformations split words before recombining them. |
-| `string Resolve()` | Synchronously retrieves and formats the template. Returns a message or the configured fallback. Null, empty, whitespace templates and KeyNotFoundException are treated as missing translations. Missing-key or formatting policies may throw; other store errors propagate. HTTP stores require preloading for synchronous lookup. |
-| `Task<string> ResolveAsync(CancellationToken cancellationToken = default)` | Asynchronously retrieves the template using cancellationToken, then formats it with the builder's captured culture. Returns the message or configured fallback. Resolution policies match Resolve(); store failures and cancellation propagate. |
-| `string ToString()` | Overrides ToString by calling Resolve(). Performs a synchronous lookup each time and has the same fallback and exception behavior. |
-| `static implicit operator string(TranslationBuilder builder)` | Converts builder to a string by calling Resolve(). Supports assignments such as string message = translator.Get("Welcome"); performs synchronous resolution. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/TranslationBuilder.cs)
-
-<a id="api-translationoptions"></a>
-
-### TranslationOptions
-
-Kind: `sealed class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Policies for missing translations, formatting failures and default arguments.
-
-Fallback strings replace {key} and {0} with the key, and {culture} and {1} with the requested culture name. The builder's default arguments include gender = unspecified and quantity = null.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `TranslationOptions()` | Creates mutable options with the defaults listed below. |
-| `MissingTranslationBehavior MissingKeyBehavior { get; set; }` | Default: ReturnPlaceholder. Selects placeholder, configured value or exception when the template is missing. |
-| `string MissingKeyFallbackValue { get; set; }` | Default: [{key}]. Used with ReturnConfiguredValue. ReturnPlaceholder always produces [key] independently of this property. |
-| `Func<string, CultureInfo?, Exception>? MissingKeyExceptionFactory { get; set; }` | Default: null. Optional factory receiving key and culture when missing-key behavior is ThrowException. It must return a non-null exception. Its returned exception is thrown; factory errors propagate. |
-| `FormattingErrorBehavior FormattingErrorBehavior { get; set; }` | Default: ReturnPlaceholder. Selects the configured formatting fallback or an exception when a template cannot be parsed or formatted. |
-| `string FormattingErrorFallbackValue { get; set; }` | Default: [Format Error]. Returned with ReturnPlaceholder; supports the fallback tokens described above. |
-| `Func<string, CultureInfo?, Exception>? FormattingErrorExceptionFactory { get; set; }` | Default: null. Factory receiving key and culture with ThrowException. A null result falls back to CreateMissingKeyException; errors thrown by the factory propagate. |
-| `IReadOnlyDictionary<string, object?>? DefaultArguments { get; set; }` | Default: null. Arguments merged into each translation. Runtime values replace matching names without regard to case. |
-| `IReadOnlyDictionary<string, object?> CreateArgumentSet(IReadOnlyDictionary<string, object?>? runtimeArguments)` | Returns a new case-insensitive dictionary merging DefaultArguments and runtimeArguments. Runtime values win; null inputs are allowed and neither input dictionary is modified. |
-| `Exception CreateMissingKeyException(string key, CultureInfo? culture)` | Returns the configured factory result or a TranslationException for key and culture. Direct calls do not throw the returned exception. Rejects null, empty or whitespace keys with ArgumentException (ArgumentNullException for null on modern targets); factory failures propagate. |
-| `Exception CreateFormattingException(string key, CultureInfo? culture, Exception? innerException)` | Returns the configured factory result, or a TranslationException whose message includes innerException.Message when available. The default exception does not attach innerException as InnerException. A null factory result uses CreateMissingKeyException. Key validation and factory failures match CreateMissingKeyException. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/TranslationOptions.cs)
-
-<a id="api-itranslationstore"></a>
-
-### ITranslationStore
-
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Storage contract returning raw templates before formatting.
-
-Implementations own their fallback rules. A null result or KeyNotFoundException is treated as a missing translation by TranslationBuilder. Other failures propagate.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `string? GetTemplate(string key, CultureInfo culture)` | key identifies the template; culture selects the translation. Returns the unformatted template or null. Must complete synchronously; cannot rely on asynchronous loading. |
-| `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Asynchronous counterpart returning the raw template or null. cancellationToken allows stores performing asynchronous I/O to cancel the operation. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Interfaces/ITranslationStore.cs)
-
-<a id="api-translationexception"></a>
-
-### TranslationException
-
-Kind: `class` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Inherits: `Exception` · Since: `0.0.1`
-
-Exception carrying the translation key and requested culture. Inherits System.Exception.
-
-Standard Exception members, including Message and InnerException, are inherited from .NET.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `TranslationException(string key, CultureInfo? culture, string message, Exception? innerException = null)` | Creates an exception with the supplied key, optional culture, message and optional innerException. Does not validate the key. |
-| `string Key { get; }` | The translation key supplied to the constructor. |
-| `CultureInfo? Culture { get; }` | The requested culture supplied to the constructor; may be null. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Exceptions/TranslationException.cs)
-
-<a id="api-gender"></a>
-
-### Gender
-
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Enum values accepted by Genderize.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `Unspecified` | No explicit gender; supplies unspecified to the template. The default builder value. |
-| `Male` | Supplies male to a select expression. |
-| `Female` | Supplies female to a select expression. |
-| `Neuter` | Supplies neuter to a select expression. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/Gender.cs)
-
-<a id="api-lettercase"></a>
-
-### LetterCase
-
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Enum transformations applied after message formatting.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `AsIs` | Preserves the formatted text; default transformation. |
-| `Upper` | Converts text with ToUpperInvariant. |
-| `Lower` | Converts text with ToLowerInvariant. |
-| `CamelCase` | Joins words in camelCase. |
-| `PascalCase` | Joins words in PascalCase. |
-| `SnakeCase` | Joins lowercase words with underscores. |
-| `KebabCase` | Joins lowercase words with hyphens. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/LetterCase.cs)
-
-<a id="api-missingtranslationbehavior"></a>
-
-### MissingTranslationBehavior
-
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Enum controlling missing-key resolution.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `ReturnPlaceholder` | Returns [key]; default behavior. |
-| `ThrowException` | Throws the configured missing-key exception or TranslationException. |
-| `ReturnConfiguredValue` | Returns MissingKeyFallbackValue after token replacement. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/MissingTranslationBehavior.cs)
-
-<a id="api-formattingerrorbehavior"></a>
-
-### FormattingErrorBehavior
-
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer` · Since: `0.0.1`
-
-Enum controlling template parsing and formatting failures.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `ReturnPlaceholder` | Returns FormattingErrorFallbackValue after token replacement; default behavior. |
-| `ThrowException` | Throws the configured formatting exception or TranslationException. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Enums/FormattingErrorBehavior.cs)
-
-<a id="api-itranslationlogger"></a>
-
-### ITranslationLogger
-
-Kind: `interface` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `0.0.1`
-
-Optional contract for translation diagnostics.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `void Log(TranslationLogLevel level, string message, Exception? exception = null)` | Writes message at level, with an optional exception. Implement this interface and pass it to Translator, or use the dependency injection logger adapter. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Logging/ITranslationLogger.cs)
-
-<a id="api-translationloglevel"></a>
-
-### TranslationLogLevel
-
-Kind: `enum` · Package: `FluentLocalizer` · Namespace: `FluentLocalizer.Logging` · Since: `0.0.1`
-
-Enum severity levels passed to ITranslationLogger.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `Trace` | Most verbose tracing. |
-| `Debug` | Detailed resolution diagnostics. |
-| `Information` | Informational events. |
-| `Warning` | Recoverable issues, including fallback results. |
-| `Error` | Failures that stop normal resolution. |
-| `Critical` | Unrecoverable failures. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Core/Logging/TranslationLogLevel.cs)
-
-<a id="api-jsonstoresettings"></a>
-
-### JsonStoreSettings
-
-Kind: `class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Since: `0.1.0-alpha`
-
-Common options inherited by every JSON store options type.
-
-Configure options before creating the store. The store-specific options inherit every property listed here.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `JsonStoreSettings()` | Creates shared settings with the defaults below. |
-| `string FallbackCulture { get; set; }` | Default: en-US. The final fallback culture after the requested culture and its neutral form. Must be a valid .NET culture name. |
-| `bool ThrowOnMissingStore { get; set; }` | Default: false. Missing translation files may throw FileNotFoundException when true. When false, filesystem and embedded stores skip individual I/O or JSON parse errors; HTTP request failures and invalid HTTP JSON still throw. |
-| `long MaxDocumentBytes { get; set; }` | Default: 0 (unlimited). Positive values limit one JSON document's size in bytes. Dedicated store constructors reject negative values with ArgumentOutOfRangeException. Oversized documents always throw, whatever ThrowOnMissingStore says: InvalidDataException in file and embedded stores, HttpRequestException in HttpJsonStore. |
-| `IDictionary<string, string> FileMappings { get; }` | Mutable, initially empty, case-insensitive mapping from culture names to JSON file names. Add entries through the returned dictionary; the property cannot be replaced. File and HTTP paths are validated as relative JSON paths. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonStoreSettings.cs)
-
-<a id="api-jsonfilestoreoptions"></a>
-
-### JsonFileStoreOptions
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `0.1.0-alpha`
-
-Filesystem options, inheriting FallbackCulture, ThrowOnMissingStore, MaxDocumentBytes and FileMappings from JsonStoreSettings.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `JsonFileStoreOptions()` | Creates filesystem options with all shared defaults. |
-| `string ResourcesPath { get; set; }` | Default: Locales. Directory scanned recursively for JSON files. Relative paths are resolved against AppContext.BaseDirectory; absolute directory paths are supported. |
-| `bool ReloadOnChange { get; set; }` | Default: false. Enables a FileSystemWatcher that invalidates cached translations when files change. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonFileStoreOptions.cs)
-
-<a id="api-embeddedjsonstoreoptions"></a>
-
-### EmbeddedJsonStoreOptions
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `0.1.0-alpha`
-
-Embedded-resource options, inheriting all JsonStoreSettings properties.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `EmbeddedJsonStoreOptions()` | Creates embedded-resource options with all shared defaults. |
-| `Assembly? ResourceAssembly { get; set; }` | Default: null. Assembly containing the embedded JSON files. When null, uses the entry assembly, then the executing assembly if no entry assembly exists. |
-| `string ResourcesPath { get; set; }` | Default: Locales. Folder portion of manifest resource names used to select embedded JSON files; not a filesystem path. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/EmbeddedJsonStoreOptions.cs)
-
-<a id="api-httpjsonstoreoptions"></a>
-
-### HttpJsonStoreOptions
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `0.1.0-alpha`
-
-HTTP options, inheriting all JsonStoreSettings properties.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `HttpJsonStoreOptions()` | Creates HTTP options with all shared defaults. |
-| `string ResourcesPath { get; set; }` | Default: locales. Relative URL path under HttpClient.BaseAddress serving JSON catalogs and the optional manifest.json. Absolute URLs, traversal and query/fragment components are rejected. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/HttpJsonStoreOptions.cs)
-
-<a id="api-jsontranslationstorebase"></a>
-
-### JsonTranslationStoreBase
-
-Kind: `abstract class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore` · Since: `0.1.0-alpha`
-
-Abstract ITranslationStore implementation with cached JSON lookup, nested keys and culture fallback.
-
-Inherited by JsonFileStore and EmbeddedJsonStore. Its constructor JsonTranslationStoreBase(JsonStoreSettings options) is used by derived stores. Protected extension points are Options, ResolveCandidates(CultureInfo), SetDocument(string, string), SetDocument(string, JsonElement), RemoveDocument(string), HasCandidate(CultureInfo), FindTemplate(string, CultureInfo) and ClearTemplateCache().
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `virtual string? GetTemplate(string key, CultureInfo culture)` | Returns a raw template from cached documents using nested colon-separated key and culture fallback, or null for a missing key. Throws FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true. |
-| `virtual Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Returns Task.FromResult(GetTemplate(key, culture)). File and embedded stores inherit this synchronous implementation; it performs no asynchronous I/O and does not inspect cancellationToken. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonTranslationStoreBase.cs)
-
-<a id="api-jsonfilestore"></a>
-
-### JsonFileStore
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonTranslationStoreBase`, `IDisposable` · Since: `0.1.0-alpha`
-
-Filesystem JSON store implementing ITranslationStore and IDisposable, inheriting JsonTranslationStoreBase.
-
-Supports combined culture files and namespace files, regional/neutral culture selection and optional reload. Parsed files are cached per file until a change invalidates them. Unsupported in browser applications. Copy catalog files to build and publish output.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `JsonFileStore(JsonFileStoreOptions? options = null)` | options defaults to a new JsonFileStoreOptions. Indexes the resources directory and starts a watcher if requested. Throws PlatformNotSupportedException in browsers, ArgumentOutOfRangeException for a negative size limit, and FileNotFoundException for a missing directory/catalog when configured to throw. With ThrowOnMissingStore, every file is parsed during construction, so invalid JSON throws JsonException there. |
-| `override string? GetTemplate(string key, CultureInfo culture)` | Loads needed files on demand and returns the raw template or null. Supports nested keys and namespace-qualified keys such as common:Home:Welcome, requested/neutral/fallback cultures and file mappings. I/O and JSON errors are skipped unless ThrowOnMissingStore is true. Always throws InvalidDataException for a file larger than MaxDocumentBytes, SecurityException for symbolic links or paths outside ResourcesPath, and FileNotFoundException when only a sibling regional catalog exists. |
-| `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Wraps synchronous GetTemplate in a completed task; cancellationToken is not inspected. |
-| `void Dispose()` | Disposes the optional filesystem watcher. Use a using statement for stores owned by the application. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonFileStore.cs)
-
-<a id="api-embeddedjsonstore"></a>
-
-### EmbeddedJsonStore
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonTranslationStoreBase` · Since: `0.1.0-alpha`
-
-Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.
-
-Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. FileMappings values are final file names such as it-IT.json. Files named like common.it-IT.json become MSBuild satellite resources and are not read. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)` | options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. A resource larger than MaxDocumentBytes always throws InvalidDataException. |
-| `string? GetTemplate(string key, CultureInfo culture)` | Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true. |
-| `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/EmbeddedJsonStore.cs)
-
-<a id="api-httpjsonstore"></a>
-
-### HttpJsonStore
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore`, `IDisposable` · Since: `0.1.0-alpha`
-
-HTTP JSON store implementing ITranslationStore and IDisposable, with preload, lazy loading and refresh.
-
-Supports an optional manifest.json for culture/namespace discovery. The caller owns the supplied HttpClient. HTTP failures, invalid JSON and cancellation propagate independently of ThrowOnMissingStore.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `HttpJsonStore(HttpClient httpClient, HttpJsonStoreOptions? options = null)` | httpClient serves catalogs from its base address; options defaults to a new HttpJsonStoreOptions. Does not fetch files during construction. Throws ArgumentNullException for a null client, ArgumentOutOfRangeException for a negative size limit, and ArgumentException for invalid resource paths or mappings. |
-| `Task LoadAsync(CultureInfo culture, CancellationToken cancellationToken = default)` | Preloads culture and the configured fallback, including namespace files listed in the manifest; with a manifest, the files listed for each culture's neutral culture are loaded too, so synchronous lookups follow the same fallback order as GetTemplateAsync. Returns when loading completes. culture cannot be null; cancellationToken cancels network/loading operations. Missing required files may throw FileNotFoundException. |
-| `Task LoadAsync(IEnumerable<string> cultures, CancellationToken cancellationToken = default)` | Preloads distinct culture names and the configured fallback. cultures cannot be null; invalid names throw CultureNotFoundException. Includes manifest namespace files and, with a manifest, the files listed for each culture's neutral culture. Returns when loading completes and allows cancellation. |
-| `string? GetTemplate(string key, CultureInfo culture)` | Returns a raw template from already loaded files, with culture fallback, or null. Throws InvalidOperationException when required culture catalogs were not preloaded. A namespace absent from loaded documents returns null; use LoadAsync with a manifest or GetTemplateAsync to load it. |
-| `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Loads the required culture, fallback and key-specific namespace on demand, then returns the raw template or null. Null key/culture are rejected. Pass cancellationToken to cancel loading. Missing required files may throw FileNotFoundException. |
-| `Task RefreshStoreAsync(CancellationToken cancellationToken = default)` | Revalidates the manifest and loaded cultures using ETag/Last-Modified when available, then atomically replaces cached snapshots. A failed refresh preserves the previous snapshot. Returns on completion; cancellation and HTTP/JSON failures propagate. |
-| `void Dispose()` | Disposes the store's locks and semaphores. Does not dispose the supplied HttpClient. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/HttpJsonStore.cs)
-
-<a id="api-jsonstore"></a>
-
-### JsonStore
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `ITranslationStore`, `IDisposable` · Since: `0.0.1`
-
-> **Deprecated in 0.1.0-alpha. Use `JsonFileStore` or `EmbeddedJsonStore` instead.**
-
-Deprecated compatibility wrapper for the original mode-based store.
-
-The wrapper forwards to the selected store. It copies fallback, mappings, resource and reload settings, but currently does not copy MaxDocumentBytes.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `JsonStore(JsonStoreOptions? options = null)` | Creates a wrapper using options or new JsonStoreOptions. SearchMode selects filesystem or embedded resources. Unsupported enum values throw InvalidOperationException; filesystem mode is unsupported in browsers. |
-| `string? GetTemplate(string key, CultureInfo culture)` | Forwards key and culture to the selected store. Returns its raw template or null; propagates its errors. |
-| `Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)` | Forwards to the selected store. File and embedded implementations wrap synchronous lookup and do not inspect cancellationToken. |
-| `void Dispose()` | Disposes the underlying filesystem store's watcher when filesystem mode is selected. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonStore.cs)
-
-<a id="api-jsonstoreoptions"></a>
-
-### JsonStoreOptions
-
-Kind: `sealed class` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Inherits: `JsonStoreSettings` · Since: `0.0.1`
-
-> **Deprecated in 0.1.0-alpha. Use `JsonFileStoreOptions` or `EmbeddedJsonStoreOptions` or `HttpJsonStoreOptions` instead.**
-
-Deprecated options for JsonStore, inheriting all JsonStoreSettings properties.
-
-JsonStore currently ignores inherited MaxDocumentBytes.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `JsonStoreOptions()` | Creates compatibility options with all shared defaults. |
-| `string ResourcesPath { get; set; }` | Default: Locales. Filesystem directory or embedded-resource folder depending on SearchMode. |
-| `JsonStoreLocation SearchMode { get; set; }` | Default: FileSystem. Selects the compatibility store's backend. |
-| `Assembly? ResourceAssembly { get; set; }` | Default: null. Assembly containing catalogs when SearchMode is EmbeddedResources. |
-| `bool ReloadOnChange { get; set; }` | Default: false. Enables file watching in FileSystem mode. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs)
-
-<a id="api-jsonstorelocation"></a>
-
-### JsonStoreLocation
-
-Kind: `enum` · Package: `FluentLocalizer.Store.Json` · Namespace: `FluentLocalizer.Store.Json` · Since: `0.0.1`
-
-Compatibility enum used by deprecated JsonStoreOptions.SearchMode.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `FileSystem` | Filesystem backend; default. Unsupported in browser applications. |
-| `EmbeddedResources` | Embedded-resource backend. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/store-json-v1.0.1/Sources/FluentLocalizer.Store.Json/JsonStoreOptions.cs)
-
-<a id="api-fluentlocalizerservicecollectionextensions"></a>
-
-### FluentLocalizerServiceCollectionExtensions
-
-Kind: `static class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `Microsoft.Extensions.DependencyInjection` · Since: `0.0.1`
-
-Static extension methods registering FluentLocalizer in IServiceCollection.
-
-Registers ITranslator as a singleton. Register ITranslationStore before resolving the translator. WithLogger is optional; without a registered ITranslationLogger, translation logging is disabled.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)` | services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration. |
-| `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)` | Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs)
-
-<a id="api-fluentlocalizerbuilder"></a>
-
-### FluentLocalizerBuilder
-
-Kind: `sealed class` · Package: `FluentLocalizer.Extensions.DependencyInjection` · Namespace: `FluentLocalizer.Core` · Since: `0.0.1`
-
-Mutable registration builder returned by AddFluentLocalizer.
-
-Despite its namespace, this type belongs to the dependency injection package. WithStore and WithLogger return the same builder. ILoggerAdapter is internal and is not part of the public API.
-
-| Member | Parameters, return value and behavior |
-| --- | --- |
-| `FluentLocalizerBuilder(IServiceCollection services)` | Wraps services for further registration. Normally created by AddFluentLocalizer; constructing it directly does not register ITranslator. |
-| `IServiceCollection Services { get; }` | The service collection supplied to the constructor; can be used for additional application registrations. |
-| `FluentLocalizerBuilder WithStore(ITranslationStore store)` | Registers store as a singleton ITranslationStore. A null store throws ArgumentNullException. The caller owns an externally created disposable instance. |
-| `FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)` | Registers a singleton store factory. factory receives the service provider on resolution. A null factory throws ArgumentNullException. The DI container owns disposable stores created by the factory. |
-| `FluentLocalizerBuilder WithLogger()` | Registers a singleton ITranslationLogger adapter using ILogger<Translator>. Configure Microsoft.Extensions.Logging services and providers so ILogger<Translator> can be resolved. |
-
-[Source](https://github.com/berik-99/FluentLocalizer/blob/v1.0.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs)
-
-<!-- api-reference:end -->

@@ -54,8 +54,9 @@ function Write-Generated([string]$RelativePath, [string]$Updated, [string]$Conte
     }
 }
 
+# API-REFERENCE.md keeps its title outside the generated block, so its types are second-level headings.
 $targets = @(
-    @{ Path = 'README.md'; Package = $null },
+    @{ Path = 'API-REFERENCE.md'; Package = $null; Heading = ''; TypeHeading = '##' },
     @{ Path = 'Sources/FluentLocalizer.Core/Assets/README.md'; Package = 'FluentLocalizer' },
     @{ Path = 'Sources/FluentLocalizer.Store.Json/Assets/README.md'; Package = 'FluentLocalizer.Store.Json' },
     @{ Path = 'Sources/FluentLocalizer.Extensions.DependencyInjection/Assets/README.md'; Package = 'FluentLocalizer.Extensions.DependencyInjection' }
@@ -71,10 +72,14 @@ foreach ($target in $targets) {
         $reference = 'WebUI API reference (' + (($scopes | ForEach-Object { '[' + $_.Name + '](' + $site + (Get-DocsRoute $_) + '/api)' }) -join ', ') + ')'
         $changelog = '[changelog](' + $site + 'changelog)'
     }
+    $heading = if ($null -ne $target.Heading) { $target.Heading } else { '## API reference' }
+    $typeHeading = if ($target.TypeHeading) { $target.TypeHeading } else { '###' }
     $lines = [Collections.Generic.List[string]]::new()
     $lines.Add('<!-- api-reference:start -->')
-    $lines.Add('## API reference')
-    $lines.Add('')
+    if ($heading) {
+        $lines.Add($heading)
+        $lines.Add('')
+    }
     $lines.Add('Public types and members declared by FluentLocalizer, grouped by package and namespace. Includes constructors, overloads, properties, enum values, inherited library members and deprecated APIs. Standard inherited .NET members are omitted.')
     $lines.Add('')
     $lines.Add('Version numbers shown for a type or member refer to the NuGet package named on that type.')
@@ -90,7 +95,7 @@ foreach ($target in $targets) {
         $current = Get-Current $type
         $lines.Add('<a id="api-' + $type.Name.ToLowerInvariant() + '"></a>')
         $lines.Add('')
-        $lines.Add('### ' + $type.Name)
+        $lines.Add($typeHeading + ' ' + $type.Name)
         $lines.Add('')
         $meta = 'Kind: ' + $tick + $type.Kind + $tick + ' · Package: ' + $tick + $type.Package + $tick + ' · Namespace: ' + $tick + $type.Namespace + $tick
         if ($type.BaseTypes.Count -gt 0) {
@@ -230,4 +235,4 @@ $changelogPath = Join-Path $root 'CHANGELOG.md'
 $existing = if (Test-Path -LiteralPath $changelogPath) { [IO.File]::ReadAllText($changelogPath).Replace("`r`n", "`n") } else { '' }
 Write-Generated 'CHANGELOG.md' $changelog $existing
 
-if ($Check) { Write-Output 'All README API references and CHANGELOG.md match the shared catalog.' }
+if ($Check) { Write-Output 'API-REFERENCE.md, the package README API references and CHANGELOG.md match the shared catalog.' }

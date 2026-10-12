@@ -2,14 +2,14 @@
 
 Edit [api-reference.json](api-reference.json) when a public type or member changes or a version is released. Version numbers shown for a type or member refer to the NuGet package named on that type. The catalog records the release scopes with their versions and release notes and, for each type, its kind (`class`, `sealed class`, `interface`, `enum`...), direct base types, version history, signatures, descriptions, defaults, return values and relevant exceptions.
 
-The WebUI embeds this catalog: it renders the API reference of each documentation set at `/docs/{scope}/v{major}/api` and every release at `/changelog`. Generate the root and package README sections and the root [CHANGELOG.md](../CHANGELOG.md) from the same catalog:
+The WebUI embeds this catalog: it renders the API reference of each documentation set at `/docs/{scope}/v{major}/api` and every release at `/changelog`. Generate the root [API-REFERENCE.md](../API-REFERENCE.md), the API reference sections of the package READMEs and the root [CHANGELOG.md](../CHANGELOG.md) from the same catalog:
 
 ```powershell
 pwsh -File Docs/Update-ApiReference.ps1
 pwsh -File Docs/Update-ApiReference.ps1 -Check
 ```
 
-Keep the generated sections between the `api-reference:start` and `api-reference:end` markers intact, and do not edit `CHANGELOG.md` by hand. Edit the surrounding guides normally. The reference and the release notes are in English, matching the package READMEs; WebUI navigation is localized.
+Keep the generated sections between the `api-reference:start` and `api-reference:end` markers intact, and do not edit `CHANGELOG.md` by hand. Edit the surrounding guides normally; the root [README.md](../README.md) and [DOCUMENTATION.md](../DOCUMENTATION.md) contain no generated content. The reference and the release notes are in English, matching the package READMEs; WebUI navigation is localized.
 
 For the translated WebApp guides and interface copy, follow [WebApp localization style](WebApp-Localization-Style.md) for tone, terminology and catalog verification.
 
@@ -83,7 +83,7 @@ CI still builds and tests the full solution. A release tag packs and publishes o
 3. Write the release `Summary` and `Notes`.
 4. When releasing, set the version's `Date` and `SourceRevision` (the release tag), update the scope's `<Version>` values and run `Update-ApiReference.ps1`.
 
-The WebUI version selector filters the reference to what existed in that version and links to its changelog entry. READMEs document the newest version of each package's scope in the catalog.
+The WebUI version selector filters the reference to what existed in that version and links to its changelog entry. `API-REFERENCE.md` and the package READMEs document the newest version of each package's scope in the catalog.
 
 `Since` follows the API across documented namespace moves. For example, `ITranslator` was introduced in `0.0.1` as `FluentLocalizer.Core.ITranslator` and moved to `FluentLocalizer.ITranslator` in `0.1.0-alpha`. `EarlierDefinitions` displays the old namespace when selecting `0.0.1`; `Changes` records the breaking move. Implementation links point to the selected release's verified source revision.
 
