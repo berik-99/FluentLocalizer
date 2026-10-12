@@ -26,6 +26,7 @@
                 <tbody>
                     <tr><td><code>ResourceAssembly</code></td><td><code>null</code></td><td><RichText Text="@T("OptAssembly")" /></td></tr>
                     <tr><td><code>ResourcesPath</code></td><td><code>"Locales"</code></td><td><RichText Text="@T("OptPath")" /></td></tr>
+                    <tr><td><code>LoadOnDemand</code></td><td><code>false</code></td><td><DocsSince Version="1.1.0" /><RichText Text="@T("OptLoadOnDemand")" /></td></tr>
                     <tr><td><code>FallbackCulture</code>, <code>FileMappings</code>, <code>ThrowOnMissingStore</code>, <code>MaxDocumentBytes</code></td><td>—</td><td><RichText Text="@T("OptShared")" /></td></tr>
                 </tbody>
             </table>
@@ -53,12 +54,14 @@
             <li><RichText Text="@T("CultureStep2")" /></li>
             <li><RichText Text="@T("CultureStep3")" /></li>
         </ol>
+        <p><DocsSince Version="1.1.0" /><RichText Text="@T("CultureNamespaces")" /></p>
         <p><RichText Text="@T("Culture2")" /></p>
     </DocsSection>
 
     <DocsSection Id="loading" Title="@T("LoadingTitle")">
         <ul class="docs-list">
             <li><RichText Text="@T("LoadingStartup")" /></li>
+            <li><DocsSince Version="1.1.0" /><RichText Text="@T("LoadingOnDemand")" /></li>
             <li><RichText Text="@T("LoadingCache")" /></li>
             <li><RichText Text="@T("LoadingThreads")" /></li>
             <li><RichText Text="@T("LoadingDispose")" /></li>
@@ -117,12 +120,14 @@
         """;
 
     private const string Names = """
-        Project file                    Resource name in MyCompany.MyApp.dll    Read as
-        Locales/en.json                 MyCompany.MyApp.Locales.en.json         en.json
-        Locales/it-IT.json              MyCompany.MyApp.Locales.it-IT.json      it-IT.json
-        Locales/legacy/fr.json          MyCompany.MyApp.Locales.legacy.fr.json  fr.json
-        Locales/it.common.json          MyCompany.MyApp.Locales.it.common.json  common.json (never used)
-        Locales/common.it-IT.json       (moved to a satellite assembly)         not found
+        Project file                    Resource name in MyCompany.MyApp.dll       Read as
+        Locales/en.json                 MyCompany.MyApp.Locales.en.json            en.json
+        Locales/it-IT.json              MyCompany.MyApp.Locales.it-IT.json         it-IT.json
+        Locales/legacy/fr.json          MyCompany.MyApp.Locales.legacy.fr.json     fr.json
+        Locales/it.common.json          MyCompany.MyApp.Locales.it.common.json     it.common.json (1.1.0 and later)
+        Locales/it/common.json          MyCompany.MyApp.Locales.it.common.json     it.common.json (1.1.0 and later)
+        Locales/it-IT/common.json       MyCompany.MyApp.Locales.it_IT.common.json  common.json (never used)
+        Locales/common.it-IT.json       (moved to a satellite assembly)            not found
         """;
 
     private const string ListNames = """
@@ -142,7 +147,8 @@
             ResourceAssembly = typeof(App).Assembly,
             ResourcesPath = "Locales",
             FallbackCulture = "en",
-            ThrowOnMissingStore = true
+            ThrowOnMissingStore = true,
+            LoadOnDemand = true      // parses en.json, it.json... and en.Docs.json... only when needed
         }));
         """;
 }

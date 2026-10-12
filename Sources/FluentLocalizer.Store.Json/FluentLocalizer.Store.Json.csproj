@@ -2,9 +2,9 @@
 	<PropertyGroup>
 		<PackageId>FluentLocalizer.Store.Json</PackageId>
 		<Product>FluentLocalizer.Store.Json</Product>
-		<Version>1.0.1</Version>
+		<Version>1.1.0</Version>
 		<Description>JSON translation stores for FluentLocalizer with culture-aware loading from files, embedded resources, or HTTP.</Description>
-		<PackageReleaseNotes>Fixed HttpJsonStore manifest preloading so neutral-culture catalogs are available to synchronous lookups after LoadAsync. Updated the API reference and package documentation.</PackageReleaseNotes>
+		<PackageReleaseNotes>EmbeddedJsonStore reads namespace files such as it.common.json and can parse each file on first use with EmbeddedJsonStoreOptions.LoadOnDemand. Embedded resources are parsed straight from the resource stream, and nested-key lookups in every JSON store no longer allocate per segment.</PackageReleaseNotes>
 		<PackageTags>json;http;localization;translation;store;icu;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>

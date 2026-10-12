@@ -4,6 +4,33 @@
 
 Every release of the FluentLocalizer packages, newest first. The [WebUI changelog](https://berik-99.github.io/FluentLocalizer/changelog) shows the same notes with links to the API reference of each version.
 
+## JSON store 1.1.0 (2026-10-12)
+
+Packages: `FluentLocalizer.Store.Json`
+
+Namespace files, on-demand loading and lower memory use for EmbeddedJsonStore.
+
+### Added
+
+- `EmbeddedJsonStore` reads namespace files such as `it.common.json`, like the file and HTTP stores, so an embedded catalog can be split by page or feature. See [Namespaces](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1#namespaces).
+- `EmbeddedJsonStoreOptions.LoadOnDemand` parses each embedded file on the first lookup that needs it, so cultures that are never requested stay out of memory. See [EmbeddedJsonStore](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1/embedded).
+
+### Changed
+
+- `EmbeddedJsonStore` parses UTF-8 resources straight from the resource stream instead of reading them into a string first, allocating about a quarter of the memory while loading, and caches the files to search for each culture and namespace.
+- Nested-key lookups in every JSON store walk the key without allocating its segments.
+
+### Fixed
+
+- Embedded files named like `it.common.json` were all stored under `common.json`, so files of different cultures replaced each other. Each now keeps its culture in its name; the previous name still works as a file mapping when no other file uses it.
+
+<details><summary>Public API changes (2)</summary>
+
+- Added: `EmbeddedJsonStoreOptions.bool LoadOnDemand { get; set; }`
+- Changed: `EmbeddedJsonStore` — Reads namespace files such as it-IT.common.json, which earlier versions keyed by their last segment, common.json, so the files of different cultures replaced each other. A key with a namespace is looked for in its namespace file before the culture file. FileMappings can still use the last segment when no other file has that name.
+
+</details>
+
 ## JSON store 1.0.1 (2026-10-11)
 
 Packages: `FluentLocalizer.Store.Json`

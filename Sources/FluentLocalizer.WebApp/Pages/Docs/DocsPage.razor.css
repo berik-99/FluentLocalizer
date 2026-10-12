@@ -59,6 +59,7 @@
 .docs-content ::deep .docs-table td:first-child { color: var(--text); font-weight: 700; }
 .docs-content ::deep .docs-table td:first-child code { white-space: nowrap; }
 
+.docs-content ::deep .docs-since { display: inline-block; margin-right: 8px; padding: 0 8px; border: 1px solid var(--kind-interface-text); border-radius: 999px; background: var(--kind-interface-bg); color: var(--kind-interface-text); font-size: 11px; font-weight: 700; line-height: 1.8; vertical-align: 1px; white-space: nowrap; }
 .docs-content ::deep .docs-callout { margin: 20px 0 24px; padding: 15px 19px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--field-focus); border-radius: var(--radius); }
 .docs-content ::deep .docs-callout > strong { display: block; margin-bottom: 5px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); }
 .docs-content ::deep .docs-callout p { margin: 0; color: var(--text); font-size: 14px; line-height: 1.7; }

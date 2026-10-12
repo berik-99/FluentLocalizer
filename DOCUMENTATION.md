@@ -133,7 +133,7 @@ A key is a path through nested objects, with `:` between segments, and each stri
 
 Always nest objects: keys are split at every `:`, so a property named `"Checkout:Title"` is never found. Property names are case-sensitive, and only string values count as templates.
 
-The first segment of a key with two or more segments is its *namespace*. `common:Buttons:Save` can live in the culture file as a top-level object, `{ "common": { "Buttons": { "Save": "Salva" } } }` in `it-IT.json`, or in a namespace file without the namespace object, `{ "Buttons": { "Save": "Salva" } }` in `it-IT.common.json`. The key is the same in both cases. `JsonFileStore` and `HttpJsonStore` accept `it-IT.common.json`, `common.it-IT.json` and `it-IT/common.json`; `EmbeddedJsonStore` reads only the culture file.
+The first segment of a key with two or more segments is its *namespace*. `common:Buttons:Save` can live in the culture file as a top-level object, `{ "common": { "Buttons": { "Save": "Salva" } } }` in `it-IT.json`, or in a namespace file without the namespace object, `{ "Buttons": { "Save": "Salva" } }` in `it-IT.common.json`. The key is the same in both cases. `JsonFileStore` and `HttpJsonStore` accept `it-IT.common.json`, `common.it-IT.json` and `it-IT/common.json`. Since 1.1.0 `EmbeddedJsonStore` accepts `it-IT.common.json`, and `it/common.json` for culture folders without a hyphen; earlier versions read only the culture file.
 
 Fallback works per key: the store tries the namespace file, the culture file, the neutral culture (`it`) and then `FallbackCulture`, so regional and namespace files only need the strings that differ. Name each language's main catalog after its neutral culture and add regional files only for differences:
 
@@ -185,7 +185,7 @@ For embedded resources, include the locale files as `EmbeddedResource` and creat
 </ItemGroup>
 ```
 
-The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. It reads one file per culture, so keep namespaces as top-level objects, and never embed names such as `common.it-IT.json`: MSBuild moves them to a satellite assembly that the store does not read. Always set `ResourceAssembly`; the default is the entry assembly, which in tests or plugins is not the one containing the files. `EmbeddedJsonStore` holds no resources and is not `IDisposable`.
+The store selects embedded `.json` resources whose manifest names contain the `ResourcesPath` folder (default `Locales`) and identifies each culture by the final file name, such as `it.json`. Namespace files go in the same folder with the culture first, such as `it.common.json` (since 1.1.0). Never embed names such as `common.it-IT.json`: MSBuild moves them to a satellite assembly that the store does not read. Always set `ResourceAssembly`; the default is the entry assembly, which in tests or plugins is not the one containing the files. The store parses every file in its constructor; set `LoadOnDemand = true` (since 1.1.0) to parse each file on the first lookup that needs it, so cultures that are never requested stay out of memory, which helps in Blazor WebAssembly. Invalid JSON is then reported by that lookup. `EmbeddedJsonStore` holds no resources and is not `IDisposable`.
 
 ```csharp
 var store = new EmbeddedJsonStore(new EmbeddedJsonStoreOptions

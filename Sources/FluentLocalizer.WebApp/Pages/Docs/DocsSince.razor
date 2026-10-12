@@ -1,0 +1,9 @@
+@* Marks guide text about a feature added after the first release of the set's major version, such as "Since 1.1.0". *@
+<span class="docs-since">@Translator.Get("Ui:ApiSince").WithArg("version", Version)</span>
+
+@code {
+    [CascadingParameter] private System.Globalization.CultureInfo SiteCulture { get; set; } = System.Globalization.CultureInfo.CurrentUICulture;
+
+    /// <summary>The package version that introduced the feature.</summary>
+    [Parameter, EditorRequired] public string Version { get; set; } = string.Empty;
+}

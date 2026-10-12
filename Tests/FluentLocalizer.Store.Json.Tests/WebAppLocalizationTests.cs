@@ -42,7 +42,8 @@ public sealed class WebAppLocalizationTests
             ResourcesPath = "WebLocales",
             ResourceAssembly = typeof(WebAppLocalizationTests).Assembly,
             FallbackCulture = "en",
-            ThrowOnMissingStore = true
+            ThrowOnMissingStore = true,
+            LoadOnDemand = true
         });
         var translator = new Translator(store, new TranslationOptions
         {
@@ -63,13 +64,13 @@ public sealed class WebAppLocalizationTests
         var index = 0;
         foreach (var language in new[] { "en", "it", "fr", "de", "es" })
         {
-            using var stream = typeof(WebAppLocalizationTests).Assembly.GetManifestResourceStream(
-                $"FluentLocalizer.WebApp.Tests.WebLocales.{language}.json");
-            Assert.NotNull(stream);
-            using var catalog = JsonDocument.Parse(stream);
+            using var catalog = ReadCatalog($"{language}.json");
+            // The documentation text is the Docs namespace file, which the site parses only on documentation pages.
+            using var docs = ReadCatalog($"{language}.Docs.json");
+            Assert.False(catalog.RootElement.TryGetProperty("Docs", out _), $"{language}.json must leave Docs to {language}.Docs.json.");
             // The interface strings and every nested documentation page are checked alike.
             var entries = Leaves("Ui", catalog.RootElement.GetProperty("Ui"))
-                .Concat(Leaves("Docs", catalog.RootElement.GetProperty("Docs"))).ToArray();
+                .Concat(Leaves("Docs", docs.RootElement)).ToArray();
             var keys = entries.Select(entry => entry.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray();
             expectedKeys ??= keys;
             Assert.Equal(expectedKeys, keys);
@@ -108,6 +109,13 @@ public sealed class WebAppLocalizationTests
         Assert.Equal("Supprimer l'argument Ada", translator.Get("Ui:RemoveArgument").WithCulture(french).WithArg("name", "Ada").Resolve());
         Assert.Equal("Overview", translator.Get("Ui:Overview").WithCulture("ja-JP").Resolve());
         Assert.Equal("Introduzione", translator.Get("Docs:CoreV1:Intro:Nav").WithCulture("it-CH").Resolve());
+    }
+
+    private static JsonDocument ReadCatalog(string fileName)
+    {
+        using var stream = typeof(WebAppLocalizationTests).Assembly.GetManifestResourceStream($"FluentLocalizer.WebApp.Tests.WebLocales.{fileName}");
+        Assert.NotNull(stream);
+        return JsonDocument.Parse(stream);
     }
 
     // Every string of a catalog object with its colon-separated key, such as Docs:Templates:Title.

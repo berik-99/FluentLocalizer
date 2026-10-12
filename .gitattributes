@@ -15,3 +15,5 @@ Dockerfile text eol=lf
 *.zip binary
 *.dll binary
 *.exe binary
+# Encoding fixtures must keep their exact bytes.
+Tests/FluentLocalizer.Store.Json.Tests/EmbeddedLocales/Utf16/*.json binary

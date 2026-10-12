@@ -264,15 +264,45 @@ internal static class JsonStoreCore
         if (!HasNamespace(segments))
             return false;
 
-        var normalized = candidate.Replace('\\', '/');
-        return normalized.StartsWith(segments[0] + ".", StringComparison.OrdinalIgnoreCase) ||
-               normalized.EndsWith("." + segments[0] + ".json", StringComparison.OrdinalIgnoreCase) ||
-               normalized.EndsWith("/" + segments[0] + ".json", StringComparison.OrdinalIgnoreCase);
+        return IsNamespaceFileName(candidate, segments[0]);
     }
 
-    private static bool HasNamespace(string[] segments) =>
-        segments.Length > 1 && segments[0].Length > 0 && segments[0] is not "." and not ".." &&
-        segments[0].IndexOfAny(['/', '\\', '?', '#', '\0', '*', '"', '<', '>', '|']) < 0;
+    internal static bool IsNamespaceFileName(string candidate, string ns)
+    {
+        var normalized = candidate.Replace('\\', '/');
+        return normalized.StartsWith(ns + ".", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("." + ns + ".json", StringComparison.OrdinalIgnoreCase) ||
+               normalized.EndsWith("/" + ns + ".json", StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Same rule as HasNamespace without splitting the key: the first non-empty segment is the namespace when
+    // another non-empty segment follows. rest is where the key continues after that first segment.
+    internal static string? GetNamespace(string key, out int rest)
+    {
+        rest = 0;
+        string? first = null;
+        for (var start = 0; start <= key.Length;)
+        {
+            var end = key.IndexOf(':', start);
+            if (end < 0) end = key.Length;
+            var segment = key.AsSpan(start, end - start).Trim();
+            if (!segment.IsEmpty)
+            {
+                if (first is not null) return IsNamespaceName(first) ? first : null;
+                first = segment.ToString();
+                rest = end + 1;
+            }
+            start = end + 1;
+        }
+
+        return null;
+    }
+
+    private static bool HasNamespace(string[] segments) => segments.Length > 1 && IsNamespaceName(segments[0]);
+
+    private static bool IsNamespaceName(string segment) =>
+        segment.Length > 0 && segment is not "." and not ".." &&
+        segment.IndexOfAny(['/', '\\', '?', '#', '\0', '*', '"', '<', '>', '|']) < 0;
 
     internal static string GetCacheKey(string resourceName)
     {
@@ -282,18 +312,48 @@ internal static class JsonStoreCore
         return parts.Length >= 2 ? $"{parts[^2]}.json" : resourceName;
     }
 
-    internal static bool TryGetValue(JsonElement root, string key, out string value)
+    // Below the resource folder, it.common.json and it/common.json keep their culture, so the namespace
+    // files of different cultures do not share a key. it/it-IT.json is a culture file in a culture folder.
+    internal static string? GetNamespaceCacheKey(string resourceName, string folder)
+    {
+        if (folder.Length == 0 || !resourceName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return null;
+        int start;
+        if (resourceName.StartsWith(folder + ".", StringComparison.OrdinalIgnoreCase))
+        {
+            start = folder.Length + 1;
+        }
+        else
+        {
+            var index = resourceName.IndexOf("." + folder + ".", StringComparison.OrdinalIgnoreCase);
+            if (index < 0) return null;
+            start = index + folder.Length + 2;
+        }
+        if (start >= resourceName.Length - 5) return null;
+
+        var segments = resourceName[start..^5].Split('.');
+        if (segments.Length != 2 || !TryCulture(segments[0], out var culture)) return null;
+        return segments[1].Split('-')[0].Equals(culture.Split('-')[0], StringComparison.OrdinalIgnoreCase)
+            ? null
+            : $"{culture}.{segments[1]}.json";
+    }
+
+    internal static bool TryGetValue(JsonElement root, string key, out string value) => TryGetValue(root, key, 0, out value);
+
+    // Walks the colon-separated segments from start, trimmed and skipping empty ones, without allocating them.
+    internal static bool TryGetValue(JsonElement root, string key, int start, out string value)
     {
         value = string.Empty;
         if (string.IsNullOrWhiteSpace(key)) return false;
 
         var current = root;
-        foreach (var segment in key.Split([':'], StringSplitOptions.RemoveEmptyEntries)
-                                   .Select(static item => item.Trim())
-                                   .Where(static item => item.Length > 0))
+        while (start <= key.Length)
         {
-            if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(segment, out current))
+            var end = key.IndexOf(':', start);
+            if (end < 0) end = key.Length;
+            var segment = key.AsSpan(start, end - start).Trim();
+            if (!segment.IsEmpty && (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(segment, out current)))
                 return false;
+            start = end + 1;
         }
 
         if (current.ValueKind != JsonValueKind.String) return false;

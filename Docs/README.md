@@ -58,12 +58,14 @@ The WebUI documentation is split by scope and versioned by major version. A docu
 
 The API reference of a set lists the versions of its scope with the same major number. The guides, the API reference and the changelog share a sticky toolbar: scope tabs switch to the other scope at the same major version, and the version menu switches major version (in the API reference, any released version of the scope). Both keep the current page when the other set has it. Sets of an earlier major version show a link to the latest one. The latest set is the newest major version with a published release; `docs/{scope}` and `docs/{scope}/{page}` open it, and addresses from before versioning (such as `docs/templates` or `docs/api#api-jsonfilestore`) redirect to it.
 
-Guide text links to versioned routes, such as `[culture](docs/core/v1/culture)`, so a frozen set keeps pointing at matching pages. Within a major version, keep updating its set and mark additions with the version that introduced them.
+Guide text links to versioned routes, such as `[culture](docs/core/v1/culture)`, so a frozen set keeps pointing at matching pages. Within a major version, keep updating its set and mark additions with the version that introduced them: put `<DocsSince Version="1.1.0" />` before the paragraph, list item or table cell, which renders the localized "Since 1.1.0" badge, and say in the text what earlier versions did when that matters.
+
+The guide text lives in the `Docs` namespace files, `Locales/{language}.Docs.json`, without the `Docs` level; the interface strings stay in `Locales/{language}.json`. The site creates its `EmbeddedJsonStore` with `LoadOnDemand`, so the documentation text is parsed only when a documentation page needs it. Keep keys used outside `Pages/Docs` in the `Ui` object, otherwise every page parses the documentation file.
 
 To start the documentation of a new major version:
 
 1. Copy the latest set's page folder and namespace, for example `Pages/Docs/Core/V1` to `Pages/Docs/Core/V2`.
-2. Copy its catalog object in all five language catalogs, for example `Docs:CoreV1` to `Docs:CoreV2`, and update the links in the copy to `docs/core/v2/...`.
+2. Copy its catalog object in all five `Docs` namespace files (`Sources/FluentLocalizer.WebApp/Locales/{language}.Docs.json`), for example `CoreV1` to `CoreV2` for the keys `Docs:CoreV1:...` and `Docs:CoreV2:...`, and update the links in the copy to `docs/core/v2/...`.
 3. Register the new set in `DocsSets.All` with its pages, then edit only the new set. The previous set stays unchanged.
 4. Add the new major version to the scope's `Versions` without `Date`. The new set becomes the default when that version gets a `Date`.
 

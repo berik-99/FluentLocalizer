@@ -15,7 +15,9 @@ builder.Services.AddFluentLocalizer().WithStore(_ => new EmbeddedJsonStore(new E
     ResourceAssembly = typeof(App).Assembly,
     ResourcesPath = "Locales",
     FallbackCulture = "en",
-    ThrowOnMissingStore = true
+    ThrowOnMissingStore = true,
+    // Only the visitor's language is parsed, and its Docs namespace file only on documentation pages.
+    LoadOnDemand = true
 }));
 builder.Services.AddTransient<PlaygroundSession>();
 

@@ -10,4 +10,8 @@ public sealed class EmbeddedJsonStoreOptions : JsonStoreSettings
 
     /// <summary>Gets or sets the resource folder name used to select embedded JSON files.</summary>
     public string ResourcesPath { get; set; } = "Locales";
+
+    /// <summary>Gets or sets whether each JSON resource is read and parsed on its first lookup instead of during construction. Defaults to <see langword="false"/>.</summary>
+    /// <remarks>Only the files a lookup needs are parsed, so cultures that are never requested stay out of memory. Invalid JSON is then reported by the first lookup that reads the file.</remarks>
+    public bool LoadOnDemand { get; set; }
 }

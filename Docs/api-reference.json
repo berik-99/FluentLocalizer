@@ -67,6 +67,17 @@
             {"Kind": "Fixed", "Text": "With a manifest, `HttpJsonStore.LoadAsync` now preloads catalog files listed for the neutral culture too. Synchronous `GetTemplate` can therefore use the same neutral-culture fallback as `GetTemplateAsync` after preloading."},
             {"Kind": "Changed", "Text": "Updated the `HttpJsonStore.LoadAsync` API reference and package documentation to describe manifest-based neutral-culture preloading."}
           ]
+        },
+        {
+          "Version": "1.1.0", "Date": "2026-10-12", "SourceRevision": "store-json-v1.1.0",
+          "Summary": "Namespace files, on-demand loading and lower memory use for EmbeddedJsonStore.",
+          "Notes": [
+            {"Kind": "Added", "Text": "`EmbeddedJsonStore` reads namespace files such as `it.common.json`, like the file and HTTP stores, so an embedded catalog can be split by page or feature. See [Namespaces](docs/store-json/v1#namespaces)."},
+            {"Kind": "Added", "Text": "`EmbeddedJsonStoreOptions.LoadOnDemand` parses each embedded file on the first lookup that needs it, so cultures that are never requested stay out of memory. See [EmbeddedJsonStore](docs/store-json/v1/embedded)."},
+            {"Kind": "Changed", "Text": "`EmbeddedJsonStore` parses UTF-8 resources straight from the resource stream instead of reading them into a string first, allocating about a quarter of the memory while loading, and caches the files to search for each culture and namespace."},
+            {"Kind": "Changed", "Text": "Nested-key lookups in every JSON store walk the key without allocating its segments."},
+            {"Kind": "Fixed", "Text": "Embedded files named like `it.common.json` were all stored under `common.json`, so files of different cultures replaced each other. Each now keeps its culture in its name; the previous name still works as a file mapping when no other file uses it."}
+          ]
         }
       ]
     }
@@ -394,7 +405,8 @@
       "Members": [
         {"Signature": "EmbeddedJsonStoreOptions()", "Description": "Creates embedded-resource options with all shared defaults."},
         {"Signature": "Assembly? ResourceAssembly { get; set; }", "Description": "Default: null. Assembly containing the embedded JSON files. When null, uses the entry assembly, then the executing assembly if no entry assembly exists."},
-        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Folder portion of manifest resource names used to select embedded JSON files; not a filesystem path."}
+        {"Signature": "string ResourcesPath { get; set; }", "Description": "Default: Locales. Folder portion of manifest resource names used to select embedded JSON files; not a filesystem path."},
+        {"Signature": "bool LoadOnDemand { get; set; }", "Since": "1.1.0", "Description": "Default: false. When true, the constructor only lists the matching resources and checks MaxDocumentBytes; each file is read and parsed on the first lookup that needs it, so cultures that are never requested are not kept in memory. Invalid JSON is then reported by that lookup instead of the constructor."}
       ]
     },
     {
@@ -452,11 +464,14 @@
       "Since": "0.1.0-alpha",
       "Source": "Sources/FluentLocalizer.Store.Json/EmbeddedJsonStore.cs",
       "Summary": "Embedded JSON store inheriting JsonTranslationStoreBase; usable in browser applications.",
-      "Remarks": "Loads matching assembly resources during construction. Reads one combined file per culture, such as it-IT.json or it.json; namespace files are not supported, so keep namespaces as top-level objects. FileMappings values are final file names such as it-IT.json. Files named like common.it-IT.json become MSBuild satellite resources and are not read. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.",
+      "Remarks": "Loads matching assembly resources during construction, or on first use when LoadOnDemand is true. JSON is parsed straight from the resource stream. Reads the culture files, such as it-IT.json or it.json, and namespace files named culture first, such as it-IT.common.json or it/common.json, trying a namespace file before the culture file of the same culture. FileMappings values are final file names such as it-IT.json. Files named like common.it-IT.json become MSBuild satellite resources and are not read. Resolved templates use a bounded cache of 512 entries. Lookup methods are inherited; no Dispose method is required.",
       "Members": [
-        {"Signature": "EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)", "Description": "options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. A resource larger than MaxDocumentBytes always throws InvalidDataException."},
+        {"Signature": "EmbeddedJsonStore(EmbeddedJsonStoreOptions? options = null)", "Description": "options defaults to a new EmbeddedJsonStoreOptions. Loads matching embedded .json resources into memory unless LoadOnDemand is true. Throws ArgumentOutOfRangeException for a negative size limit. Missing resources throw FileNotFoundException when configured; read/parse errors are skipped when ThrowOnMissingStore is false. A resource larger than MaxDocumentBytes always throws InvalidDataException, also when LoadOnDemand is true."},
         {"Signature": "string? GetTemplate(string key, CultureInfo culture)", "Description": "Inherited from JsonTranslationStoreBase. Returns the raw nested-key template using culture fallback, or null. May throw FileNotFoundException when no candidate store exists and ThrowOnMissingStore is true."},
         {"Signature": "Task<string?> GetTemplateAsync(string key, CultureInfo culture, CancellationToken cancellationToken = default)", "Description": "Inherited from JsonTranslationStoreBase. Returns a completed task from the synchronous lookup; cancellationToken is not inspected."}
+      ],
+      "Changes": [
+        {"Version": "1.1.0", "Description": "Reads namespace files such as it-IT.common.json, which earlier versions keyed by their last segment, common.json, so the files of different cultures replaced each other. A key with a namespace is looked for in its namespace file before the culture file. FileMappings can still use the last segment when no other file has that name."}
       ]
     },
     {
