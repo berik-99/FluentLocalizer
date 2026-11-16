@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>dotnet-FluentLocalizer.Samples.WorkerApp-c9a4165b-083b-403b-b394-25af674df1aa</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.*" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="11.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -16,6 +16,10 @@
 		<PackageReference Include="MessageFormat" Version="8.0.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Update="PolySharp" Version="1.17.1" />
+	</ItemGroup>
+
 	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />
 
 </Project>
