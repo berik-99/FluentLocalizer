@@ -164,6 +164,8 @@
         set => _templates[_culture] = value;
     }
 
+    // Blazor injects the base class's private ScopeFactory setter through reflection after trimming.
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties, typeof(OwningComponentBase))]
     protected override void OnInitialized()
     {
         _culture = Locales.First(locale => locale.Code.StartsWith(SiteCulture.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase)).Code;

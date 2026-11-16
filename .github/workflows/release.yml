@@ -45,7 +45,10 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
+            11.0.x
 
       - name: Derive package selection and version from tag
         id: version
@@ -133,6 +136,13 @@ jobs:
       - name: Restore
         run: dotnet restore FluentLocalizer.slnx
 
+      - name: Check API reference documentation
+        shell: pwsh
+        run: ./Docs/Update-ApiReference.ps1 -Check
+
+      - name: Test website browser script
+        run: node Tests/FluentLocalizer.WebApp.Tests/site.test.cjs
+
       - name: Build
         run: dotnet build FluentLocalizer.slnx --configuration Release --no-restore
 
@@ -203,7 +213,10 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
+            11.0.x
 
       - name: Get NuGet publishing credentials
         uses: NuGet/login@v1

@@ -106,6 +106,6 @@ The original packages export 17 public types. The alpha exports 25, adding the d
 - documented types still exist unless `RemovedIn` says otherwise, and nothing marked as removed still ships;
 - every package belongs to one scope; versions are valid, ordered and consistent within their scope (`Since` ≤ `DeprecatedIn` < `RemovedIn`, members not older than their type), and each library version is listed in its scope's `Versions`;
 - release notes have a known kind and link only to versioned documentation routes;
-- historical override boundaries are valid and ordered; the `net10.0` WebApp integration tests compare the initial release against the published-package snapshot and check alpha/stable history and playground isolation.
+- historical override boundaries are valid and ordered; the `net10.0` and `net11.0` WebApp integration tests compare the initial release against the published-package snapshot and check alpha/stable history and playground isolation.
 
 Standard inherited .NET members are omitted. Inherited library methods are listed under concrete stores, shared options under their base class, and deprecated types remain documented for compatibility.

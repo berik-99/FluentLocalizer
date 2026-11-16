@@ -93,7 +93,7 @@
                         <div class="install-command"><code>@command</code><CopyButton Text="@command" ShowLabel="false" AriaLabel="@Translator.Get("Ui:CopyInstall").WithArg("package", package.Id)" /></div>
                     </div>
                     <div class="package-end">
-                        <span class="version">v@(SiteLinks.PackageVersion)</span>
+                        <span class="version">v@(SiteLinks.PackageVersion(package.Id))</span>
                         <a href="@SiteLinks.NuGet(package.Id)" target="_blank" rel="noopener noreferrer" aria-label="@Translator.Get("Ui:OnNuGet").WithArg("package", package.Id)">↗</a>
                     </div>
                 </article>
@@ -150,8 +150,15 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !await JS.InvokeAsync<bool>("fluentSite.prefersReducedMotion"))
-            _animationTask = AnimateGreetingAsync(_animationCancellation.Token);
+        try
+        {
+            if (firstRender && !await JS.InvokeAsync<bool>("fluentSite.prefersReducedMotion"))
+                _animationTask = AnimateGreetingAsync(_animationCancellation.Token);
+        }
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
     }
 
     private string ResolveGreeting(string culture) => Translator.Get("Demo:Welcome")

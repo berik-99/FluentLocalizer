@@ -23,16 +23,31 @@ builder.Services.AddTransient<PlaygroundSession>();
 
 var host = builder.Build();
 var js = host.Services.GetRequiredService<IJSRuntime>();
-var culture = BrowserCulture.SelectCulture(await js.InvokeAsync<string[]>("fluentSite.getLanguages"));
+var culture = CultureInfo.GetCultureInfo("en");
+try
+{
+    culture = BrowserCulture.SelectCulture(await js.InvokeAsync<string[]>("fluentSite.getLanguages"));
+}
+catch (JSException exception)
+{
+    Console.Error.WriteLine(exception);
+}
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 var translator = host.Services.GetRequiredService<ITranslator>();
-await js.InvokeVoidAsync("fluentSite.setLanguage", culture.Name, new
+try
 {
-    loading = translator.Get("Ui:Loading").Resolve(),
-    errorTitle = translator.Get("Ui:ErrorTitle").Resolve(),
-    error = translator.Get("Ui:UnhandledError").Resolve(),
-    reload = translator.Get("Ui:Reload").Resolve(),
-    dismiss = translator.Get("Ui:Dismiss").Resolve()
-});
+    await js.InvokeVoidAsync("fluentSite.setLanguage", culture.Name, new
+    {
+        loading = translator.Get("Ui:Loading").Resolve(),
+        errorTitle = translator.Get("Ui:ErrorTitle").Resolve(),
+        error = translator.Get("Ui:UnhandledError").Resolve(),
+        reload = translator.Get("Ui:Reload").Resolve(),
+        dismiss = translator.Get("Ui:Dismiss").Resolve()
+    });
+}
+catch (JSException exception)
+{
+    Console.Error.WriteLine(exception);
+}
 await host.RunAsync();

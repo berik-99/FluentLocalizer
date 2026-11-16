@@ -4,6 +4,43 @@
 
 Every release of the FluentLocalizer packages, newest first. The [WebUI changelog](https://berik-99.github.io/FluentLocalizer/changelog) shows the same notes with links to the API reference of each version.
 
+## Core 1.1.0 (2026-11-16)
+
+Packages: `FluentLocalizer`, `FluentLocalizer.Extensions.DependencyInjection`
+
+Native .NET 11 support with unchanged public APIs and continued support for earlier targets.
+
+### Added
+
+- A native `net11.0` target for FluentLocalizer and its dependency injection package, alongside `netstandard2.0`, `net8.0` and `net10.0`.
+
+### Changed
+
+- The dependency injection package uses Microsoft.Extensions 11.0.0 on .NET 11 and 10.0.15 on earlier targets, preserving .NET 8 and .NET Framework compatibility. Public APIs and translation behavior are unchanged.
+- The repository, samples, website and release workflows use the .NET 11 SDK. Website integration tests run on both .NET 10 and .NET 11. Removed the obsolete Blazor debugging proxy configuration and guarded browser JavaScript calls so optional browser features cannot prevent rendering.
+
+### Fixed
+
+- The website homepage shows each package's release version instead of displaying the Core version for every package. Preserved the inherited DI scope factory during trimming so the playground opens in optimized WebAssembly builds.
+
+No public API changes in this version.
+
+## JSON store 1.2.0 (2026-11-16)
+
+Packages: `FluentLocalizer.Store.Json`
+
+Native .NET 11 support and refreshed dependencies, with unchanged JSON store APIs and behavior.
+
+### Added
+
+- A native `net11.0` target alongside `netstandard2.0`, `net8.0` and `net10.0`.
+
+### Changed
+
+- Updated the Core dependency to FluentLocalizer 1.1.0 and System.Text.Json for .NET Standard 2.0 to 10.0.15. Modern .NET targets keep using their runtime's JSON implementation.
+
+No public API changes in this version.
+
 ## JSON store 1.1.0 (2026-10-12)
 
 Packages: `FluentLocalizer.Store.Json`

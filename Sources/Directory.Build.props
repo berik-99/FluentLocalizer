@@ -26,7 +26,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.shproj' and '$(MSBuildProjectName)' != 'FluentLocalizer.WebApp'">
-		<PackageReference Include="PolySharp" Version="1.17.0" PrivateAssets="all" />
+		<PackageReference Include="PolySharp" Version="1.17.1" PrivateAssets="all" />
 
 		<None Include="Assets\README.md"
 			  Pack="true"

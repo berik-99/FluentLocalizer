@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace FluentLocalizer.WebApp;
 
 /// <summary>External links and facts about the project shown across the site.</summary>
@@ -10,8 +8,9 @@ internal static class SiteLinks
     public const string Examples = Repository + "/tree/main/Examples";
     public const string ThirdPartyNotices = Repository + "/blob/main/THIRD-PARTY-NOTICES.md";
 
-    /// <summary>The version read from the referenced core assembly.</summary>
-    public static readonly string PackageVersion = ReadPackageVersion();
+    /// <summary>The latest released version of the scope that owns the package.</summary>
+    public static string PackageVersion(string packageId) =>
+        ApiReference.Scopes.Single(scope => scope.Packages.Contains(packageId)).LatestRelease;
 
     public static string NuGet(string packageId) => $"https://www.nuget.org/packages/{packageId}";
 
@@ -29,12 +28,4 @@ internal static class SiteLinks
         return null;
     }
 
-    private static string ReadPackageVersion()
-    {
-        var version = typeof(Translator).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            ?? typeof(Translator).Assembly.GetName().Version?.ToString(3)
-            ?? "1.0.0";
-        // Drop SourceLink's "+commit" suffix.
-        return version.Split('+')[0];
-    }
 }

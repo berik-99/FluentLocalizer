@@ -30,6 +30,30 @@
         {
           "Version": "1.0.0", "Date": "2026-10-02", "SourceRevision": "v1.0.0",
           "Summary": "First stable release. Public APIs and library implementation are unchanged from 0.1.0-alpha."
+        },
+        {
+          "Version": "1.1.0",
+          "Date": "2026-11-16",
+          "SourceRevision": "core-v1.1.0",
+          "Summary": "Native .NET 11 support with unchanged public APIs and continued support for earlier targets.",
+          "Notes": [
+            {
+              "Kind": "Added",
+              "Text": "A native `net11.0` target for FluentLocalizer and its dependency injection package, alongside `netstandard2.0`, `net8.0` and `net10.0`."
+            },
+            {
+              "Kind": "Changed",
+              "Text": "The dependency injection package uses Microsoft.Extensions 11.0.0 on .NET 11 and 10.0.15 on earlier targets, preserving .NET 8 and .NET Framework compatibility. Public APIs and translation behavior are unchanged."
+            },
+            {
+              "Kind": "Changed",
+              "Text": "The repository, samples, website and release workflows use the .NET 11 SDK. Website integration tests run on both .NET 10 and .NET 11. Removed the obsolete Blazor debugging proxy configuration and guarded browser JavaScript calls so optional browser features cannot prevent rendering."
+            },
+            {
+              "Kind": "Fixed",
+              "Text": "The website homepage shows each package's release version instead of displaying the Core version for every package. Preserved the inherited DI scope factory during trimming so the playground opens in optimized WebAssembly builds."
+            }
+          ]
         }
       ]
     },
@@ -77,6 +101,22 @@
             {"Kind": "Changed", "Text": "`EmbeddedJsonStore` parses UTF-8 resources straight from the resource stream instead of reading them into a string first, allocating about a quarter of the memory while loading, and caches the files to search for each culture and namespace."},
             {"Kind": "Changed", "Text": "Nested-key lookups in every JSON store walk the key without allocating its segments."},
             {"Kind": "Fixed", "Text": "Embedded files named like `it.common.json` were all stored under `common.json`, so files of different cultures replaced each other. Each now keeps its culture in its name; the previous name still works as a file mapping when no other file uses it."}
+          ]
+        },
+        {
+          "Version": "1.2.0",
+          "Date": "2026-11-16",
+          "SourceRevision": "store-json-v1.2.0",
+          "Summary": "Native .NET 11 support and refreshed dependencies, with unchanged JSON store APIs and behavior.",
+          "Notes": [
+            {
+              "Kind": "Added",
+              "Text": "A native `net11.0` target alongside `netstandard2.0`, `net8.0` and `net10.0`."
+            },
+            {
+              "Kind": "Changed",
+              "Text": "Updated the Core dependency to FluentLocalizer 1.1.0 and System.Text.Json for .NET Standard 2.0 to 10.0.15. Modern .NET targets keep using their runtime's JSON implementation."
+            }
           ]
         }
       ]

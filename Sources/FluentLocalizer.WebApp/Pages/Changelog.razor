@@ -161,7 +161,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+        try
+        {
+            if (firstRender) await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+        }
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
     }
 
     private string ScopeName(ApiScope scope) => Translator.Get(DocsSets.ScopeNameKey(scope.Id));

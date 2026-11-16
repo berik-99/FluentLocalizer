@@ -1,24 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<PackageId>FluentLocalizer.Store.Json</PackageId>
 		<Product>FluentLocalizer.Store.Json</Product>
-		<Version>1.1.0</Version>
+		<Version>1.2.0</Version>
 		<Description>JSON translation stores for FluentLocalizer with culture-aware loading from files, embedded resources, or HTTP.</Description>
-		<PackageReleaseNotes>EmbeddedJsonStore reads namespace files such as it.common.json and can parse each file on first use with EmbeddedJsonStoreOptions.LoadOnDemand. Embedded resources are parsed straight from the resource stream, and nested-key lookups in every JSON store no longer allocate per segment.</PackageReleaseNotes>
+		<PackageReleaseNotes>Add a native .NET 11 target while retaining .NET Standard 2.0, .NET 8 and .NET 10 support. Update System.Text.Json for .NET Standard 2.0 to 10.0.15 and depend on FluentLocalizer 1.1.0. Public APIs and JSON store behavior are unchanged.</PackageReleaseNotes>
 		<PackageTags>json;http;localization;translation;store;icu;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="11.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+		<PackageReference Include="System.Text.Json" Version="10.0.15" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\FluentLocalizer.Core\FluentLocalizer.Core.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="PolySharp" Version="1.17.1" />
 	</ItemGroup>
 
 	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />

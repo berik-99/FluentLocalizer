@@ -115,15 +115,22 @@
     // Highlights the sidebar link of the section being read; on narrow screens the menu starts collapsed.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        try
         {
-            await JS.InvokeVoidAsync("fluentSite.collapseOnNarrow", _menu);
-            await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+            if (firstRender)
+            {
+                await JS.InvokeVoidAsync("fluentSite.collapseOnNarrow", _menu);
+                await JS.InvokeVoidAsync("fluentSite.scrollToHash");
+            }
+            if (_watchedPage == PageKey) return;
+            _watchedPage = PageKey;
+            await DisposeWatcherAsync();
+            _sectionWatcher = await JS.InvokeAsync<IJSObjectReference>("fluentSite.watchSections", _sidebar);
         }
-        if (_watchedPage == PageKey) return;
-        _watchedPage = PageKey;
-        await DisposeWatcherAsync();
-        _sectionWatcher = await JS.InvokeAsync<IJSObjectReference>("fluentSite.watchSections", _sidebar);
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
     }
 
     private async Task DisposeWatcherAsync()

@@ -1,23 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<PackageId>FluentLocalizer</PackageId>
 		<Product>FluentLocalizer</Product>
 		<RootNamespace>FluentLocalizer</RootNamespace>
-		<Version>1.0.0</Version>
+		<Version>1.1.0</Version>
 		<Description>
 			Core library for building culture-aware translation pipelines in .NET with fluent APIs, ICU message syntax, and configurable fallback and error handling.
 		</Description>
+		<PackageReleaseNotes>Add a native .NET 11 target while retaining .NET Standard 2.0, .NET 8 and .NET 10 support. Public APIs and translation behavior are unchanged.</PackageReleaseNotes>
 		<PackageTags>localization;translation;icu;messageformat;culture;fluent;dotnet</PackageTags>
 		<GenerateDependencyFile>false</GenerateDependencyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="MessageFormat" Version="8.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="PolySharp" Version="1.17.1" />
 	</ItemGroup>
 
 	<Import Project="..\FluentLocalizer.Shared.Polyfill\FluentLocalizer.Shared.Polyfill.projitems" Label="Shared" />

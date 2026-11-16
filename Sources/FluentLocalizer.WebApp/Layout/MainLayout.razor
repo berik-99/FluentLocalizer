@@ -81,26 +81,50 @@
     {
         if (firstRender)
         {
-            _theme = await JS.InvokeAsync<string>("fluentSite.getTheme");
+            try
+            {
+                _theme = await JS.InvokeAsync<string>("fluentSite.getTheme");
+            }
+            catch (JSException exception)
+            {
+                Console.Error.WriteLine(exception);
+            }
             StateHasChanged();
         }
     }
 
-    private async Task ChangeThemeAsync() => await JS.InvokeVoidAsync("fluentSite.setTheme", _theme);
+    private async Task ChangeThemeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("fluentSite.setTheme", _theme);
+        }
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
+    }
 
     private async Task ChangeLanguageAsync(string language)
     {
         SiteCulture = BrowserCulture.SelectCulture([language]);
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = SiteCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = SiteCulture;
-        await JS.InvokeVoidAsync("fluentSite.saveLanguage", SiteCulture.TwoLetterISOLanguageName);
-        await JS.InvokeVoidAsync("fluentSite.setLanguage", SiteCulture.Name, new
+        try
         {
-            loading = Translator.Get("Ui:Loading").Resolve(),
-            errorTitle = Translator.Get("Ui:ErrorTitle").Resolve(),
-            error = Translator.Get("Ui:UnhandledError").Resolve(),
-            reload = Translator.Get("Ui:Reload").Resolve(),
-            dismiss = Translator.Get("Ui:Dismiss").Resolve()
-        });
+            await JS.InvokeVoidAsync("fluentSite.saveLanguage", SiteCulture.TwoLetterISOLanguageName);
+            await JS.InvokeVoidAsync("fluentSite.setLanguage", SiteCulture.Name, new
+            {
+                loading = Translator.Get("Ui:Loading").Resolve(),
+                errorTitle = Translator.Get("Ui:ErrorTitle").Resolve(),
+                error = Translator.Get("Ui:UnhandledError").Resolve(),
+                reload = Translator.Get("Ui:Reload").Resolve(),
+                dismiss = Translator.Get("Ui:Dismiss").Resolve()
+            });
+        }
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(exception);
+        }
     }
 }
