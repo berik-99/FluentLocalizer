@@ -13,8 +13,8 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageIcon>Icon.png</PackageIcon>
 		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://github.com/berik-99/FluentLocalizer</RepositoryUrl>
-		<PackageProjectUrl>https://github.com/berik-99/FluentLocalizer</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/noyzone99/FluentLocalizer</RepositoryUrl>
+		<PackageProjectUrl>https://noyzone99.github.io/FluentLocalizer/</PackageProjectUrl>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IncludeSymbols>true</IncludeSymbols>

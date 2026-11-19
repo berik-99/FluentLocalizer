@@ -46,4 +46,4 @@ Fonti primarie: metadati NuGet dei tre pacchetti (`registration5-gz-semver2`), p
 - [FluentLocalizer 0.0.1](https://www.nuget.org/packages/FluentLocalizer/0.0.1)
 - [Store.Json 0.0.1](https://www.nuget.org/packages/FluentLocalizer.Store.Json/0.0.1)
 - [DependencyInjection 0.0.1](https://www.nuget.org/packages/FluentLocalizer.Extensions.DependencyInjection/0.0.1)
-- [Confronto alpha / stable](https://github.com/berik-99/FluentLocalizer/compare/v0.1.0-alpha...v1.0.0)
+- [Confronto alpha / stable](https://github.com/noyzone99/FluentLocalizer/compare/v0.1.0-alpha...v1.0.0)

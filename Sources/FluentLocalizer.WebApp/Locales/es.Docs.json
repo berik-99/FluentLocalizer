@@ -547,7 +547,7 @@
       "InjectionTitle": "Inyección de dependencias",
       "Injection": "`AddFluentLocalizer(services, options)` ahora registra realmente el objeto de opciones que pasas, y las dos sobrecargas validan que sus argumentos no sean `null`. `WithStore(store)` ya no registra el store dos veces. No hace falta cambiar el código, pero el comportamiento que dependía de los registros anteriores puede ser distinto.",
       "ReferenceTitle": "Mantenerse al día",
-      "Reference1": "El [registro de cambios](changelog?scope=core) enumera los cambios de cada versión de Core. Consulta la [referencia de la API](docs/core/v1/api) para ver las firmas públicas y los miembros obsoletos con sus sustitutos. El README de cada paquete en [GitHub](https://github.com/berik-99/FluentLocalizer) contiene su referencia de la API."
+      "Reference1": "El [registro de cambios](changelog?scope=core) enumera los cambios de cada versión de Core. Consulta la [referencia de la API](docs/core/v1/api) para ver las firmas públicas y los miembros obsoletos con sus sustitutos. El README de cada paquete en [GitHub](https://github.com/noyzone99/FluentLocalizer) contiene su referencia de la API."
     }
   },
   "StoreJsonV1": {
@@ -829,7 +829,7 @@
       "LifetimeThreads": "Registra también el propio store en la inyección de dependencias, como en el ejemplo de abajo, si los componentes necesitan llamar a `LoadAsync` o a `RefreshStoreAsync`.",
       "ExampleTitle": "Ejemplo: Blazor WebAssembly",
       "Example1": "Un `Program.cs` completo que carga previamente el idioma del usuario antes del primer renderizado, y un componente que cambia de idioma:",
-      "Example2": "Los componentes que muestran texto deben volver a renderizarse después del cambio: el propio componente del botón lo hace después de su controlador de eventos, y los demás componentes pueden recibir la cultura como valor en cascada. El [ejemplo de Blazor](https://github.com/berik-99/FluentLocalizer/tree/main/Examples/FluentLocalizer.Samples.BlazorWebApp) del repositorio muestra la carga previa con manifiesto, los espacios de nombres bajo demanda y la actualización en una aplicación en ejecución."
+      "Example2": "Los componentes que muestran texto deben volver a renderizarse después del cambio: el propio componente del botón lo hace después de su controlador de eventos, y los demás componentes pueden recibir la cultura como valor en cascada. El [ejemplo de Blazor](https://github.com/noyzone99/FluentLocalizer/tree/main/Examples/FluentLocalizer.Samples.BlazorWebApp) del repositorio muestra la carga previa con manifiesto, los espacios de nombres bajo demanda y la actualización en una aplicación en ejecución."
     },
     "Migration": {
       "Nav": "Guía de migración",
@@ -852,7 +852,7 @@
       "DeprecatedMax": "No transmite `MaxDocumentBytes`: con `JsonStore` el límite de tamaño nunca se aplica.",
       "DeprecatedBrowser": "Con `SearchMode = FileSystem` (el valor predeterminado) lanza `PlatformNotSupportedException` en el navegador, igual que `JsonFileStore`.",
       "ReferenceTitle": "Mantenerse al día",
-      "Reference1": "El [registro de cambios](changelog?scope=store-json) enumera los cambios de cada versión del store JSON. Consulta la [referencia de la API](docs/store-json/v1/api) para ver las firmas públicas y los miembros obsoletos con sus sustitutos. El README del paquete en [GitHub](https://github.com/berik-99/FluentLocalizer) contiene la misma referencia."
+      "Reference1": "El [registro de cambios](changelog?scope=store-json) enumera los cambios de cada versión del store JSON. Consulta la [referencia de la API](docs/store-json/v1/api) para ver las firmas públicas y los miembros obsoletos con sus sustitutos. El README del paquete en [GitHub](https://github.com/noyzone99/FluentLocalizer) contiene la misma referencia."
     }
   }
 }

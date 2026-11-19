@@ -1,4 +1,4 @@
-# FluentLocalizer.Extensions.DependencyInjection
+# ![](https://raw.githubusercontent.com/noyzone99/FluentLocalizer/main/Sources/FluentLocalizer.WebApp/wwwroot/favicon.svg) FluentLocalizer.Extensions.DependencyInjection
 
 Version 1.1.0 adds a native `net11.0` target alongside `netstandard2.0`, `net8.0` and `net10.0`. Public APIs are unchanged; building this repository requires the .NET 11 SDK.
 
@@ -6,7 +6,7 @@ FluentLocalizer.Extensions.DependencyInjection provides ASP.NET Core and generic
 
 ## Install
 
-For every public type and member in this package, see the [API reference](#api-reference). The [online guide](https://berik-99.github.io/FluentLocalizer/docs/core/dependency-injection) covers ASP.NET Core, worker services and Blazor.
+For every public type and member in this package, see the [API reference](#api-reference). The [online guide](https://noyzone99.github.io/FluentLocalizer/docs/core/dependency-injection) covers ASP.NET Core, worker services and Blazor.
 
 ```bash
 dotnet add package FluentLocalizer.Extensions.DependencyInjection
@@ -191,7 +191,7 @@ Public types and members declared by FluentLocalizer, grouped by package and nam
 
 Version numbers shown for a type or member refer to the NuGet package named on that type.
 
-Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions and deprecations are marked on each member, and the changes between versions are listed in the changelog. The searchable [WebUI API reference](https://berik-99.github.io/FluentLocalizer/docs/core/v1/api) uses the same catalog and can show any earlier version; the [changelog](https://berik-99.github.io/FluentLocalizer/changelog?scope=core) lists the changes of every release.
+Signatures use C# notation; parameter names, defaults, return values and relevant exceptions are described alongside each member. Every type states the version that introduced it; later additions and deprecations are marked on each member, and the changes between versions are listed in the changelog. The searchable [WebUI API reference](https://noyzone99.github.io/FluentLocalizer/docs/core/v1/api) uses the same catalog and can show any earlier version; the [changelog](https://noyzone99.github.io/FluentLocalizer/changelog?scope=core) lists the changes of every release.
 
 - [FluentLocalizerServiceCollectionExtensions](#api-fluentlocalizerservicecollectionextensions)
 - [FluentLocalizerBuilder](#api-fluentlocalizerbuilder)
@@ -211,7 +211,7 @@ Registers ITranslator as a singleton. Register ITranslationStore before resolvin
 | `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, Action<TranslationOptions>? configure = null)` | services is the DI collection and cannot be null (ArgumentNullException). configure optionally configures IOptions<TranslationOptions>. Returns a FluentLocalizerBuilder for store/logger registration. |
 | `static FluentLocalizerBuilder AddFluentLocalizer(this IServiceCollection services, TranslationOptions translationOptions)` | Registers the supplied translationOptions instance through IOptions and adds the translator. Returns a builder. Null services or translationOptions throw ArgumentNullException. Use a typed argument when passing null to avoid overload ambiguity. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/core-v1.1.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs)
+[Source](https://github.com/noyzone99/FluentLocalizer/blob/core-v1.1.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerServiceCollectionExtensions.cs)
 
 <a id="api-fluentlocalizerbuilder"></a>
 
@@ -231,6 +231,6 @@ Despite its namespace, this type belongs to the dependency injection package. Wi
 | `FluentLocalizerBuilder WithStore(Func<IServiceProvider, ITranslationStore> factory)` | Registers a singleton store factory. factory receives the service provider on resolution. A null factory throws ArgumentNullException. The DI container owns disposable stores created by the factory. |
 | `FluentLocalizerBuilder WithLogger()` | Registers a singleton ITranslationLogger adapter using ILogger<Translator>. Configure Microsoft.Extensions.Logging services and providers so ILogger<Translator> can be resolved. |
 
-[Source](https://github.com/berik-99/FluentLocalizer/blob/core-v1.1.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs)
+[Source](https://github.com/noyzone99/FluentLocalizer/blob/core-v1.1.0/Sources/FluentLocalizer.Extensions.DependencyInjection/FluentLocalizerBuilder.cs)
 
 <!-- api-reference:end -->

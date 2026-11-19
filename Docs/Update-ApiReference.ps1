@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $catalog = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'api-reference.json') -Raw | ConvertFrom-Json
 $tick = [char]96
-$site = 'https://berik-99.github.io/FluentLocalizer/'
+$site = 'https://noyzone99.github.io/FluentLocalizer/'
 
 function Compare-ApiVersion([string]$Left, [string]$Right) {
     $l = $Left.Split('-', 2); $r = $Right.Split('-', 2)
@@ -128,7 +128,7 @@ foreach ($target in $targets) {
         }
         $lines.Add('')
         $sourceRevision = if ($current.SourceRevision) { $current.SourceRevision } else { 'main' }
-        $source = 'https://github.com/berik-99/FluentLocalizer/blob/' + $sourceRevision + '/' + $type.Source
+        $source = 'https://github.com/noyzone99/FluentLocalizer/blob/' + $sourceRevision + '/' + $type.Source
         $lines.Add('[Source](' + $source + ')')
         $lines.Add('')
     }

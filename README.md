@@ -1,4 +1,4 @@
-# FluentLocalizer
+# ![](Sources/FluentLocalizer.WebApp/wwwroot/favicon.svg) FluentLocalizer
 
 [![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer)
 [![NuGet Version](https://img.shields.io/nuget/v/FluentLocalizer.Store.Json.svg?style=flat-square&color=blue)](https://www.nuget.org/packages/FluentLocalizer.Store.Json)
@@ -7,7 +7,7 @@
 
 **FluentLocalizer** is a lightweight, high-performance .NET library designed for resolving culture-aware translation templates written in the **[ICU message syntax](https://unicode-org.github.io/icu/userguide/format_parse/messages/)** with clean **Fluent APIs**. Templates are parsed and formatted by [**MessageFormat**](https://github.com/jeffijoe/messageformat.net), the open-source .NET library by Jeff Hansen ([@jeffijoe](https://github.com/jeffijoe)): FluentLocalizer would not exist without it.
 
-Explore the [website and browser playground](https://berik-99.github.io/FluentLocalizer/).
+Explore the [website and browser playground](https://noyzone99.github.io/FluentLocalizer/).
 
 Stop dealing with cumbersome resource files (`.resx`) or rigid formatting string builders. FluentLocalizer makes multi-language management, pluralization, gender-aware translations, and missing-key fallback seamless, extensible, and developer-friendly.
 
@@ -83,7 +83,7 @@ For a real application, use the [JSON stores](DOCUMENTATION.md#json-stores) and 
 | [DOCUMENTATION.md](DOCUMENTATION.md) | [ICU templates](DOCUMENTATION.md#icu-message-templates), [culture selection](DOCUMENTATION.md#culture-selection), [translation options and resolution rules](DOCUMENTATION.md#translation-options), [JSON stores](DOCUMENTATION.md#json-stores) and [dependency injection](DOCUMENTATION.md#dependency-injection). |
 | [API-REFERENCE.md](API-REFERENCE.md) | Every public type and member of the three packages, generated from the shared API catalog. |
 | [CHANGELOG.md](CHANGELOG.md) | The changes of every release. |
-| [Website](https://berik-99.github.io/FluentLocalizer/) | Step-by-step [Core guides](https://berik-99.github.io/FluentLocalizer/docs/core) and [JSON store guides](https://berik-99.github.io/FluentLocalizer/docs/store-json), the searchable API reference for [Core](https://berik-99.github.io/FluentLocalizer/docs/core/v1/api) and the [JSON store](https://berik-99.github.io/FluentLocalizer/docs/store-json/v1/api) with earlier versions, and a browser playground. |
+| [Website](https://noyzone99.github.io/FluentLocalizer/) | Step-by-step [Core guides](https://noyzone99.github.io/FluentLocalizer/docs/core) and [JSON store guides](https://noyzone99.github.io/FluentLocalizer/docs/store-json), the searchable API reference for [Core](https://noyzone99.github.io/FluentLocalizer/docs/core/v1/api) and the [JSON store](https://noyzone99.github.io/FluentLocalizer/docs/store-json/v1/api) with earlier versions, and a browser playground. |
 | Package READMEs | Shipped with each NuGet package: [Core](Sources/FluentLocalizer.Core/Assets/README.md), [JSON store](Sources/FluentLocalizer.Store.Json/Assets/README.md), [dependency injection](Sources/FluentLocalizer.Extensions.DependencyInjection/Assets/README.md). |
 | [Examples](Examples/README.md) | Runnable console, worker and Blazor samples. |
 
@@ -164,8 +164,8 @@ The website is a Blazor WebAssembly app; the GitHub Pages workflow publishes its
 
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 
-- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/berik-99/FluentLocalizer/issues).
-- 🐛 **Found a bug?** Submit an [Issue](https://github.com/berik-99/FluentLocalizer/issues) with steps to reproduce it.
+- 💡 **Have an idea or feature request?** Open an [Issue](https://github.com/noyzone99/FluentLocalizer/issues).
+- 🐛 **Found a bug?** Submit an [Issue](https://github.com/noyzone99/FluentLocalizer/issues) with steps to reproduce it.
 - 🔧 **Want to contribute code?** Fork the repo and submit a **Pull Request**. New storage backends (e.g., Redis, Database, YAML) or engine improvements are warmly welcome!
 
 > [!NOTE]

@@ -547,7 +547,7 @@
       "InjectionTitle": "Dependency injection",
       "Injection": "`AddFluentLocalizer(services, options)` now really registers the options object you pass, and both overloads validate their arguments against `null`. `WithStore(store)` no longer registers the store twice. No code change is needed, but behavior that relied on the old registrations may differ.",
       "ReferenceTitle": "Keeping up to date",
-      "Reference1": "The [changelog](changelog?scope=core) lists the changes of every Core release. Use the [API reference](docs/core/v1/api) to look up public signatures and deprecated members with their replacements. Each package's README on [GitHub](https://github.com/berik-99/FluentLocalizer) contains its API reference."
+      "Reference1": "The [changelog](changelog?scope=core) lists the changes of every Core release. Use the [API reference](docs/core/v1/api) to look up public signatures and deprecated members with their replacements. Each package's README on [GitHub](https://github.com/noyzone99/FluentLocalizer) contains its API reference."
     }
   },
   "StoreJsonV1": {
@@ -829,7 +829,7 @@
       "LifetimeThreads": "Register the store itself in dependency injection as well, as in the example below, if components need to call `LoadAsync` or `RefreshStoreAsync`.",
       "ExampleTitle": "Example: Blazor WebAssembly",
       "Example1": "A complete `Program.cs` that preloads the user's language before the first render, and a component that switches language:",
-      "Example2": "Components that show text must render again after the switch: the button's own component does so after its event handler, and other components can receive the culture as a cascading value. The repository's [Blazor sample](https://github.com/berik-99/FluentLocalizer/tree/main/Examples/FluentLocalizer.Samples.BlazorWebApp) shows manifest preloading, on-demand namespaces and refresh in a running application."
+      "Example2": "Components that show text must render again after the switch: the button's own component does so after its event handler, and other components can receive the culture as a cascading value. The repository's [Blazor sample](https://github.com/noyzone99/FluentLocalizer/tree/main/Examples/FluentLocalizer.Samples.BlazorWebApp) shows manifest preloading, on-demand namespaces and refresh in a running application."
     },
     "Migration": {
       "Nav": "Migration guide",
@@ -852,7 +852,7 @@
       "DeprecatedMax": "It does not pass on `MaxDocumentBytes`: with `JsonStore` the size limit is never applied.",
       "DeprecatedBrowser": "With `SearchMode = FileSystem` (the default) it throws `PlatformNotSupportedException` in the browser, like `JsonFileStore`.",
       "ReferenceTitle": "Keeping up to date",
-      "Reference1": "The [changelog](changelog?scope=store-json) lists the changes of every JSON store release. Use the [API reference](docs/store-json/v1/api) to look up public signatures and deprecated members with their replacements. The package README on [GitHub](https://github.com/berik-99/FluentLocalizer) contains the same reference."
+      "Reference1": "The [changelog](changelog?scope=store-json) lists the changes of every JSON store release. Use the [API reference](docs/store-json/v1/api) to look up public signatures and deprecated members with their replacements. The package README on [GitHub](https://github.com/noyzone99/FluentLocalizer) contains the same reference."
     }
   }
 }

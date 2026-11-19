@@ -2,7 +2,7 @@
 
 [README](README.md) · [API reference](API-REFERENCE.md) · [Changelog](CHANGELOG.md)
 
-This guide covers how FluentLocalizer resolves messages, how to configure it and how to use the JSON stores and dependency injection. The [website](https://berik-99.github.io/FluentLocalizer/) explains every feature step by step: the [Core guides](https://berik-99.github.io/FluentLocalizer/docs/core) cover templates, requests, culture, errors, logging and dependency injection, and the [JSON store guides](https://berik-99.github.io/FluentLocalizer/docs/store-json) cover each JSON store. Every public type and member is described in the [API reference](API-REFERENCE.md).
+This guide covers how FluentLocalizer resolves messages, how to configure it and how to use the JSON stores and dependency injection. The [website](https://noyzone99.github.io/FluentLocalizer/) explains every feature step by step: the [Core guides](https://noyzone99.github.io/FluentLocalizer/docs/core) cover templates, requests, culture, errors, logging and dependency injection, and the [JSON store guides](https://noyzone99.github.io/FluentLocalizer/docs/store-json) cover each JSON store. Every public type and member is described in the [API reference](API-REFERENCE.md).
 
 - [ICU message templates](#icu-message-templates)
 - [Culture selection](#culture-selection)

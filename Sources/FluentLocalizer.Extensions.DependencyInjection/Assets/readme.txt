@@ -16,4 +16,4 @@ You normally do not need WithCulture(...). Get(key) uses CultureInfo.CurrentUICu
 
 See README.md in this package for hosted-service, factory, options, and logging examples.
 
-The API reference section in README.md lists every public type and member in this package, including constructors, overloads, options and enum values. Search all packages at https://berik-99.github.io/FluentLocalizer/docs/api.
+The API reference section in README.md lists every public type and member in this package, including constructors, overloads, options and enum values. Search all packages at https://noyzone99.github.io/FluentLocalizer/docs/api.
